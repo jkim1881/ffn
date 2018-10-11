@@ -284,14 +284,16 @@ class EvalTracker(object):
     return summaries
 
 
-def run_training_step(sess, model, fetch_summary, feed_dict):
+def run_training_step(sess, model, fetch_summary, accuracy_to_log, feed_dict):
   """Runs one training step for a single FFN FOV."""
+  # ops_to_run = [model.train_op, model.global_step, model.logits, accuracy_to_log]
   ops_to_run = [model.train_op, model.global_step, model.logits]
 
   if fetch_summary is not None:
     ops_to_run.append(fetch_summary)
 
   results = sess.run(ops_to_run, feed_dict)
+  # step, prediction, accuracy = results[1:4]
   step, prediction = results[1:3]
 
   if fetch_summary is not None:
@@ -299,7 +301,8 @@ def run_training_step(sess, model, fetch_summary, feed_dict):
   else:
     summ = None
 
-  return prediction, step, summ
+  # return prediction, step, summ, accuracy
+  return prediction, step, summ, None
 
 
 def fov_moves():
@@ -664,20 +667,31 @@ def train_ffn(model_cls, **model_kwargs):
       step = 0
       t_last = time.time()
 
+      # TODO (jk): text log of learning curve
+      learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
+
       while step < FLAGS.max_steps:
         # Run summaries periodically.
         t_curr = time.time()
-        if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+
+        # TIME-BASED SUMMARY
+        # if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+        #   summ_op = merge_summaries_op
+        #   t_last = t_curr
+        # else:
+        #   summ_op = None
+
+        # TODO (jk): ITERATION-BASED SUMMARY
+        if (step % 100 == 0) & (step>0):
           summ_op = merge_summaries_op
-          t_last = t_curr
         else:
           summ_op = None
 
         seed, patches, labels, weights = next(batch_it)
 
         summaries = []
-        updated_seed, step, summ = run_training_step(
-            sess, model, summ_op,
+        updated_seed, step, summ, accuracy = run_training_step(
+            sess, model, summ_op, None,
             feed_dict={
                 model.loss_weights: weights,
                 model.labels: labels,
@@ -701,6 +715,12 @@ def train_ffn(model_cls, **model_kwargs):
           logging.info('Saving summaries.')
           summ = tf.Summary()
           summ.value.extend(eval_tracker.get_summaries())
+
+          # TODO (jk): text log of learning curve
+          learning_curve_txt.write('step_' + str(step) +
+                                   '_precision_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
+                                   '_recall_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)) +
+                                   '_accuracy_' + str((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)))
           eval_tracker.reset()
 
           for s in summaries:
