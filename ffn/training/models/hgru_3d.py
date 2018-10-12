@@ -61,7 +61,7 @@ class ConvStack3DFFNModel(model.FFNModel):
 
     if self.input_patches is None:
       self.input_patches = tf.placeholder(
-          tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
+          tf.bfloat16, [1] + list(self.input_image_size[::-1]) +[1],
           name='patches')
 
     net = tf.concat([self.input_patches, self.input_seed], 4)

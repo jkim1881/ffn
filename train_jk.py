@@ -22,11 +22,13 @@ if __name__ == '__main__':
                           [1250, 1250, 100],
                           [1250, 1250, 100],
                           [1250, 1250, 100]] # x, y, z. DONT KNOW HOW ITS USED
-
+    load_from_ckpt = None
+    #load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # None
+    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 5
     max_steps = 100000
     optimizer = 'adam' #'sgd'
-    batch_size = 4
+    batch_size = 64
     image_mean = 128
     image_stddev = 33
 
@@ -48,7 +50,8 @@ if __name__ == '__main__':
                       ' --image_mean ' + str(image_mean) + \
                       ' --image_stddev ' + str(image_stddev) + \
                       ' --max_steps=' + str(max_steps) + \
-                      ' --optimizer ' + str(optimizer) + \
+                      ' --optimizer ' + optimizer + \
+                      ' --load_from_ckpt ' + str(load_from_ckpt) + \
                       ' --batch_size=' + str(batch_size)
 
             subprocess.call(command, shell=True)

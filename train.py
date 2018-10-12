@@ -89,6 +89,8 @@ flags.DEFINE_string('model_args', None,
 # Training infra options.
 flags.DEFINE_string('train_dir', '/tmp',
                     'Path where checkpoints and other data will be saved.')
+flags.DEFINE_string('load_from_ckpt', None,
+                    'Path to the pretrained checkpoint.')
 flags.DEFINE_string('master', '', 'Network address of the master.')
 flags.DEFINE_integer('batch_size', 4, 'Number of images in a batch.')
 flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
@@ -151,13 +153,10 @@ class EvalTracker(object):
   """Tracks eval results over multiple training steps."""
 
   def __init__(self, eval_shape):
-    self.eval_labels = tf.placeholder(
-        tf.float32, [1] + eval_shape + [1], name='eval_labels')
-    self.eval_preds = tf.placeholder(
-        tf.float32, [1] + eval_shape + [1], name='eval_preds')
+    self.eval_labels = tf.placeholder(tf.float32, [1] + eval_shape + [1], name='eval_labels')
+    self.eval_preds = tf.placeholder(tf.float32, [1] + eval_shape + [1], name='eval_preds')
     self.eval_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=self.eval_preds, labels=self.eval_labels))
+        tf.nn.sigmoid_cross_entropy_with_logits(logits=self.eval_preds, labels=self.eval_labels))
     self.reset()
     self.eval_threshold = logit(0.9)
     self.sess = None
@@ -443,8 +442,8 @@ def prepare_ffn(model):
   """Creates the TF graph for an FFN."""
   shape = [FLAGS.batch_size] + list(model.pred_mask_size[::-1]) + [1]
 
-  model.labels = tf.placeholder(tf.float32, shape, name='labels')
-  model.loss_weights = tf.placeholder(tf.float32, shape, name='loss_weights')
+  model.labels = tf.placeholder(tf.bfloat16, shape, name='labels')
+  model.loss_weights = tf.placeholder(tf.bfloat16, shape, name='loss_weights')
   model.define_tf_graph()
 
 
@@ -617,6 +616,7 @@ def train_ffn(model_cls, **model_kwargs):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
       model = model_cls(**model_kwargs)
+
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
@@ -667,10 +667,20 @@ def train_ffn(model_cls, **model_kwargs):
       step = 0
       t_last = time.time()
 
-      # TODO (jk): text log of learning curve
+      # TODO (jk): text log of learning curve. refresh file.
       learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
+      learning_curve_txt.close()
+      # TODO (jk): load from ckpt
+
+      if FLAGS.load_from_ckpt != 'None':
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
       while step < FLAGS.max_steps:
+        if (step % 10 == 0) & (step>0):
+          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) + ',   accuracy: ' + str((eval_tracker.tp + eval_tracker.tn) / (
+        eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)))
         # Run summaries periodically.
         t_curr = time.time()
 
@@ -717,10 +727,14 @@ def train_ffn(model_cls, **model_kwargs):
           summ.value.extend(eval_tracker.get_summaries())
 
           # TODO (jk): text log of learning curve
+          learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
           learning_curve_txt.write('step_' + str(step) +
                                    '_precision_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
                                    '_recall_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)) +
                                    '_accuracy_' + str((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)))
+          learning_curve_txt.write("\n")
+          learning_curve_txt.close()
+
           eval_tracker.reset()
 
           for s in summaries:

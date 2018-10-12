@@ -78,8 +78,8 @@ class FFNModel(object):
 
     # The seed is always a placeholder which is fed externally from the
     # training/inference drivers.
-    self.input_seed = tf.placeholder(tf.float32, name='seed')
-    self.input_patches = tf.placeholder(tf.float32, name='patches')
+    self.input_seed = tf.placeholder(tf.bfloat16, name='seed')
+    self.input_patches = tf.placeholder(tf.bfloat16, name='patches')
 
     # For training, labels should be defined as a TF object.
     self.labels = None
