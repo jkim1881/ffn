@@ -2,18 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c53770b6-cce1-4be7-9c5c-dfafb6294403" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ffn/training/models/prc/__init__.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ffn/training/models/prc/feedback_hgru_3l.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ffn/training/models/prc/initialization.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ffn/training/models/prc/pooling.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ffn/training/inputs.py" afterPath="$PROJECT_DIR$/ffn/training/inputs.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ffn/training/model.py" afterPath="$PROJECT_DIR$/ffn/training/model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ffn/training/models/convstack_3d.py" afterPath="$PROJECT_DIR$/ffn/training/models/convstack_3d.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ffn/training/models/hgru_3d.py" afterPath="$PROJECT_DIR$/ffn/training/models/hgru_3d.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ffn/training/variables.py" afterPath="$PROJECT_DIR$/ffn/training/variables.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run_inference_jk.py" afterPath="$PROJECT_DIR$/run_inference_jk.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/train.py" afterPath="$PROJECT_DIR$/train.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/train_jk.py" afterPath="$PROJECT_DIR$/train_jk.py" />
     </list>
     <ignored path="ffn.iws" />
@@ -70,11 +58,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train_jk.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train_jk.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train_jk.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="595">
-              <caret line="65" column="18" selection-start-line="65" selection-start-column="18" selection-end-line="65" selection-end-column="18" />
+            <state relative-caret-position="680">
+              <caret line="40" column="20" selection-start-line="40" selection-start-column="20" selection-end-line="40" selection-end-column="20" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -82,10 +70,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="train.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="428">
+            <state relative-caret-position="3284">
               <caret line="752" column="21" selection-start-line="752" selection-start-column="21" selection-end-line="752" selection-end-column="21" />
               <folding>
                 <marker date="1539617316899" expanded="true" signature="25784:25971" ph="..." />
@@ -158,8 +146,8 @@
         <option value="$PROJECT_DIR$/ffn/training/models/prc/pooling.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/hgru_3d.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/prc/feedback_hgru_3l.py" />
-        <option value="$PROJECT_DIR$/train_jk.py" />
         <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/train_jk.py" />
       </list>
     </option>
   </component>
@@ -780,16 +768,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ffn/training/models/convstack_3d.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="29" column="33" selection-start-line="29" selection-start-column="9" selection-end-line="29" selection-end-column="33" />
-          <folding>
-            <element signature="e#734#772#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ffn/inference/inference.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="404">
@@ -828,22 +806,32 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train_jk.py">
+    <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="595">
-          <caret line="65" column="18" selection-start-line="65" selection-start-column="18" selection-end-line="65" selection-end-column="18" />
+        <state relative-caret-position="3284">
+          <caret line="752" column="21" selection-start-line="752" selection-start-column="21" selection-end-line="752" selection-end-column="21" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <marker date="1539617316899" expanded="true" signature="25784:25971" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
+    <entry file="file://$PROJECT_DIR$/ffn/training/models/convstack_3d.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="428">
-          <caret line="752" column="21" selection-start-line="752" selection-start-column="21" selection-end-line="752" selection-end-column="21" />
+        <state relative-caret-position="136">
+          <caret line="29" column="33" selection-start-line="29" selection-start-column="9" selection-end-line="29" selection-end-column="33" />
           <folding>
-            <marker date="1539617316899" expanded="true" signature="25784:25971" ph="..." />
+            <element signature="e#734#772#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train_jk.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="680">
+          <caret line="40" column="20" selection-start-line="40" selection-start-column="20" selection-end-line="40" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>

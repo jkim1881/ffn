@@ -37,8 +37,8 @@ if __name__ == '__main__':
 
     import sys
     import numpy as np
-    num_machines = sys.argv[1]
-    i_machine = sys.argv[2]
+    num_machines = int(sys.argv[1])
+    i_machine = int(sys.argv[2])
     kth_job=0
 
     for dataset_name in dataset_name_list:
