@@ -442,8 +442,8 @@ def prepare_ffn(model):
   """Creates the TF graph for an FFN."""
   shape = [FLAGS.batch_size] + list(model.pred_mask_size[::-1]) + [1]
 
-  model.labels = tf.placeholder(tf.bfloat16, shape, name='labels')
-  model.loss_weights = tf.placeholder(tf.bfloat16, shape, name='loss_weights')
+  model.labels = tf.placeholder(tf.float32, shape, name='labels')
+  model.loss_weights = tf.placeholder(tf.float32, shape, name='loss_weights')
   model.define_tf_graph()
 
 
@@ -622,6 +622,13 @@ def train_ffn(model_cls, **model_kwargs):
       eval_tracker = EvalTracker(eval_shape_zyx)
       load_data_ops = define_data_input(model, queue_batch=1)
       prepare_ffn(model)
+
+      # TODO (jk): load from ckpt
+      if FLAGS.load_from_ckpt != 'None':
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
+
       merge_summaries_op = tf.summary.merge_all()
 
       if FLAGS.task == 0:
@@ -670,12 +677,6 @@ def train_ffn(model_cls, **model_kwargs):
       # TODO (jk): text log of learning curve. refresh file.
       learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
       learning_curve_txt.close()
-      # TODO (jk): load from ckpt
-
-      if FLAGS.load_from_ckpt != 'None':
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
       while step < FLAGS.max_steps:
         if (step % 10 == 0) & (step>0):
@@ -728,18 +729,24 @@ def train_ffn(model_cls, **model_kwargs):
 
           # TODO (jk): text log of learning curve
           learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
+          precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)
+          recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)
+          accuracy = (eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)
           learning_curve_txt.write('step_' + str(step) +
-                                   '_precision_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
-                                   '_recall_' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)) +
-                                   '_accuracy_' + str((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)))
+                                   '_precision_' + str(precision) +
+                                   '_recall_' + str(recall) +
+                                   '_accuracy_' + str(accuracy))
           learning_curve_txt.write("\n")
           learning_curve_txt.close()
-
           eval_tracker.reset()
 
           for s in summaries:
             summ.value.extend(s.value)
           sv.summary_computed(sess, summ, step)
+
+          if np.min([precision, recall]) > 0.9:
+              logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
+              break
 
 
 def main(argv=()):

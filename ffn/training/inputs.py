@@ -204,7 +204,7 @@ def get_offset_scale(volname,
     return np.float32(offset), np.float32(scale)
 
   offset, scale = tf.py_func(
-      _get_offset_scale, [volname], [tf.bfloat16, tf.bfloat16],
+      _get_offset_scale, [volname], [tf.float32, tf.float32],
       stateful=False,
       name=name)
   offset.set_shape([])
@@ -239,9 +239,7 @@ def offset_and_scale_patches(patches,
         offset_scale_map=offset_scale_map,
         default_offset=default_offset,
         default_scale=default_scale)
-    import ipdb
-    ipdb.set_trace()
-    return (tf.cast(patches, tf.bfloat16) - offset) / scale
+    return (tf.cast(patches, tf.float32) - offset) / scale
 
 
 def redundant_lom(label, radius, scope='redundant_lom'):

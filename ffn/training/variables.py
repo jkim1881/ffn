@@ -38,9 +38,9 @@ class FractionTracker(object):
   def get_hit_rate(self):
     total = self.var[0]
     hits = self.var[1]
-    hit_rate = (tf.cast(hits, tf.bfloat16) /
-                tf.maximum(tf.constant(1, dtype=tf.bfloat16),
-                           tf.cast(total, tf.bfloat16)))
+    hit_rate = (tf.cast(hits, tf.float32) /
+                tf.maximum(tf.constant(1, dtype=tf.float32),
+                           tf.cast(total, tf.float32)))
 
     with tf.control_dependencies([hit_rate]):
       update_var = self.var.assign_add([-total, -hits])

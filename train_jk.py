@@ -6,52 +6,68 @@ import subprocess
 if __name__ == '__main__':
 
     script_root = '/home/jk/PycharmProjects/ffn'
-    hdf_root = '/media/data_cifs/connectomics/datasets/third_party/public/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
-
-    net_name = 'ffn'
-    fov_size = [41, 41, 21] # [33,33,33] XYZ
-    deltas = [10, 10, 5] #[8,8,8] XYZ
-    dataset_name_list = ['berson',
+    net_name = 'hgru' #'ffn'
+    dataset_name_list = ['neuroproof',
+                         'berson',
                          'isbi2013',
                          'cremi_a',
                          'cremi_b',
                          'cremi_c']
-    dataset_shape_list = [[384, 384, 300],
-                          [1024, 1024, 75],
-                          [1250, 1250, 100],
-                          [1250, 1250, 100],
-                          [1250, 1250, 100]] # x, y, z. DONT KNOW HOW ITS USED
-    load_from_ckpt = None
-    #load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # None
+    dataset_type = 'val' #'train'
+
+    hdf_root = '/media/data_cifs/connectomics/datasets/third_party/traditional/'
+    fov_size = [33, 33, 33]
+    deltas = [8, 8, 8]
+
+    # hdf_root = '/media/data_cifs/connectomics/datasets/third_party/flat_fov/'
+    # fov_size = [41, 41, 21]
+    # deltas = [10, 10, 5]
+
+
+    load_from_ckpt = 'None'
+    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
-    num_model_repeats = 5
+    num_model_repeats = 1
     max_steps = 100000
-    optimizer = 'adam' #'sgd'
+    optimizer = 'sgd' #'adam' #'sgd'
     batch_size = 64
     image_mean = 128
     image_stddev = 33
 
+    import sys
+    import numpy as np
+    num_machines = sys.argv[1]
+    i_machine = sys.argv[2]
+    kth_job=0
+
     for dataset_name in dataset_name_list:
         for irep in range(num_model_repeats):
+
+            kth_job += 1
+            if np.mod(kth_job, num_machines) != i_machine and num_machines != i_machine:
+                continue
+            elif np.mod(kth_job, num_machines) != 0 and num_machines == i_machine:
+                continue
+
             print('>>>>>>>>>>>>>>>>>>>>> Dataset = ' + dataset_name + ' Rep = ' + str(irep))
             cond_name = net_name + '_' + dataset_name + '_r' + str(irep)
-            coords_fullpath = os.path.join(hdf_root, dataset_name, 'train/tf_record_file')
-            groundtruth_fullpath = os.path.join(hdf_root, dataset_name, 'train/groundtruth.h5')
-            volume_fullpath = os.path.join(hdf_root, dataset_name, 'train/grayscale_maps.h5')
+            coords_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'tf_record_file')
+            groundtruth_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'groundtruth.h5')
+            volume_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'grayscale_maps.h5')
 
             command = 'python ' + os.path.join(script_root, 'train.py') + \
                       ' --train_coords ' + coords_fullpath + \
                       ' --data_volumes jk:' + volume_fullpath + ':raw' + \
                       ' --label_volumes jk:' + groundtruth_fullpath + ':stack' + \
                       ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
-                      ' --model_name convstack_3d.ConvStack3DFFNModel' + \
+                      ' --model_name hgru_3d.ConvStack3DFFNModel' + \
                       ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
                       ' --image_mean ' + str(image_mean) + \
                       ' --image_stddev ' + str(image_stddev) + \
                       ' --max_steps=' + str(max_steps) + \
                       ' --optimizer ' + optimizer + \
-                      ' --load_from_ckpt ' + str(load_from_ckpt) + \
+                      ' --load_from_ckpt ' + load_from_ckpt + \
                       ' --batch_size=' + str(batch_size)
 
             subprocess.call(command, shell=True)
@@ -69,7 +85,7 @@ if __name__ == '__main__':
   #   --lom_radius 30,30,15 \
   #   --min_size 1000
 
-        # lom used to be 24 24 24 (xyz)
+        # lom used to be 24 24 24 (xyz), min_size=10000
 
 
   # python build_coordinates.py \

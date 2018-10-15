@@ -21,30 +21,44 @@ from __future__ import print_function
 import tensorflow as tf
 
 from .. import model
-
+from .prc import feedback_hgru_3l
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
 def _predict_object_mask(net, depth=9):
   """Computes single-object mask prediction."""
-  conv = tf.contrib.layers.conv3d
-  with tf.contrib.framework.arg_scope([conv], num_outputs=32,
-                                      kernel_size=(3, 3, 3),
-                                      padding='SAME'):
-    net = conv(net, scope='conv0_a')
-    net = conv(net, scope='conv0_b', activation_fn=None)
+  net = tf.contrib.layers.conv3d(net,
+                                 scope='conv0_a',
+                                 num_outputs=32,
+                                 kernel_size=(3, 3, 3),
+                                 padding='SAME')
 
-    for i in range(1, depth):
-      with tf.name_scope('residual%d' % i):
-        in_net = net
-        net = tf.nn.relu(net)
-        net = conv(net, scope='conv%d_a' % i)
-        net = conv(net, scope='conv%d_b' % i, activation_fn=None)
-        net += in_net
+  hgru_net = feedback_hgru_3l.hGRU(layer_name='hgru_net',
+                                   num_in_feats=32,
+                                   timesteps=5,
+                                   hgru_dhw=[[1, 7, 7], [2, 5, 5], [2, 3, 3], [1, 1, 1], [1, 1, 1]],
+                                   hgru_k=[32, 32, 32, 32, 32],
+                                   ff_dhw=[[2, 5, 5],[2, 3, 3]],
+                                   ff_k=[32, 32],
+                                   ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
+                                   ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
+                                   ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+                                   padding='SAME',
+                                   aux=None,
+                                   train=True)
 
-  net = tf.nn.relu(net)
-  logits = conv(net, 1, (1, 1, 1), activation_fn=None, scope='conv_lom')
+  # TODO: TEST GPU
+  # TODO: implement layer-wise horizontal timestep
+  # TODO: implement layer-wise num_features
+  # TODO: implement h to have independent num_feats
+  # TODO: implement FF bypass
+  net = hgru_net.build(net)
 
+  logits = tf.contrib.layers.conv3d(net,
+                                    scope='conv_lom',
+                                    num_outputs=1,
+                                    kernel_size=(1, 1, 1),
+                                    activation_fn=None)
   return logits
 
 
@@ -61,7 +75,7 @@ class ConvStack3DFFNModel(model.FFNModel):
 
     if self.input_patches is None:
       self.input_patches = tf.placeholder(
-          tf.bfloat16, [1] + list(self.input_image_size[::-1]) +[1],
+          tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
           name='patches')
 
     net = tf.concat([self.input_patches, self.input_seed], 4)
