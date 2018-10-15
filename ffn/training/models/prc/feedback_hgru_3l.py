@@ -21,23 +21,25 @@ class hGRU(object):
             timesteps,
             hgru_dhw,
             hgru_k,
-            ff_dhw,
-            ff_k,
+            ff_conv_dhw,
+            ff_conv_k,
             ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
             ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
             ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+            fb_mode = 'transpose',
+            fb_dhw=[[1, 2, 2], [1, 2, 2]],
             padding='SAME',
+            peephole=False,
             aux=None,
             train=True):
         """Global initializations and settings."""
         self.in_k = num_in_feats
         self.timesteps = timesteps
-        self.ff_conv_strides = ff_conv_strides
-        self.ff_pool_dhw = ff_pool_dhw
-        self.ff_pool_strides = ff_pool_strides
         self.padding = padding
         self.train = train
         self.layer_name = layer_name
+        self.fb_mode = fb_mode # 'transpose', 'replicate_n_transpose'
+        self.peephole = peephole
 
         # Sort through and assign the auxilliary variables
         default_vars = self.defaults()
@@ -47,17 +49,18 @@ class hGRU(object):
         self.update_params(default_vars)
 
         # Kernel shapes
-        self.ff_dhw = ff_dhw
-        self.ff_k = ff_k
+        self.ff_conv_dhw = ff_conv_dhw
+        self.ff_conv_k = ff_conv_k
+        self.ff_conv_strides = ff_conv_strides
+        self.ff_pool_dhw = ff_pool_dhw
+        self.ff_pool_strides = ff_pool_strides
         self.hgru_dhw = hgru_dhw
         self.hgru_k = hgru_k
+        self.fb_dhw = fb_dhw
 
         # Nonlinearities and initializations
         if isinstance(self.recurrent_nl, basestring):
             self.recurrent_nl = self.interpret_nl(self.recurrent_nl)
-
-        # Set integration operations
-        self.ii, self.oi = self.input_integration, self.output_integration
 
         # Handle BN scope reuse
         if self.reuse:
@@ -109,8 +112,6 @@ class hGRU(object):
             'multiplicative_excitation': True,
             'readout': 'fb',  # l2 or fb
             'hgru_ids': ['h1', 'h2', 'h3', 'fb2', 'fb1'],  # Labels for the hGRUs
-            'ff_k': [28, 38],  # [25, 25],  # channels in intermediate layers
-            'ff_dhw': [[1, 3, 3], [1, 3, 3]],  # [7, 7],  # intermediate (ff) kernel shape
             'include_pooling': True,
             'resize_kernel': tf.image.ResizeMethod.BILINEAR,
             'batch_norm': False,  # Not working
@@ -152,9 +153,10 @@ class hGRU(object):
         """
         # FEEDFORWARD AND FEEDBACK KERNELS
         lower_feats = self.in_k
-        for idx, (higher_feats, dhw) in enumerate(
-                zip(self.ff_k,
-                    self.ff_dhw)):
+        for idx, (higher_feats, ff_dhw, fb_dhw) in enumerate(
+                zip(self.ff_conv_k,
+                    self.ff_conv_dhw,
+                    self.fb_dhw)):
             setattr(
                 self,
                 'fb_kernel_%s' % idx,
@@ -162,7 +164,7 @@ class hGRU(object):
                     name='%s_fb_kernel__%s' % (self.layer_name, idx),
                     dtype=self.dtype,
                     initializer=initialization.xavier_initializer(
-                        shape=self.ff_pool_dhw[idx] + [lower_feats, higher_feats],
+                        shape=fb_dhw + [lower_feats, higher_feats],
                         dtype=self.dtype,
                         uniform=self.normal_initializer),
                     trainable=True))
@@ -181,7 +183,7 @@ class hGRU(object):
                     name='%s_ff_kernel_%s' % (self.layer_name, idx),
                     dtype=self.dtype,
                     initializer=initialization.xavier_initializer(
-                        shape=dhw + [lower_feats, higher_feats],
+                        shape=ff_dhw + [lower_feats, higher_feats],
                         dtype=self.dtype,
                         uniform=self.normal_initializer),
                     trainable=True))
@@ -433,9 +435,9 @@ class hGRU(object):
                 align_corners=True)
         elif mode == 'transpose':
             # strides = np.asarray(self.pool_strides)
-            # strides[1:] *= len(self.ff_k)
+            # strides[1:] *= len(self.ff_conv_k)
             # kernels = np.asarray(self.pooling_kernel)
-            # kernels[1:] *= len(self.ff_k)
+            # kernels[1:] *= len(self.ff_conv_k)
             # return tf.layers.conv3d_transpose(
             #     inputs=x,
             #     strides=strides,
@@ -445,7 +447,6 @@ class hGRU(object):
             #     trainable=self.train,
             #     use_bias=use_bias,
             #     activation=self.ff_nl)
-
             resized = tf.nn.conv3d_transpose(
                 value=x,
                 filter=kernel,
@@ -453,7 +454,24 @@ class hGRU(object):
                 strides=[1] + strides + [1],
                 padding=self.padding,
                 name='resize_x_to_y')
-            ## TODO : ERRROROROROROROROROROO
+            resized = tf.nn.bias_add(
+                resized,
+                bias)
+            resized = self.ff_nl(resized)
+            return resized
+        elif mode == 'replicate_n_transpose':
+            resized = tf.image.resize_images(
+                x,
+                y_size[:-1],
+                kernel,
+                align_corners=False)
+            resized = tf.nn.conv3d_transpose(
+                value=resized,
+                filter=kernel,
+                output_shape=y_size,
+                strides=[1, 1, 1, 1, 1],
+                padding='SAME',
+                name='resize_x_to_y')
             resized = tf.nn.bias_add(
                 resized,
                 bias)
@@ -819,12 +837,16 @@ class hGRU(object):
             h2=self.resize_x_to_y(x=l3_h2, y=l2_h2,
                                   kernel=self.fb_kernel_1,
                                   bias=self.fb_bias_1,
+                                  mode=self.fb_mode,
                                   strides=self.ff_pool_strides[1]),
             layer='fb2',
             layer_idx=3)
 
         # Peephole
-        l2_h2 = temp_l2_h2 + l2_h2
+        if self.peephole:
+            l2_h2 = temp_l2_h2 + l2_h2
+        else:
+            l2_h2 = temp_l2_h2
 
         # l2-l1 feedback (FEEDBACK KERNEL is 2x channels)
         _, temp_l1_h2 = self.hgru_ops(
@@ -833,12 +855,16 @@ class hGRU(object):
             h2=self.resize_x_to_y(x=l2_h2, y=l1_h2,
                                   kernel=self.fb_kernel_0,
                                   bias=self.fb_bias_0,
+                                  mode=self.fb_mode,
                                   strides=self.ff_pool_strides[0]),
             layer='fb1',
             layer_idx=4)
 
         # Peephole
-        l1_h2 = temp_l1_h2 + l1_h2
+        if self.peephole:
+            l1_h2 = temp_l1_h2 + l1_h2
+        else:
+            l1_h2 = temp_l1_h2
 
         # Iterate loop
         i0 += 1
@@ -848,32 +874,36 @@ class hGRU(object):
         """While loop halting condition."""
         return i0 < self.timesteps
 
+    def compute_shape(self, in_length, stride):
+        if in_length % stride == 0:
+            return in_length/stride
+        else:
+            return in_length/stride + 1
+
     def build(self, x):
         """Run the backprop version of the Circuit."""
         self.prepare_tensors()
         i0 = tf.constant(0)
 
         # Calculate l2 hidden state size
-        x_shape = tf.shape(x)
-        if self.include_pooling and len(self.ff_k):
-            if len(self.ff_k):
-                final_dim = self.ff_k[-1]
+        x_shape = x.get_shape().as_list()
+        if self.include_pooling and len(self.ff_conv_k):
+            if len(self.ff_conv_k):
+                final_dim = self.ff_conv_k[-1]
             else:
                 final_dim = x_shape[-1]
-            l2_shape = tf.stack(
-                [
+            l2_shape = [
                     x_shape[0],
-                    x_shape[1] / self.ff_pool_strides[0][0],
-                    x_shape[2] / self.ff_pool_strides[0][1],
-                    x_shape[3] / self.ff_pool_strides[0][2],
-                    final_dim])
-            l3_shape = tf.stack(
-                [
+                    self.compute_shape(x_shape[1], self.ff_pool_strides[0][0]),
+                    self.compute_shape(x_shape[2], self.ff_pool_strides[0][1]),
+                    self.compute_shape(x_shape[3], self.ff_pool_strides[0][2]),
+                    final_dim]
+            l3_shape = [
                     x_shape[0],
-                    x_shape[1] / (self.ff_pool_strides[0][0]*self.ff_pool_strides[1][0]),
-                    x_shape[2] / (self.ff_pool_strides[0][1]*self.ff_pool_strides[1][1]),
-                    x_shape[3] / (self.ff_pool_strides[0][2]*self.ff_pool_strides[1][2]),
-                    final_dim])
+                    self.compute_shape(l2_shape[1], self.ff_pool_strides[1][0]),
+                    self.compute_shape(l2_shape[2], self.ff_pool_strides[1][1]),
+                    self.compute_shape(l2_shape[3], self.ff_pool_strides[1][2]),
+                    final_dim]
         else:
             l2_shape = tf.identity(x_shape)
 

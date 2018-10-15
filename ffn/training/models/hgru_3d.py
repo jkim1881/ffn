@@ -29,21 +29,24 @@ def _predict_object_mask(net, depth=9):
   """Computes single-object mask prediction."""
   net = tf.contrib.layers.conv3d(net,
                                  scope='conv0_a',
-                                 num_outputs=32,
+                                 num_outputs=16,
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
   hgru_net = feedback_hgru_3l.hGRU(layer_name='hgru_net',
-                                   num_in_feats=32,
+                                   num_in_feats=16,
                                    timesteps=5,
                                    hgru_dhw=[[1, 7, 7], [2, 5, 5], [2, 3, 3], [1, 1, 1], [1, 1, 1]],
-                                   hgru_k=[32, 32, 32, 32, 32],
-                                   ff_dhw=[[2, 5, 5],[2, 3, 3]],
-                                   ff_k=[32, 32],
+                                   hgru_k=[16, 16, 16, 16, 16],
+                                   ff_conv_dhw=[[2, 5, 5],[2, 3, 3]],
+                                   ff_conv_k=[16, 16],
                                    ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
                                    ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
                                    ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+                                   fb_mode='transpose',
+                                   fb_dhw=[[1, 7, 7], [1, 5, 5]],
                                    padding='SAME',
+                                   peephole=False,
                                    aux=None,
                                    train=True)
 

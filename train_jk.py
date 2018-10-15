@@ -24,21 +24,21 @@ if __name__ == '__main__':
     # fov_size = [41, 41, 21]
     # deltas = [10, 10, 5]
 
+    import sys
+    import numpy as np
+    num_machines = int(sys.argv[1])
+    i_machine = int(sys.argv[2])
+    batch_size = int(sys.argv[3])
 
     load_from_ckpt = 'None'
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
-    max_steps = 100000
+    max_steps = 64*100000/batch_size # 100K for ffn
     optimizer = 'sgd' #'adam' #'sgd'
-    batch_size = 64
     image_mean = 128
     image_stddev = 33
 
-    import sys
-    import numpy as np
-    num_machines = int(sys.argv[1])
-    i_machine = int(sys.argv[2])
     kth_job=0
 
     for dataset_name in dataset_name_list:

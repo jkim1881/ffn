@@ -680,8 +680,16 @@ def train_ffn(model_cls, **model_kwargs):
 
       while step < FLAGS.max_steps:
         if (step % 10 == 0) & (step>0):
-          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) + ',   accuracy: ' + str((eval_tracker.tp + eval_tracker.tn) / (
-        eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)))
+          if True: #(eval_tracker.tp + eval_tracker.fp) == 0 | (eval_tracker.tp + eval_tracker.fn) == 0:
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) + ' (zero div) ' +
+                             ',   tp: ' + str(eval_tracker.tp) +
+                             ',   fp: ' + str(eval_tracker.fp) +
+                             ',   fn: ' + str(eval_tracker.fn))
+          else:
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+                       ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
+                       ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)))
+
         # Run summaries periodically.
         t_curr = time.time()
 
