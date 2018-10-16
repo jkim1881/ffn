@@ -641,7 +641,7 @@ def train_ffn(model_cls, **model_kwargs):
           saver=model.saver,
           summary_op=None,
           save_summaries_secs=FLAGS.summary_rate_secs,
-          save_model_secs=300,
+          save_model_secs=1800,
           recovery_wait_secs=5)
       sess = sv.prepare_or_wait_for_session(
           FLAGS.master,
@@ -654,8 +654,7 @@ def train_ffn(model_cls, **model_kwargs):
         # a launch schedule where new replicas are brought online gradually.
         logging.info('Delaying replica start.')
         while True:
-          if (int(sess.run(model.global_step)) >= FLAGS.replica_step_delay *
-              FLAGS.task):
+          if (int(sess.run(model.global_step)) >= FLAGS.replica_step_delay *FLAGS.task):
             break
           time.sleep(5.0)
 

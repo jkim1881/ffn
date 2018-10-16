@@ -33,23 +33,41 @@ def _predict_object_mask(net, depth=9):
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
-  hgru_net = feedback_hgru_3l.hGRU(layer_name='hgru_net',
+  # from .prc import feedback_hgru_3l
+  # hgru_net = feedback_hgru_3l.hGRU(layer_name='hgru_net',
+  #                                  num_in_feats=16,
+  #                                  timesteps=5,
+  #                                  hgru_dhw=[[1, 7, 7], [2, 5, 5], [2, 3, 3], [1, 1, 1], [1, 1, 1]], #z to 3
+  #                                  hgru_k=[16, 16, 16, 16, 16],
+  #                                  ff_conv_dhw=[[2, 5, 5],[2, 3, 3]],
+  #                                  ff_conv_k=[16, 16],
+  #                                  ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
+  #                                  ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
+  #                                  ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+  #                                  fb_mode='transpose',
+  #                                  fb_dhw=[[1, 7, 7], [1, 5, 5]],
+  #                                  padding='SAME',
+  #                                  peephole=False,
+  #                                  aux=None,
+  #                                  train=True)
+
+  from .prc import feedback_hgru_2l
+  hgru_net = feedback_hgru_2l.hGRU(layer_name='hgru_net',
                                    num_in_feats=16,
                                    timesteps=5,
-                                   hgru_dhw=[[1, 7, 7], [2, 5, 5], [2, 3, 3], [1, 1, 1], [1, 1, 1]],
-                                   hgru_k=[16, 16, 16, 16, 16],
-                                   ff_conv_dhw=[[2, 5, 5],[2, 3, 3]],
+                                   hgru_dhw=[[1, 7, 7], [3, 5, 5], [1, 1, 1]], #z to 3
+                                   hgru_k=[16, 16, 16],
+                                   ff_conv_dhw=[[3, 5, 5]],
                                    ff_conv_k=[16, 16],
-                                   ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
-                                   ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
-                                   ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+                                   ff_conv_strides=[[1, 1, 1, 1, 1]],
+                                   ff_pool_dhw=[[1, 2, 2]],
+                                   ff_pool_strides=[[1, 2, 2]],
                                    fb_mode='transpose',
-                                   fb_dhw=[[1, 7, 7], [1, 5, 5]],
+                                   fb_dhw=[[5, 7, 7]],
                                    padding='SAME',
                                    peephole=False,
                                    aux=None,
                                    train=True)
-
   # TODO: TEST GPU
   # TODO: implement layer-wise horizontal timestep
   # TODO: implement layer-wise num_features
