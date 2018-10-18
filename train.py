@@ -623,12 +623,6 @@ def train_ffn(model_cls, **model_kwargs):
       load_data_ops = define_data_input(model, queue_batch=1)
       prepare_ffn(model)
 
-      # TODO (jk): load from ckpt
-      if FLAGS.load_from_ckpt != 'None':
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-
       merge_summaries_op = tf.summary.merge_all()
 
       if FLAGS.task == 0:
@@ -648,6 +642,12 @@ def train_ffn(model_cls, **model_kwargs):
           config=tf.ConfigProto(
               log_device_placement=False, allow_soft_placement=True))
       eval_tracker.sess = sess
+
+      # TODO (jk): load from ckpt
+      if FLAGS.load_from_ckpt != 'None':
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
       if FLAGS.task > 0:
         # To avoid early instabilities when using multiple replicas, we use

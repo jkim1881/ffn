@@ -8,6 +8,7 @@ if __name__ == '__main__':
     script_root = '/home/jk/PycharmProjects/ffn'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
     net_name = 'hgru' #'ffn'
+    net_name_obj = 'hgru_3d' #'convstack_3d'
     dataset_name_list = ['neuroproof',
                          'berson',
                          'isbi2013',
@@ -30,7 +31,8 @@ if __name__ == '__main__':
     i_machine = int(sys.argv[2])
     batch_size = int(sys.argv[3])
 
-    load_from_ckpt = 'None'
+    load_from_ckpt =
+    #load_from_ckpt = 'None'
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
@@ -61,7 +63,7 @@ if __name__ == '__main__':
                       ' --data_volumes jk:' + volume_fullpath + ':raw' + \
                       ' --label_volumes jk:' + groundtruth_fullpath + ':stack' + \
                       ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
-                      ' --model_name hgru_3d.ConvStack3DFFNModel' + \
+                      ' --model_name convstack_3d.ConvStack3DFFNModel' + \
                       ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
                       ' --image_mean ' + str(image_mean) + \
                       ' --image_stddev ' + str(image_stddev) + \
