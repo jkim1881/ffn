@@ -31,9 +31,8 @@ if __name__ == '__main__':
     i_machine = int(sys.argv[2])
     batch_size = int(sys.argv[3])
 
-    load_from_ckpt =
     #load_from_ckpt = 'None'
-    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
+    load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
     max_steps = 64*100000/batch_size # 100K for ffn

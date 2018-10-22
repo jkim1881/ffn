@@ -34,11 +34,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train_jk.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train_jk.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train_jk.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="10" column="12" selection-start-line="10" selection-start-column="12" selection-end-line="10" selection-end-column="12" />
+            <state relative-caret-position="17">
+              <caret line="10" column="44" selection-start-line="10" selection-start-column="44" selection-end-line="10" selection-end-column="44" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -78,13 +78,13 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="train.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="train.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="329">
-              <caret line="628" column="27" selection-start-line="628" selection-start-column="20" selection-end-line="628" selection-end-column="27" />
+            <state relative-caret-position="550">
+              <caret line="650" column="0" selection-start-line="650" selection-start-column="0" selection-end-line="650" selection-end-column="0" />
               <folding>
-                <marker date="1539709947667" expanded="true" signature="26229:26416" ph="..." />
+                <marker date="1539903014786" expanded="true" signature="26229:26416" ph="..." />
               </folding>
             </state>
           </provider>
@@ -151,9 +151,9 @@
         <option value="$PROJECT_DIR$/run_inference_jk.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/prc/pooling.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/prc/feedback_hgru_3l.py" />
-        <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/prc/feedback_hgru_2l.py" />
         <option value="$PROJECT_DIR$/ffn/training/models/hgru_3d.py" />
+        <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/train_jk.py" />
       </list>
     </option>
@@ -603,7 +603,7 @@
         <state relative-caret-position="6851">
           <caret line="440" column="23" selection-start-line="440" selection-start-column="23" selection-end-line="440" selection-end-column="23" />
           <folding>
-            <marker date="1539709947667" expanded="true" signature="26229:26416" ph="..." />
+            <marker date="1539903014786" expanded="true" signature="26229:26416" ph="..." />
           </folding>
         </state>
       </provider>
@@ -834,22 +834,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train_jk.py">
+    <entry file="file://$PROJECT_DIR$/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" column="12" selection-start-line="10" selection-start-column="12" selection-end-line="10" selection-end-column="12" />
+        <state relative-caret-position="550">
+          <caret line="650" column="0" selection-start-line="650" selection-start-column="0" selection-end-line="650" selection-end-column="0" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <marker date="1539903014786" expanded="true" signature="26229:26416" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
+    <entry file="file://$PROJECT_DIR$/train_jk.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="329">
-          <caret line="628" column="27" selection-start-line="628" selection-start-column="20" selection-end-line="628" selection-end-column="27" />
+        <state relative-caret-position="17">
+          <caret line="10" column="44" selection-start-line="10" selection-start-column="44" selection-end-line="10" selection-end-column="44" />
           <folding>
-            <marker date="1539709947667" expanded="true" signature="26229:26416" ph="..." />
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
