@@ -89,6 +89,8 @@ flags.DEFINE_string('model_args', None,
 # Training infra options.
 flags.DEFINE_string('train_dir', '/tmp',
                     'Path where checkpoints and other data will be saved.')
+flags.DEFINE_string('load_from_ckpt', None,
+                    'Path to the pretrained checkpoint.')
 flags.DEFINE_string('master', '', 'Network address of the master.')
 flags.DEFINE_integer('batch_size', 4, 'Number of images in a batch.')
 flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
@@ -151,13 +153,10 @@ class EvalTracker(object):
   """Tracks eval results over multiple training steps."""
 
   def __init__(self, eval_shape):
-    self.eval_labels = tf.placeholder(
-        tf.float32, [1] + eval_shape + [1], name='eval_labels')
-    self.eval_preds = tf.placeholder(
-        tf.float32, [1] + eval_shape + [1], name='eval_preds')
+    self.eval_labels = tf.placeholder(tf.float32, [1] + eval_shape + [1], name='eval_labels')
+    self.eval_preds = tf.placeholder(tf.float32, [1] + eval_shape + [1], name='eval_preds')
     self.eval_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=self.eval_preds, labels=self.eval_labels))
+        tf.nn.sigmoid_cross_entropy_with_logits(logits=self.eval_preds, labels=self.eval_labels))
     self.reset()
     self.eval_threshold = logit(0.9)
     self.sess = None
@@ -284,14 +283,16 @@ class EvalTracker(object):
     return summaries
 
 
-def run_training_step(sess, model, fetch_summary, feed_dict):
+def run_training_step(sess, model, fetch_summary, accuracy_to_log, feed_dict):
   """Runs one training step for a single FFN FOV."""
+  # ops_to_run = [model.train_op, model.global_step, model.logits, accuracy_to_log]
   ops_to_run = [model.train_op, model.global_step, model.logits]
 
   if fetch_summary is not None:
     ops_to_run.append(fetch_summary)
 
   results = sess.run(ops_to_run, feed_dict)
+  # step, prediction, accuracy = results[1:4]
   step, prediction = results[1:3]
 
   if fetch_summary is not None:
@@ -299,7 +300,8 @@ def run_training_step(sess, model, fetch_summary, feed_dict):
   else:
     summ = None
 
-  return prediction, step, summ
+  # return prediction, step, summ, accuracy
+  return prediction, step, summ, None
 
 
 def fov_moves():
@@ -614,11 +616,13 @@ def train_ffn(model_cls, **model_kwargs):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
       model = model_cls(**model_kwargs)
+
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
       load_data_ops = define_data_input(model, queue_batch=1)
       prepare_ffn(model)
+
       merge_summaries_op = tf.summary.merge_all()
 
       if FLAGS.task == 0:
@@ -631,7 +635,7 @@ def train_ffn(model_cls, **model_kwargs):
           saver=model.saver,
           summary_op=None,
           save_summaries_secs=FLAGS.summary_rate_secs,
-          save_model_secs=300,
+          save_model_secs=1800,
           recovery_wait_secs=5)
       sess = sv.prepare_or_wait_for_session(
           FLAGS.master,
@@ -639,13 +643,18 @@ def train_ffn(model_cls, **model_kwargs):
               log_device_placement=False, allow_soft_placement=True))
       eval_tracker.sess = sess
 
+      # TODO (jk): load from ckpt
+      if FLAGS.load_from_ckpt != 'None':
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
+
       if FLAGS.task > 0:
         # To avoid early instabilities when using multiple replicas, we use
         # a launch schedule where new replicas are brought online gradually.
         logging.info('Delaying replica start.')
         while True:
-          if (int(sess.run(model.global_step)) >= FLAGS.replica_step_delay *
-              FLAGS.task):
+          if (int(sess.run(model.global_step)) >= FLAGS.replica_step_delay *FLAGS.task):
             break
           time.sleep(5.0)
 
@@ -664,20 +673,43 @@ def train_ffn(model_cls, **model_kwargs):
       step = 0
       t_last = time.time()
 
+      # TODO (jk): text log of learning curve. refresh file.
+      learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
+      learning_curve_txt.close()
+
       while step < FLAGS.max_steps:
+        if (step % 10 == 0) & (step>0):
+          if True: #(eval_tracker.tp + eval_tracker.fp) == 0 | (eval_tracker.tp + eval_tracker.fn) == 0:
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) + ' (zero div) ' +
+                             ',   tp: ' + str(eval_tracker.tp) +
+                             ',   fp: ' + str(eval_tracker.fp) +
+                             ',   fn: ' + str(eval_tracker.fn))
+          else:
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+                       ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
+                       ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)))
+
         # Run summaries periodically.
         t_curr = time.time()
-        if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+
+        # TIME-BASED SUMMARY
+        # if t_curr - t_last > FLAGS.summary_rate_secs and FLAGS.task == 0:
+        #   summ_op = merge_summaries_op
+        #   t_last = t_curr
+        # else:
+        #   summ_op = None
+
+        # TODO (jk): ITERATION-BASED SUMMARY
+        if (step % 100 == 0) & (step>0):
           summ_op = merge_summaries_op
-          t_last = t_curr
         else:
           summ_op = None
 
         seed, patches, labels, weights = next(batch_it)
 
         summaries = []
-        updated_seed, step, summ = run_training_step(
-            sess, model, summ_op,
+        updated_seed, step, summ, accuracy = run_training_step(
+            sess, model, summ_op, None,
             feed_dict={
                 model.loss_weights: weights,
                 model.labels: labels,
@@ -701,11 +733,27 @@ def train_ffn(model_cls, **model_kwargs):
           logging.info('Saving summaries.')
           summ = tf.Summary()
           summ.value.extend(eval_tracker.get_summaries())
+
+          # TODO (jk): text log of learning curve
+          learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
+          precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)
+          recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)
+          accuracy = (eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)
+          learning_curve_txt.write('step_' + str(step) +
+                                   '_precision_' + str(precision) +
+                                   '_recall_' + str(recall) +
+                                   '_accuracy_' + str(accuracy))
+          learning_curve_txt.write("\n")
+          learning_curve_txt.close()
           eval_tracker.reset()
 
           for s in summaries:
             summ.value.extend(s.value)
           sv.summary_computed(sess, summ, step)
+
+          if np.min([precision, recall]) > 0.9:
+              logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
+              break
 
 
 def main(argv=()):

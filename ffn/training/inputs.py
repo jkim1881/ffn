@@ -163,10 +163,15 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     # For historical reasons these have extra flat dims.
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
-
-    loaded = tf.py_func(
-        _load_from_numpylike, [coordinates, volume_names], [dtype],
-        name=scope)[0]
+    # TODO: (jk) forcing dtype to be uint32
+    if dtype==np.uint32:
+        loaded = tf.py_func(
+            _load_from_numpylike, [coordinates, volume_names], [tf.int32],
+            name=scope)[0]
+    else:
+        loaded = tf.py_func(
+            _load_from_numpylike, [coordinates, volume_names], [dtype],
+            name=scope)[0]
     loaded.set_shape([1] + list(shape[::-1]) + [num_channels])
     return loaded
 
