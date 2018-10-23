@@ -8,7 +8,7 @@ if __name__ == '__main__':
     script_root = '/home/jk/PycharmProjects/ffn'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
     net_name = 'hgru' #'ffn'
-    net_name_obj = 'hgru_3d' #'convstack_3d'
+    net_name_obj = 'feedback_hgru_2l' #'convstack_3d'
     dataset_name_list = ['neuroproof',
                          'berson',
                          'isbi2013',

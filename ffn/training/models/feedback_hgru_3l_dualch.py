@@ -21,59 +21,42 @@ from __future__ import print_function
 import tensorflow as tf
 
 from .. import model
-from .prc import feedback_hgru_3l
+from .prc import feedback_hgru_3l_temporal
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(net, depth=9):
+def _predict_object_mask(input_patches, input_seed, depth=9):
   """Computes single-object mask prediction."""
-  net = tf.contrib.layers.conv3d(net,
+  x = tf.contrib.layers.conv3d(tf.concat([input_patches, input_seed], axis=4),
                                  scope='conv0_a',
                                  num_outputs=16,
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
-  # from .prc import feedback_hgru_3l
-  # hgru_net = feedback_hgru_3l.hGRU(layer_name='hgru_net',
-  #                                  num_in_feats=16,
-  #                                  timesteps=5,
-  #                                  hgru_dhw=[[1, 7, 7], [2, 5, 5], [2, 3, 3], [1, 1, 1], [1, 1, 1]], #z to 3
-  #                                  hgru_k=[16, 16, 16, 16, 16],
-  #                                  ff_conv_dhw=[[2, 5, 5],[2, 3, 3]],
-  #                                  ff_conv_k=[16, 16],
-  #                                  ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
-  #                                  ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
-  #                                  ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
-  #                                  fb_mode='transpose',
-  #                                  fb_dhw=[[1, 7, 7], [1, 5, 5]],
-  #                                  padding='SAME',
-  #                                  peephole=False,
-  #                                  aux=None,
-  #                                  train=True)
+  from .prc import feedback_hgru_3l_temporal
+  hgru_net = feedback_hgru_3l_temporal.hGRU(layer_name='hgru_net',
+                                            num_in_feats=16,
+                                            timesteps=5,
+                                            hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3], [1, 1, 1], [1, 1, 1]],  #z to 3
+                                            hgru_k=[16, 16, 16, 16, 16],
+                                            ff_conv_dhw=[[2, 5, 5],[2, 3, 3]],
+                                            ff_conv_k=[16, 16],
+                                            ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
+                                            ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
+                                            ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+                                            fb_mode='transpose',
+                                            fb_dhw=[[1, 7, 7], [1, 5, 5]],
+                                            padding='SAME',
+                                            peephole=False,
+                                            aux=None,
+                                            train=True)
 
-  from .prc import feedback_hgru_2l
-  hgru_net = feedback_hgru_2l.hGRU(layer_name='hgru_net',
-                                   num_in_feats=16,
-                                   timesteps=5,
-                                   hgru_dhw=[[1, 7, 7], [3, 5, 5], [1, 1, 1]], #z to 3
-                                   hgru_k=[16, 16, 16],
-                                   ff_conv_dhw=[[3, 5, 5]],
-                                   ff_conv_k=[16, 16],
-                                   ff_conv_strides=[[1, 1, 1, 1, 1]],
-                                   ff_pool_dhw=[[1, 2, 2]],
-                                   ff_pool_strides=[[1, 2, 2]],
-                                   fb_mode='transpose',
-                                   fb_dhw=[[5, 7, 7]],
-                                   padding='SAME',
-                                   peephole=False,
-                                   aux=None,
-                                   train=True)
   # TODO: TEST GPU
   # TODO: implement layer-wise horizontal timestep
   # TODO: implement layer-wise num_features
   # TODO: implement h to have independent num_feats
   # TODO: implement FF bypass
-  net = hgru_net.build(net)
+  net = hgru_net.build(x)
 
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',
@@ -99,10 +82,8 @@ class ConvStack3DFFNModel(model.FFNModel):
           tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
           name='patches')
 
-    net = tf.concat([self.input_patches, self.input_seed], 4)
-
     with tf.variable_scope('seed_update', reuse=False):
-      logit_update = _predict_object_mask(net, self.depth)
+      logit_update = _predict_object_mask(self.input_patches, self.input_seed, self.depth)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 
