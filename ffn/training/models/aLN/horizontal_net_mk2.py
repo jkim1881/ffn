@@ -3,11 +3,11 @@ import operator
 from functools import reduce
 
 import tensorflow as tf
-from layers.feedforward import normalization
-from layers.feedforward.aLN import helpers_mk2
+import normalization
+import helpers_mk2
 
-from layers.feedforward.pooling import max_pool
-from ops import initialization
+from pooling import max_pool
+import initialization
 
 # Dependency for symmetric weight ops is in models/layers/ff.py
 class horizontal_net(object):
