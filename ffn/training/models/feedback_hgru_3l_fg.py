@@ -21,25 +21,24 @@ from __future__ import print_function
 import tensorflow as tf
 
 from .. import model
-from .prc import feedback_hgru_3l_temporal
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
 def _predict_object_mask(input_patches, input_seed, depth=9):
   """Computes single-object mask prediction."""
-  x = tf.contrib.layers.conv3d(tf.concat([input_patches, input_seed], axis=4),
+  x = tf.contrib.layers.conv3d(tf.concat([input_patches], axis=4),
                                  scope='conv0_a',
                                  num_outputs=16,
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
-  from .prc import feedback_hgru_3l_dualch
+  from .prc import feedback_hgru_3l_fg
   with tf.variable_scope('recurrent'):
-      hgru_net = feedback_hgru_3l_dualch.hGRU(layer_name='hgru_net',
+      hgru_net = feedback_hgru_3l_fg.hGRU(layer_name='hgru_net',
                                                 num_in_feats=16,
                                                 timesteps=5,
-                                                hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3], [1, 1, 1], [1, 1, 1]],  #z to 3
-                                                hgru_k=[16, 16, 16, 16, 16],
+                                                hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],  #z to 3
+                                                hgru_k=[16, 16, 16],
                                                 ff_conv_dhw=[[2, 5, 5], [2, 3, 3]],
                                                 ff_conv_k=[16, 16],
                                                 ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
@@ -57,7 +56,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   # TODO: implement layer-wise num_features
   # TODO: implement h to have independent num_feats
   # TODO: implement FF bypass
-  net = hgru_net.build(x)
+  net = hgru_net.build(x, input_seed)
 
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',

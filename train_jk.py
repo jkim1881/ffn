@@ -7,15 +7,15 @@ if __name__ == '__main__':
 
     script_root = '/home/jk/PycharmProjects/ffn'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
-    net_name = 'hgru' #'ffn'
-    net_name_obj = 'feedback_hgru_2l' #'convstack_3d'
+    net_name_obj = 'feedback_hgru_3l_fg' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name = net_name_obj
     dataset_name_list = ['neuroproof',
                          'berson',
                          'isbi2013',
                          'cremi_a',
                          'cremi_b',
                          'cremi_c']
-    dataset_type = 'val' #'train'
+    dataset_type = 'train' #'val' #'train'
 
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/traditional/'
     fov_size = [33, 33, 33]
@@ -31,8 +31,8 @@ if __name__ == '__main__':
     i_machine = int(sys.argv[2])
     batch_size = int(sys.argv[3])
 
-    #load_from_ckpt = 'None'
-    load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
+    load_from_ckpt = 'None'
+    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
     max_steps = 64*100000/batch_size # 100K for ffn
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                       ' --data_volumes jk:' + volume_fullpath + ':raw' + \
                       ' --label_volumes jk:' + groundtruth_fullpath + ':stack' + \
                       ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
-                      ' --model_name convstack_3d.ConvStack3DFFNModel' + \
+                      ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
                       ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
                       ' --image_mean ' + str(image_mean) + \
                       ' --image_stddev ' + str(image_stddev) + \

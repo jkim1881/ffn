@@ -156,16 +156,17 @@ class FFNModel(object):
     # TODO(b/34707785): Hopefully remove need for these deprecated calls.  Let
     # one warning through so that we have some (low) possibility of noticing if
     # the message changes.
-    trainables = tf.trainable_variables()
-    if trainables:
-      var = trainables[0]
-      tf.contrib.deprecated.histogram_summary(var.op.name, var)
-    with deprecation.silence():
-      for var in trainables[1:]:
-        tf.contrib.deprecated.histogram_summary(var.op.name, var)
-      for grad, var in grads_and_vars:
-        tf.contrib.deprecated.histogram_summary(
-            'gradients/' + var.op.name, grad)
+    # TODO(jk): removed summary gradients for speed
+    # trainables = tf.trainable_variables()
+    # if trainables:
+    #   var = trainables[0]
+    #   tf.contrib.deprecated.histogram_summary(var.op.name, var)
+    # with deprecation.silence():
+    #   for var in trainables[1:]:
+    #     tf.contrib.deprecated.histogram_summary(var.op.name, var)
+    #   for grad, var in grads_and_vars:
+    #     tf.contrib.deprecated.histogram_summary(
+    #         'gradients/' + var.op.name, grad)
 
     self.train_op = opt.apply_gradients(grads_and_vars,
                                         global_step=self.global_step,

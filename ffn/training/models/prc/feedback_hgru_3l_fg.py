@@ -55,7 +55,7 @@ class hGRU(object):
         self.ff_pool_dhw = ff_pool_dhw
         self.ff_pool_strides = ff_pool_strides
         self.hgru_dhw = hgru_dhw
-        self.hgru_k = hgru_k
+        self.hgru_k = [k*2 for k in hgru_k]
         self.fb_dhw = fb_dhw
 
         # Nonlinearities and initializations
@@ -111,7 +111,7 @@ class hGRU(object):
             'reuse': False,
             'multiplicative_excitation': True,
             'readout': 'fb',  # l2 or fb
-            'hgru_ids': ['h1', 'h2', 'h3', 'fb2', 'fb1'],  # Labels for the hGRUs
+            'hgru_ids': ['h1', 'h2', 'h3'],  # Labels for the hGRUs
             'include_pooling': True,
             'resize_kernel': tf.image.ResizeMethod.BILINEAR,
             'batch_norm': False,  # Not working
@@ -152,7 +152,7 @@ class hGRU(object):
         (np.prod([h, w, k]) / 2) - k params in the surround filter
         """
         # FEEDFORWARD KERNELS
-        lower_feats = self.in_k*2
+        lower_feats = self.in_k
         for idx, (higher_feats, ff_dhw) in enumerate(
                 zip(self.ff_conv_k, self.ff_conv_dhw)):
             with tf.variable_scope('ff_%s' % idx):
@@ -175,7 +175,7 @@ class hGRU(object):
                         dtype=self.dtype,
                         initializer=tf.ones([higher_feats], dtype=self.dtype),
                         trainable=True))
-                lower_feats = higher_feats*2
+                lower_feats = higher_feats
 
         # FEEDBACK KERNELS
         lower_feats = self.in_k
@@ -199,7 +199,54 @@ class hGRU(object):
                     tf.get_variable(
                         name='bias',
                         dtype=self.dtype,
-                        initializer=tf.ones([lower_feats], dtype=self.dtype),
+                        initializer=initialization.xavier_initializer(
+                            shape=[lower_feats],
+                            dtype=self.dtype,
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                setattr(
+                    self,
+                    'fb_%s_remix_kernel_a' % idx,
+                    tf.get_variable(
+                        name='remix_kernel_a',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1] + [lower_feats*6, lower_feats*12],
+                            dtype=self.dtype,
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                setattr(
+                    self,
+                    'fb_%s_remix_bias_a' % idx,
+                    tf.get_variable(
+                        name='remix_bias_a',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1,1] + [lower_feats*12],
+                            dtype=self.dtype,
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                setattr(
+                    self,
+                    'fb_%s_remix_kernel_b' % idx,
+                    tf.get_variable(
+                        name='remix_kernel_b',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1] + [lower_feats*12, lower_feats],
+                            dtype=self.dtype,
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                setattr(
+                    self,
+                    'fb_%s_remix_bias_b' % idx,
+                    tf.get_variable(
+                        name='remix_bias_b',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1,1] + [lower_feats],
+                            dtype=self.dtype,
+                            uniform=self.normal_initializer),
                         trainable=True))
 
         # HGRU KERNELS
@@ -731,6 +778,53 @@ class hGRU(object):
             h2 *= e
         return h1, h2
 
+
+    def fb_ops(self, x, fb, var_scope):
+        """hGRU body."""
+        num_feats = x.get_shape().as_list()[-1]
+        # recombine fg
+        x_and_fb = tf.concat([x, fb*x, fb], axis=4)
+
+        with tf.variable_scope(var_scope, reuse=True):
+            remix_kernel_a = tf.get_variable("remix_kernel_a")
+            remix_bias_a = tf.get_variable("remix_bias_a")
+            remix_kernel_b = tf.get_variable("remix_kernel_b")
+            remix_bias_b = tf.get_variable("remix_bias_b")
+        remix_gate = tf.nn.conv3d(
+                input=x_and_fb,
+                filter=remix_kernel_a,
+                strides=[1,1,1,1,1],
+                padding="SAME")
+        with tf.variable_scope(
+                '%s/remix_bn' % var_scope,
+                reuse=self.scope_reuse) as scope:
+            remix_gate = tf.contrib.layers.batch_norm(
+                    inputs=remix_gate,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    scope=scope,
+                    reuse=self.reuse,
+                    is_training=self.train)
+        remix_gate = tf.nn.conv3d(
+                input=tf.nn.relu(remix_gate + remix_bias_a),
+                filter=remix_kernel_b,
+                strides=[1,1,1,1,1],
+                padding="SAME")
+        remix_gate = tf.nn.sigmoid(remix_gate + remix_bias_b)
+
+        x_f = x[:,:,:,:,:num_feats/2]
+        x_g = x[:,:,:,:,num_feats/2:]
+        x_combined = x_f + x_g
+        new_f = x_combined*remix_gate
+        new_g = x_combined - new_f
+
+        return tf.concat([new_f,new_g], axis=4)
+
+
     def full(self, i0, l1_x, l1_h2, l2_h2, l3_h2):
         """hGRU body.
         Take the recurrent h2 from a low level and imbue it with
@@ -741,6 +835,26 @@ class hGRU(object):
 
         h1 -> conv -> h2 -> conv -> h3 -> fb -> h2 h2 -> fb -> h1 h1 h1
         """
+
+        # l2-l1 feedback (FEEDBACK KERNEL is 2x channels)
+        idx = 0
+        with tf.variable_scope('fb_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
+            top_chs = l2_h2.get_shape().as_list()[-1]
+            bottom_chs = l1_x.get_shape().as_list()[-1]
+            fb_f = self.resize_x_to_y(x=l2_h2[:,:,:,:,:top_chs/2], y=l1_x[:,:,:,:,:bottom_chs/2],
+                                    kernel=weights,
+                                    bias=bias,
+                                    mode=self.fb_mode,
+                                    strides=self.ff_pool_strides[idx])
+            fb_g = self.resize_x_to_y(x=l2_h2[:,:,:,:,top_chs/2:], y=l1_x[:,:,:,:,bottom_chs/2:],
+                                    kernel=weights,
+                                    bias=bias,
+                                    mode=self.fb_mode,
+                                    strides=self.ff_pool_strides[idx])
+            fb = tf.concat([fb_f,fb_g],axis=4)
+        l1_x = self.fb_ops(l1_x, fb, var_scope='fb_%s' % idx)
 
         # LAYER 1
         _, l1_h2 = self.hgru_ops(
@@ -756,15 +870,26 @@ class hGRU(object):
         with tf.variable_scope('ff_%s' % idx, reuse=True):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
-            processed_l1 = tf.nn.conv3d(
-                input=tf.concat([l1_x, l1_h2], axis=4),
+            bottom_chs = l1_h2.get_shape().as_list()[-1]
+            l1_h2_f = l1_h2[:, :, :, :, :bottom_chs/2]
+            l1_h2_g = l1_h2[:, :, :, :, bottom_chs/2:]
+            processed_l1_f = tf.nn.conv3d(
+                input=l1_h2_f,
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
-            processed_l1 = tf.nn.bias_add(
-                processed_l1,
+            processed_l1_f = tf.nn.bias_add(
+                processed_l1_f,
                 bias)
-            processed_l1 = self.ff_nl(processed_l1)
+            processed_l1_g = tf.nn.conv3d(
+                input=l1_h2_g,
+                filter=weights,
+                strides=self.ff_conv_strides[idx],
+                padding=self.padding)
+            processed_l1_g = tf.nn.bias_add(
+                processed_l1_g,
+                bias)
+            processed_l1 = self.ff_nl(tf.concat([processed_l1_f,processed_l1_g], axis=4))
 
         # Pool the preceding layer's drive
         if self.include_pooling:
@@ -788,6 +913,28 @@ class hGRU(object):
                     reuse=self.reuse,
                     is_training=self.train)
 
+
+        # l3-l2 feedback (FEEDBACK KERNEL is 2x channels)
+        idx = 1
+        with tf.variable_scope('fb_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
+            top_chs = l3_h2.get_shape().as_list()[-1]
+            bottom_chs = processed_l1.get_shape().as_list()[-1]
+            fb_f = self.resize_x_to_y(x=l3_h2[:,:,:,:,:top_chs/2], y=processed_l1[:,:,:,:,:bottom_chs/2],
+                                    kernel=weights,
+                                    bias=bias,
+                                    mode=self.fb_mode,
+                                    strides=self.ff_pool_strides[idx])
+            fb_g = self.resize_x_to_y(x=l3_h2[:,:,:,:,top_chs/2:], y=processed_l1[:,:,:,:,bottom_chs/2:],
+                                    kernel=weights,
+                                    bias=bias,
+                                    mode=self.fb_mode,
+                                    strides=self.ff_pool_strides[idx])
+            fb = tf.concat([fb_f, fb_g], axis=4)
+        processed_l1 = self.fb_ops(processed_l1, fb, var_scope='fb_%s' % idx)
+
+
         # LAYER 2
         _, l2_h2 = self.hgru_ops(
             i0=i0,
@@ -802,15 +949,27 @@ class hGRU(object):
         with tf.variable_scope('ff_%s' % idx, reuse=True):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
-            processed_l2 = tf.nn.conv3d(
-                input=tf.concat([processed_l1, l2_h2], axis=4),
+            bottom_chs = l2_h2.get_shape().as_list()[-1]
+            l2_h2_f = l2_h2[:, :, :, :, :bottom_chs/2]
+            l2_h2_g = l2_h2[:, :, :, :, bottom_chs/2:]
+            processed_l2_f = tf.nn.conv3d(
+                input=l2_h2_f,
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
-            processed_l2 = tf.nn.bias_add(
-                processed_l2,
+            processed_l2_f = tf.nn.bias_add(
+                processed_l2_f,
                 bias)
-            processed_l2 = self.ff_nl(processed_l2)
+            processed_l2_g = tf.nn.conv3d(
+                input=l2_h2_g,
+                filter=weights,
+                strides=self.ff_conv_strides[idx],
+                padding=self.padding)
+            processed_l2_g = tf.nn.bias_add(
+                processed_l2_g,
+                bias)
+            processed_l2 = self.ff_nl(tf.concat([processed_l2_f,processed_l2_g], axis=4))
+
 
         # Pool the preceding layer's drive
         if self.include_pooling:
@@ -859,53 +1018,6 @@ class hGRU(object):
                     reuse=self.reuse,
                     is_training=self.train)
 
-        # l3-l2 feedback (FEEDBACK KERNEL is 2x channels)
-        idx = 1
-        with tf.variable_scope('fb_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-        _, temp_l2_h2 = self.hgru_ops(
-            i0=i0,
-            x=l2_h2,
-            h2=self.resize_x_to_y(x=l3_h2, y=l2_h2,
-                                  kernel=weights,
-                                  bias=bias,
-                                  mode=self.fb_mode,
-                                  strides=self.ff_pool_strides[idx]),
-            layer='fb2',
-            var_scope='hgru_%s' % 3,
-            layer_idx=3)
-
-        # Peephole
-        if self.peephole:
-            l2_h2 = temp_l2_h2 + l2_h2
-        else:
-            l2_h2 = temp_l2_h2
-
-
-        # l2-l1 feedback (FEEDBACK KERNEL is 2x channels)
-        idx = 0
-        with tf.variable_scope('fb_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-        _, temp_l1_h2 = self.hgru_ops(
-            i0=i0,
-            x=l1_h2,
-            h2=self.resize_x_to_y(x=l2_h2, y=l1_h2,
-                                  kernel=weights,
-                                  bias=bias,
-                                  mode=self.fb_mode,
-                                  strides=self.ff_pool_strides[idx]),
-            layer='fb1',
-            var_scope='hgru_%s' % 4,
-            layer_idx=4)
-
-        # Peephole
-        if self.peephole:
-            l1_h2 = temp_l1_h2 + l1_h2
-        else:
-            l1_h2 = temp_l1_h2
-
         # Iterate loop
         i0 += 1
         return i0, l1_x, l1_h2, l2_h2, l3_h2
@@ -920,26 +1032,27 @@ class hGRU(object):
         else:
             return in_length/stride + 1
 
-    def build(self, x):
+    def build(self, x, seed):
         """Run the backprop version of the Circuit."""
         self.prepare_tensors()
         i0 = tf.constant(0)
 
         # Calculate l2 hidden state size
         x_shape = x.get_shape().as_list()
+        x_shape[-1] = x_shape[-1]*2
         if self.include_pooling:
             l2_shape = [
                     x_shape[0],
                     self.compute_shape(x_shape[1], self.ff_pool_strides[0][0]),
                     self.compute_shape(x_shape[2], self.ff_pool_strides[0][1]),
                     self.compute_shape(x_shape[3], self.ff_pool_strides[0][2]),
-                    self.ff_conv_k[0]]
+                    self.ff_conv_k[0]*2]
             l3_shape = [
                     x_shape[0],
                     self.compute_shape(l2_shape[1], self.ff_pool_strides[1][0]),
                     self.compute_shape(l2_shape[2], self.ff_pool_strides[1][1]),
                     self.compute_shape(l2_shape[3], self.ff_pool_strides[1][2]),
-                    self.ff_conv_k[1]]
+                    self.ff_conv_k[1]*2]
         else:
             l2_shape = tf.identity(x_shape)
 
@@ -956,9 +1069,12 @@ class hGRU(object):
             raise RuntimeError
 
         # While loop
+        x_f = x*seed
+        x_g = x - x_f
+        x_fg = tf.concat([x_f, x_g], axis=4)
         elems = [
             i0,
-            x,
+            x_fg,
             l1_h2,
             l2_h2,
             l3_h2
@@ -971,5 +1087,5 @@ class hGRU(object):
             swap_memory=False)
 
         # Prepare output
-        i0, x, l1_h2, l2_h2, l3_h2 = returned
+        i0, x_fg, l1_h2, l2_h2, l3_h2 = returned
         return l1_h2

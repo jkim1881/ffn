@@ -152,7 +152,7 @@ class hGRU(object):
         (np.prod([h, w, k]) / 2) - k params in the surround filter
         """
         # FEEDFORWARD KERNELS
-        lower_feats = self.in_k*2
+        lower_feats = self.in_k
         for idx, (higher_feats, ff_dhw) in enumerate(
                 zip(self.ff_conv_k, self.ff_conv_dhw)):
             with tf.variable_scope('ff_%s' % idx):
@@ -175,7 +175,7 @@ class hGRU(object):
                         dtype=self.dtype,
                         initializer=tf.ones([higher_feats], dtype=self.dtype),
                         trainable=True))
-                lower_feats = higher_feats*2
+                lower_feats = higher_feats
 
         # FEEDBACK KERNELS
         lower_feats = self.in_k
@@ -757,7 +757,7 @@ class hGRU(object):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
             processed_l1 = tf.nn.conv3d(
-                input=tf.concat([l1_x, l1_h2], axis=4),
+                input=l1_h2,
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
@@ -803,7 +803,7 @@ class hGRU(object):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
             processed_l2 = tf.nn.conv3d(
-                input=tf.concat([processed_l1, l2_h2], axis=4),
+                input=l2_h2,
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
