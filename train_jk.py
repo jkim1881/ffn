@@ -1,12 +1,17 @@
 import sys
 import os
 import subprocess
+import sys
+import numpy as np
 
 
 if __name__ == '__main__':
 
+    num_machines = int(sys.argv[1])
+    i_machine = int(sys.argv[2])
+    batch_size = int(sys.argv[3])
+
     script_root = '/home/jk/PycharmProjects/ffn'
-    ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
     net_name_obj = 'feedback_hgru_3l_fg' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     dataset_name_list = ['neuroproof',
@@ -17,19 +22,13 @@ if __name__ == '__main__':
                          'cremi_c']
     dataset_type = 'train' #'val' #'train'
 
-    hdf_root = '/media/data_cifs/connectomics/datasets/third_party/traditional/'
-    fov_size = [33, 33, 33]
-    deltas = [8, 8, 8]
 
-    # hdf_root = '/media/data_cifs/connectomics/datasets/third_party/flat_fov/'
-    # fov_size = [41, 41, 21]
-    # deltas = [10, 10, 5]
+    fov_type = 'traditional_fov' #'flat_fov'
+    fov_size = [33, 33, 33] # [41, 41, 21]
+    deltas = [8, 8, 8] # [10, 10, 5]
 
-    import sys
-    import numpy as np
-    num_machines = int(sys.argv[1])
-    i_machine = int(sys.argv[2])
-    batch_size = int(sys.argv[3])
+    hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
+    ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     load_from_ckpt = 'None'
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
