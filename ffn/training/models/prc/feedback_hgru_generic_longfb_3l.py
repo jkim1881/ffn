@@ -111,7 +111,7 @@ class hGRU(object):
             'reuse': False,
             'multiplicative_excitation': True,
             'readout': 'fb',  # l2 or fb
-            'hgru_ids': ['h1', 'h2', 'h3'],  # Labels for the hGRUs
+            'hgru_ids': ['h0', 'h1', 'h2'],  # Labels for the hGRUs
             'include_pooling': True,
             'resize_kernel': tf.image.ResizeMethod.BILINEAR,
             'batch_norm': False,  # Not working
@@ -608,7 +608,7 @@ class hGRU(object):
             raise RuntimeError
         return activities
 
-    def circuit_input(self, h2, layer, var_scope, layer_idx):
+    def circuit_input(self, h2, var_scope, layer_idx):
         """Calculate gain and inh horizontal activities."""
         with tf.variable_scope(var_scope, reuse=True):
             gain_kernels = tf.get_variable("gain_weights")
@@ -646,7 +646,7 @@ class hGRU(object):
             dilations=self.hgru_dilations[layer_idx])
         return c1, g1
 
-    def circuit_output(self, h1, layer, var_scope, layer_idx):
+    def circuit_output(self, h1, var_scope, layer_idx):
         """Calculate mix and exc horizontal activities."""
         with tf.variable_scope(var_scope, reuse=True):
             mix_kernels = tf.get_variable("mix_weights")
@@ -684,38 +684,43 @@ class hGRU(object):
             dilations=self.hgru_dilations[layer_idx])
         return c2, g2
 
-    def input_integration(self, x, c1, h2, layer, var_scope):
+    def input_integration(self, x, c1, h2, var_scope):
         """Integration on the input."""
         with tf.variable_scope(var_scope, reuse=True):
             alpha = tf.get_variable("alpha")
             mu = tf.get_variable("mu")
-        return self.recurrent_nl(x - ((alpha * h2 + mu) * c1))
+        stacked = tf.concat([h2, h2*c1, c1], axis=4)
+        stacked = tf.nn.conv3d(
+            stacked,
+            alpha,
+            [1,1,1,1,1],
+            padding='SAME') + mu
+        return self.recurrent_nl(stacked)
 
     def output_integration(self, h1, c2, g2, h2, layer, var_scope):
         """Integration on the output."""
         if self.multiplicative_excitation:
-            # Multiplicative gating I * (P + Q)
+            """Integration on the input."""
             with tf.variable_scope(var_scope, reuse=True):
-                gamma = tf.get_variable("gamma")
                 kappa = tf.get_variable("kappa")
                 omega = tf.get_variable("omega")
-            e = gamma * c2
-            a = kappa * (h1 + e)
-            m = omega * (h1 * e)
-            h2_hat = self.recurrent_nl(a + m)
+            stacked = tf.concat([h1, h1*c2, c2], axis=4)
+            stacked = tf.nn.conv3d(
+                stacked,
+                kappa,
+                [1,1,1,1,1],
+                padding='SAME') + omega
+            stacked = self.recurrent_nl(stacked)
         else:
-            # Additive gating I + P + Q
-            gamma = getattr(self, 'gamma_%s' % layer)
-            h2_hat = self.recurrent_nl(
-                h1 + gamma * c2)
-        return (g2 * h2) + ((1 - g2) * h2_hat)
+            return NotImplementedError('jk: not implemented')
+        return (g2 * h2) + ((1 - g2) * stacked)
 
-    def hgru_ops(self, i0, x, h2, var_scope, layer, layer_idx):
+    def hgru_ops(self, i0, x, h2, var_scope, layer_idx):
         """hGRU body."""
+
         # Circuit input receives recurrent output h2
         c1, g1 = self.circuit_input(
             h2=h2,
-            layer=layer,
             var_scope=var_scope,
             layer_idx=layer_idx)
         with tf.variable_scope(
@@ -738,13 +743,11 @@ class hGRU(object):
             x=x,
             c1=c1,
             h2=h2,
-            layer=layer,
             var_scope=var_scope)
 
         # Circuit output receives recurrent input h1
         c2, g2 = self.circuit_output(
             h1=h1,
-            layer=layer,
             var_scope=var_scope,
             layer_idx=layer_idx)
 
@@ -769,39 +772,55 @@ class hGRU(object):
             c2=c2,
             g2=g2,
             h2=h2,
-            layer=layer,
             var_scope=var_scope)
 
         if self.adapation:
-            eta = getattr(self, 'eta_%s' % layer)
+            eta = getattr(self, 'eta_%s' % layer_idx)
             e = tf.gather(eta, i0, axis=-1)
             h2 *= e
         return h1, h2
 
 
-    def fb_ops(self, x, fb, var_scope):
-        """hGRU body."""
-        num_feats = x.get_shape().as_list()[-1]
-        # recombine fg
-        x_and_fb = tf.concat([x, fb*x, fb], axis=4)
+    def full(self, i0, x, l1_h2, l2_h2, l3_h2, fb_h2):
+        """hGRU body.
+        Take the recurrent h2 from a low level and imbue it with
+        information froma high layer. This means to treat the lower
+        layer h2 as the X and the higher layer h2 as the recurrent state.
+        This will serve as I/E from the high layer along with feedback
+        kernels.
+        """
 
-        with tf.variable_scope(var_scope, reuse=True):
-            remix_kernel_a = tf.get_variable("remix_kernel_a")
-            remix_bias_a = tf.get_variable("remix_bias_a")
-            remix_kernel_b = tf.get_variable("remix_kernel_b")
-            remix_bias_b = tf.get_variable("remix_bias_b")
-        remix_gate = tf.nn.conv3d(
-                input=x_and_fb,
-                filter=remix_kernel_a,
-                strides=[1,1,1,1,1],
-                padding="SAME")
-        with tf.variable_scope(
-                '%s/remix_bn' % var_scope,
-                reuse=self.scope_reuse) as scope:
-            remix_gate = tf.contrib.layers.batch_norm(
-                    inputs=remix_gate,
+        # Intermediate FF - h0
+        idx = 0
+        if self.adapation:
+            eta2 = getattr(self, 'eta2_%s' % idx)
+            e2 = tf.gather(eta2, i0, axis=-1)
+            fb_h2_processed = fb_h2*e2
+        with tf.variable_scope('ff_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
+            processed_x = tf.nn.conv3d(
+                input=tf.concat([x, fb_h2_processed*x, fb_h2_processed], axis=4),
+                filter=weights,
+                strides=self.ff_conv_strides[idx],
+                padding=self.padding)
+            processed_x = tf.nn.bias_add(
+                processed_x,
+                bias)
+            processed_x = self.ff_nl(processed_x)
+        # if self.include_pooling:
+        #     processed_x = max_pool3d(
+        #         bottom=processed_x,
+        #         k=self.ff_pool_dhw[idx],
+        #         s=self.ff_pool_strides[idx],
+        #         name='ff_pool_%s' % 0)
+        if self.batch_norm:
+            with tf.variable_scope('ff_bn_%s' % idx,
+                    reuse=self.scope_reuse) as scope:
+                processed_x = tf.contrib.layers.batch_norm(
+                    inputs=processed_x,
                     scale=True,
-                    center=False,
+                    center=True,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -809,97 +828,92 @@ class hGRU(object):
                     scope=scope,
                     reuse=self.reuse,
                     is_training=self.train)
-        remix_gate = tf.nn.conv3d(
-                input=tf.nn.relu(remix_gate + remix_bias_a),
-                filter=remix_kernel_b,
-                strides=[1,1,1,1,1],
-                padding="SAME")
-        remix_gate = tf.nn.sigmoid(remix_gate + remix_bias_b)
-
-        x_f = x[:,:,:,:,:num_feats/2]
-        x_g = x[:,:,:,:,num_feats/2:]
-        x_combined = x_f + x_g
-        new_f = x_combined*remix_gate
-        new_g = x_combined - new_f
-
-        return tf.concat([new_f,new_g], axis=4)
+        for i in range(self.h_repeat):
+            _, l0_h2 = self.hgru_ops(
+                i0=i0,
+                x=processed_x,
+                h2=l0_h2,
+                var_scope = 'hgru_%s' % idx,
+                layer_idx=idx)
 
 
-    def full(self, i0, l1_x, l1_h2, l2_h2, l3_h2):
-        """hGRU body.
-        Take the recurrent h2 from a low level and imbue it with
-        information froma high layer. This means to treat the lower
-        layer h2 as the X and the higher layer h2 as the recurrent state.
-        This will serve as I/E from the high layer along with feedback
-        kernels.
 
-        h1 -> conv -> h2 -> conv -> h3 -> fb -> h2 h2 -> fb -> h1 h1 h1
-        """
-
-        # l2-l1 feedback (FEEDBACK KERNEL is 2x channels)
-        idx = 0
-        with tf.variable_scope('fb_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-            top_chs = l2_h2.get_shape().as_list()[-1]
-            bottom_chs = l1_x.get_shape().as_list()[-1]
-            fb_f = self.resize_x_to_y(x=l2_h2[:,:,:,:,:top_chs/2], y=l1_x[:,:,:,:,:bottom_chs/2],
-                                    kernel=weights,
-                                    bias=bias,
-                                    mode=self.fb_mode,
-                                    strides=self.ff_pool_strides[idx])
-            fb_g = self.resize_x_to_y(x=l2_h2[:,:,:,:,top_chs/2:], y=l1_x[:,:,:,:,bottom_chs/2:],
-                                    kernel=weights,
-                                    bias=bias,
-                                    mode=self.fb_mode,
-                                    strides=self.ff_pool_strides[idx])
-            fb = tf.concat([fb_f,fb_g],axis=4)
-        l1_x = self.fb_ops(l1_x, fb, var_scope='fb_%s' % idx)
-
-        # LAYER 1
-        _, l1_h2 = self.hgru_ops(
-            i0=i0,
-            x=l1_x,
-            h2=l1_h2,
-            layer='h1',
-            var_scope = 'hgru_%s' % 0,
-            layer_idx=0)
-
-        # Intermediate FF
-        idx = 0
+        #Intermediate FF - h1
+        idx = 1
+        if self.adapation:
+            eta2 = getattr(self, 'eta2_%s' % idx)
+            e2 = tf.gather(eta2, i0, axis=-1)
+            l0_h2_processed = l0_h2*e2
         with tf.variable_scope('ff_%s' % idx, reuse=True):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
-            bottom_chs = l1_h2.get_shape().as_list()[-1]
-            l1_h2_f = l1_h2[:, :, :, :, :bottom_chs/2]
-            l1_h2_g = l1_h2[:, :, :, :, bottom_chs/2:]
-            processed_l1_f = tf.nn.conv3d(
-                input=l1_h2_f,
+            processed_l0 = tf.nn.conv3d(
+                input=tf.concat([processed_x, l0_h2_processed*processed_x, l0_h2_processed], axis=4),
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
-            processed_l1_f = tf.nn.bias_add(
-                processed_l1_f,
+            processed_l0 = tf.nn.bias_add(
+                processed_l0,
                 bias)
-            processed_l1_g = tf.nn.conv3d(
-                input=l1_h2_g,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l1_g = tf.nn.bias_add(
-                processed_l1_g,
-                bias)
-            processed_l1 = self.ff_nl(tf.concat([processed_l1_f,processed_l1_g], axis=4))
+            processed_l0 = self.ff_nl(processed_l0)
+        # Pool the preceding layer's drive
+        if self.include_pooling:
+            processed_l0 = max_pool3d(
+                bottom=processed_l0,
+                k=self.ff_pool_dhw[idx],
+                s=self.ff_pool_strides[idx],
+                name='ff_pool_%s' % idx)
+        if self.batch_norm:
+            with tf.variable_scope('ff_bn_%s' % idx,
+                    reuse=self.scope_reuse) as scope:
+                processed_l0 = tf.contrib.layers.batch_norm(
+                    inputs=processed_l0,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    scope=scope,
+                    reuse=self.reuse,
+                    is_training=self.train)
+        for i in range(self.h_repeat):
+            _, l1_h2 = self.hgru_ops(
+                i0=i0,
+                x=processed_l0,
+                h2=l1_h2,
+                var_scope='hgru_%s' % idx,
+                layer_idx=idx)
 
+
+
+        # Intermediate FF - h2
+        idx = 2
+        if self.adapation:
+            eta2 = getattr(self, 'eta2_%s' % idx)
+            e2 = tf.gather(eta2, i0, axis=-1)
+            l1_h2_processed = l1_h2*e2
+        with tf.variable_scope('ff_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
+            processed_l1 = tf.nn.conv3d(
+                input=tf.concat([processed_l0, l1_h2_processed*processed_l0, l1_h2_processed], axis=4),
+                filter=weights,
+                strides=self.ff_conv_strides[idx],
+                padding=self.padding)
+            processed_l1 = tf.nn.bias_add(
+                processed_l1,
+                bias)
+            processed_l1 = self.ff_nl(processed_l1)
         # Pool the preceding layer's drive
         if self.include_pooling:
             processed_l1 = max_pool3d(
                 bottom=processed_l1,
-                k=self.ff_pool_dhw[0],
-                s=self.ff_pool_strides[0],
-                name='ff_pool_%s' % 0)
+                k=self.ff_pool_dhw[idx],
+                s=self.ff_pool_strides[idx],
+                name='ff_pool_%s' % idx)
         if self.batch_norm:
-            with tf.variable_scope('l1_bn_%s' % idx,
+            with tf.variable_scope('ff_bn_%s' % idx,
                     reuse=self.scope_reuse) as scope:
                 processed_l1 = tf.contrib.layers.batch_norm(
                     inputs=processed_l1,
@@ -912,80 +926,49 @@ class hGRU(object):
                     scope=scope,
                     reuse=self.reuse,
                     is_training=self.train)
+        for i in range(self.h_repeat):
+            _, l2_h2 = self.hgru_ops(
+                i0=i0,
+                x=processed_l1,
+                h2=l2_h2,
+                var_scope='hgru_%s' % idx,
+                layer_idx=idx)
 
 
-        # l3-l2 feedback (FEEDBACK KERNEL is 2x channels)
-        idx = 1
-        with tf.variable_scope('fb_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-            top_chs = l3_h2.get_shape().as_list()[-1]
-            bottom_chs = processed_l1.get_shape().as_list()[-1]
-            fb_f = self.resize_x_to_y(x=l3_h2[:,:,:,:,:top_chs/2], y=processed_l1[:,:,:,:,:bottom_chs/2],
-                                    kernel=weights,
-                                    bias=bias,
-                                    mode=self.fb_mode,
-                                    strides=self.ff_pool_strides[idx])
-            fb_g = self.resize_x_to_y(x=l3_h2[:,:,:,:,top_chs/2:], y=processed_l1[:,:,:,:,bottom_chs/2:],
-                                    kernel=weights,
-                                    bias=bias,
-                                    mode=self.fb_mode,
-                                    strides=self.ff_pool_strides[idx])
-            fb = tf.concat([fb_f, fb_g], axis=4)
-        processed_l1 = self.fb_ops(processed_l1, fb, var_scope='fb_%s' % idx)
 
-
-        # LAYER 2
-        _, l2_h2 = self.hgru_ops(
-            i0=i0,
-            x=processed_l1,
-            h2=l2_h2,
-            layer='h2',
-            var_scope='hgru_%s' % 1,
-            layer_idx=1)
 
         # Intermediate FF
-        idx = 1
+        idx = 3
+        if self.adapation:
+            eta2 = getattr(self, 'eta2_%s' % idx)
+            e2 = tf.gather(eta2, i0, axis=-1)
+            l2_h2_processed = l2_h2*e2
         with tf.variable_scope('ff_%s' % idx, reuse=True):
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
-            bottom_chs = l2_h2.get_shape().as_list()[-1]
-            l2_h2_f = l2_h2[:, :, :, :, :bottom_chs/2]
-            l2_h2_g = l2_h2[:, :, :, :, bottom_chs/2:]
-            processed_l2_f = tf.nn.conv3d(
-                input=l2_h2_f,
+            top = tf.nn.conv3d(
+                input=tf.concat([processed_l1, l2_h2_processed*processed_l1, l2_h2_processed], axis=4),
                 filter=weights,
                 strides=self.ff_conv_strides[idx],
                 padding=self.padding)
-            processed_l2_f = tf.nn.bias_add(
-                processed_l2_f,
+            top = tf.nn.bias_add(
+                top,
                 bias)
-            processed_l2_g = tf.nn.conv3d(
-                input=l2_h2_g,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l2_g = tf.nn.bias_add(
-                processed_l2_g,
-                bias)
-            processed_l2 = self.ff_nl(tf.concat([processed_l2_f,processed_l2_g], axis=4))
-
-
+            top = self.ff_nl(top)
         # Pool the preceding layer's drive
         if self.include_pooling:
-            processed_l2 = max_pool3d(
-                bottom=processed_l2,
-                k=self.ff_pool_dhw[0],
-                s=self.ff_pool_strides[0],
-                name='ff_pool_%s' % 0)
+            top = max_pool3d(
+                bottom=top,
+                k=self.ff_pool_dhw[idx],
+                s=self.ff_pool_strides[idx],
+                name='ff_pool_%s' % idx)
         if self.batch_norm:
-            with tf.variable_scope(
-                            'l2_bn_%s' % idx,
+            with tf.variable_scope('ff_bn_%s' % idx,
                     reuse=self.scope_reuse) as scope:
-                processed_l2 = tf.contrib.layers.batch_norm(
-                    inputs=processed_l2,
+                top = tf.contrib.layers.batch_norm(
+                    inputs=top,
                     scale=True,
-                    center=False,
+                    center=True,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -994,22 +977,21 @@ class hGRU(object):
                     reuse=self.reuse,
                     is_training=self.train)
 
-        # LAYER 3
-        _, l3_h2 = self.hgru_ops(
-            i0=i0,
-            x=processed_l2,
-            h2=l3_h2,
-            layer='h3',
-            var_scope='hgru_%s' % 2,
-            layer_idx=2)
+
+
+        # FB
+        top = self.resize_x_to_y(x=top, y=l2_h2,
+                                  kernel=self.fb_kernel_2,
+                                  bias=self.fb_kernel_2,
+                                  mode=self.fb_mode,
+                                  strides=self.ff_pool_strides[3])
         if self.batch_norm:
-            with tf.variable_scope(
-                    'l3_bn',
+            with tf.variable_scope('fb_bn' % 2,
                     reuse=self.scope_reuse) as scope:
-                l3_h2 = tf.contrib.layers.batch_norm(
-                    inputs=l3_h2,
+                top = tf.contrib.layers.batch_norm(
+                    inputs=top,
                     scale=True,
-                    center=False,
+                    center=True,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1017,12 +999,58 @@ class hGRU(object):
                     scope=scope,
                     reuse=self.reuse,
                     is_training=self.train)
+        top = self.resize_x_to_y(x=top, y=l1_h2,
+                                  kernel=self.fb_kernel_1,
+                                  bias=self.fb_kernel_1,
+                                  mode=self.fb_mode,
+                                  strides=self.ff_pool_strides[2])
+        if self.batch_norm:
+            with tf.variable_scope('fb_bn' % 1,
+                    reuse=self.scope_reuse) as scope:
+                top = tf.contrib.layers.batch_norm(
+                    inputs=top,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    scope=scope,
+                    reuse=self.reuse,
+                    is_training=self.train)
+        top = self.resize_x_to_y(x=top, y=fb_h2,
+                                  kernel=self.fb_kernel_0,
+                                  bias=self.fb_kernel_0,
+                                  mode=self.fb_mode,
+                                  strides=self.ff_pool_strides[1])
+        if self.batch_norm:
+            with tf.variable_scope('fb_bn' % 0,
+                    reuse=self.scope_reuse) as scope:
+                top = tf.contrib.layers.batch_norm(
+                    inputs=top,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    scope=scope,
+                    reuse=self.reuse,
+                    is_training=self.train)
+        _, fb_h2 = self.hgru_ops(
+            i0=i0,
+            x=top,
+            h2=fb_h2,
+            var_scope='hgru_%s' % 3,
+            layer_idx=3)
+
+
 
         # Iterate loop
         i0 += 1
-        return i0, l1_x, l1_h2, l2_h2, l3_h2
+        return i0, x, l1_h2, l2_h2, l3_h2, fb_h2
 
-    def condition(self, i0, x, l1_h2, l2_h2, l3_h2):
+    def condition(self, i0, x, l1_h2, l2_h2, l3_h2, fb_h2):
         """While loop halting condition."""
         return i0 < self.timesteps
 
@@ -1068,152 +1096,6 @@ class hGRU(object):
         else:
             raise RuntimeError
 
-
-        # LAYER 1
-        x_f = x*seed
-        x_g = x - x_f
-        x_fg = tf.concat([x_f, x_g], axis=4)
-        _, l1_h2 = self.hgru_ops(
-            i0=i0,
-            x=x_fg,
-            h2=l1_h2,
-            layer='h1',
-            var_scope = 'hgru_%s' % 0,
-            layer_idx=0)
-
-        # Intermediate FF
-        idx = 0
-        with tf.variable_scope('ff_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-            bottom_chs = l1_h2.get_shape().as_list()[-1]
-            l1_h2_f = l1_h2[:, :, :, :, :bottom_chs/2]
-            l1_h2_g = l1_h2[:, :, :, :, bottom_chs/2:]
-            processed_l1_f = tf.nn.conv3d(
-                input=l1_h2_f,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l1_f = tf.nn.bias_add(
-                processed_l1_f,
-                bias)
-            processed_l1_g = tf.nn.conv3d(
-                input=l1_h2_g,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l1_g = tf.nn.bias_add(
-                processed_l1_g,
-                bias)
-            processed_l1 = self.ff_nl(tf.concat([processed_l1_f,processed_l1_g], axis=4))
-
-        # Pool the preceding layer's drive
-        if self.include_pooling:
-            processed_l1 = max_pool3d(
-                bottom=processed_l1,
-                k=self.ff_pool_dhw[0],
-                s=self.ff_pool_strides[0],
-                name='ff_pool_%s' % 0)
-        if self.batch_norm:
-            with tf.variable_scope('l1_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                processed_l1 = tf.contrib.layers.batch_norm(
-                    inputs=processed_l1,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
-
-        # LAYER 2
-        _, l2_h2 = self.hgru_ops(
-            i0=i0,
-            x=processed_l1,
-            h2=l2_h2,
-            layer='h2',
-            var_scope='hgru_%s' % 1,
-            layer_idx=1)
-
-        # Intermediate FF
-        idx = 1
-        with tf.variable_scope('ff_%s' % idx, reuse=True):
-            weights = tf.get_variable("weights")
-            bias = tf.get_variable("bias")
-            bottom_chs = l2_h2.get_shape().as_list()[-1]
-            l2_h2_f = l2_h2[:, :, :, :, :bottom_chs/2]
-            l2_h2_g = l2_h2[:, :, :, :, bottom_chs/2:]
-            processed_l2_f = tf.nn.conv3d(
-                input=l2_h2_f,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l2_f = tf.nn.bias_add(
-                processed_l2_f,
-                bias)
-            processed_l2_g = tf.nn.conv3d(
-                input=l2_h2_g,
-                filter=weights,
-                strides=self.ff_conv_strides[idx],
-                padding=self.padding)
-            processed_l2_g = tf.nn.bias_add(
-                processed_l2_g,
-                bias)
-            processed_l2 = self.ff_nl(tf.concat([processed_l2_f,processed_l2_g], axis=4))
-
-
-        # Pool the preceding layer's drive
-        if self.include_pooling:
-            processed_l2 = max_pool3d(
-                bottom=processed_l2,
-                k=self.ff_pool_dhw[0],
-                s=self.ff_pool_strides[0],
-                name='ff_pool_%s' % 0)
-        if self.batch_norm:
-            with tf.variable_scope(
-                            'l2_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                processed_l2 = tf.contrib.layers.batch_norm(
-                    inputs=processed_l2,
-                    scale=True,
-                    center=False,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
-
-        # LAYER 3
-        _, l3_h2 = self.hgru_ops(
-            i0=i0,
-            x=processed_l2,
-            h2=l3_h2,
-            layer='h3',
-            var_scope='hgru_%s' % 2,
-            layer_idx=2)
-        if self.batch_norm:
-            with tf.variable_scope(
-                    'l3_bn',
-                    reuse=self.scope_reuse) as scope:
-                l3_h2 = tf.contrib.layers.batch_norm(
-                    inputs=l3_h2,
-                    scale=True,
-                    center=False,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
-
-
-
         # While loop
         x_f = x*seed
         x_g = x - x_f
@@ -1235,5 +1117,6 @@ class hGRU(object):
             swap_memory=False)
 
         # Prepare output
-        i0, x_fg, l1_h2, l2_h2, l3_h2 = returned
+        i0, x, l1_h2, l2_h2, l3_h2, fb_h2 = returned
+
         return l1_h2
