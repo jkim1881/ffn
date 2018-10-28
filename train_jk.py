@@ -12,7 +12,7 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[3])
 
     script_root = '/home/jk/PycharmProjects/ffn'
-    net_name_obj = 'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'convstack_3d_provided'#'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     dataset_name_list = ['neuroproof',
                          'berson',
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
     max_steps = 64*100000/batch_size # 100K for ffn
-    optimizer = 'adam' #'adam' #'sgd'
+    optimizer = 'sgd' #'adam' #'sgd'
     image_mean = 128
     image_stddev = 33
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             groundtruth_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'groundtruth.h5')
             volume_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'grayscale_maps.h5')
 
-            command = 'python ' + os.path.join(script_root, 'train.py') + \
+            command = 'python ' + os.path.join(script_root, 'train_old.py') + \
                       ' --train_coords ' + coords_fullpath + \
                       ' --data_volumes jk:' + volume_fullpath + ':raw' + \
                       ' --label_volumes jk:' + groundtruth_fullpath + ':stack' + \
