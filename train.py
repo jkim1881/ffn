@@ -638,7 +638,7 @@ def train_ffn(model_cls, **model_kwargs):
           master=FLAGS.master,
           is_chief=(FLAGS.task == 0),
           save_summaries_steps=None,
-          save_checkpoint_secs=1800,
+          save_checkpoint_secs=200,#save_checkpoint_steps=10000/FLAGS.batch_size,
           config=tf.ConfigProto(
               log_device_placement=False, allow_soft_placement=True),
           checkpoint_dir=FLAGS.train_dir,
@@ -657,8 +657,9 @@ def train_ffn(model_cls, **model_kwargs):
 	#ipdb.set_trace()
         step = int(sess.run(model.global_step))
 	if FLAGS.load_from_ckpt != 'None':
-	    logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
+	    #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
 	    FLAGS.max_steps += step
+	    logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from '+str(step))
 
         if FLAGS.task > 0:
           # To avoid early instabilities when using multiple replicas, we use
@@ -707,12 +708,13 @@ def train_ffn(model_cls, **model_kwargs):
           t_curr = time.time()
 
           seed, patches, labels, weights = next(batch_it)
-
+	  # TODO (jk): added an item to set offset_label off according to old version
           updated_seed, step, summ = run_training_step(
               sess, model, summ_op,
               feed_dict={
                   model.loss_weights: weights,
                   model.labels: labels,
+		  model.offset_label: 'off',
                   model.input_patches: patches,
                   model.input_seed: seed,
               })
@@ -720,7 +722,7 @@ def train_ffn(model_cls, **model_kwargs):
           # Save prediction results in the original seed array so that
           # they can be used in subsequent steps.
           mask.update_at(seed, (0, 0, 0), updated_seed)
-
+	  
           # Record summaries.
           if summ is not None:
 
