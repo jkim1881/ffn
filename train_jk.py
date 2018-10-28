@@ -35,8 +35,8 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
-    load_from_ckpt = 'None'
-    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_pretrained/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
+    #load_from_ckpt = 'None'
+    load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
     num_model_repeats = 1
     max_steps = 64*100000/batch_size # 100K for ffn
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             groundtruth_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'groundtruth.h5')
             volume_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'grayscale_maps.h5')
 
-            command = 'python ' + os.path.join(script_root, 'train_old.py') + \
+            command = 'python ' + os.path.join(script_root, 'train.py') + \
                       ' --train_coords ' + coords_fullpath + \
                       ' --data_volumes jk:' + volume_fullpath + ':raw' + \
                       ' --label_volumes jk:' + groundtruth_fullpath + ':stack' + \

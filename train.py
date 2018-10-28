@@ -85,6 +85,9 @@ flags.DEFINE_string('model_name', None,
 flags.DEFINE_string('model_args', None,
                     'JSON string with arguments to be passed to the model '
                     'constructor.')
+#TODO (jk)
+flags.DEFINE_string('load_from_ckpt', None,
+                    'Path to the pretrained checkpoint.')
 
 # Training infra options.
 flags.DEFINE_string('train_dir', '/tmp',
@@ -644,12 +647,18 @@ def train_ffn(model_cls, **model_kwargs):
         eval_tracker.sess = sess
 
         # TODO (jk): load from ckpt
+	#import ipdb
+	#ipdb.set_trace()
         if FLAGS.load_from_ckpt != 'None':
             logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
             model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
             logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-
+	#import ipdb
+	#ipdb.set_trace()
         step = int(sess.run(model.global_step))
+	if FLAGS.load_from_ckpt != 'None':
+	    logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
+	    FLAGS.max_steps += step
 
         if FLAGS.task > 0:
           # To avoid early instabilities when using multiple replicas, we use
