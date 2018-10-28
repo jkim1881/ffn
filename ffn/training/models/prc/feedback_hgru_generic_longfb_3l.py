@@ -18,18 +18,20 @@ class hGRU(object):
             self,
             layer_name,
             num_in_feats,
-            timesteps,
-            hgru_dhw,
-            hgru_k,
-            ff_conv_dhw,
-            ff_conv_k,
-            ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
-            ff_pool_dhw=[[1, 2, 2], [1, 2, 2]],
-            ff_pool_strides=[[1, 2, 2], [1, 2, 2]],
+            timesteps=3,
+            h_repeat=2,
+            hgru_dhw=[[3, 7, 7], [3, 5, 5], [1, 3, 3], [1, 1, 1]],
+            hgru_k=[8, 16, 32, 8],
+            ff_conv_dhw=[[1, 1, 1], [2, 5, 5], [2, 3, 3], [1, 3, 3]],
+            ff_conv_k=[8, 16, 32, 48],
+            ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
+            ff_pool_dhw=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [1, 2, 2]],
+            ff_pool_strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [1, 2, 2]],
             fb_mode = 'transpose',
-            fb_dhw=[[1, 2, 2], [1, 2, 2]],
+            fb_dhw=[[3, 6, 6], [3, 4, 4], [1, 4, 4]],
+            fb_k=[16, 32, 48],
             padding='SAME',
-            peephole=False,
+            batch_norm=True,
             aux=None,
             train=True):
         """Global initializations and settings."""
@@ -39,7 +41,8 @@ class hGRU(object):
         self.train = train
         self.layer_name = layer_name
         self.fb_mode = fb_mode # 'transpose', 'replicate_n_transpose'
-        self.peephole = peephole
+        self.h_repeat = h_repeat
+        self.batch_norm=batch_norm
 
         # Sort through and assign the auxilliary variables
         default_vars = self.defaults()
@@ -55,18 +58,14 @@ class hGRU(object):
         self.ff_pool_dhw = ff_pool_dhw
         self.ff_pool_strides = ff_pool_strides
         self.hgru_dhw = hgru_dhw
-        self.hgru_k = [k*2 for k in hgru_k]
+        self.hgru_k = [k for k in hgru_k]
         self.fb_dhw = fb_dhw
+        self.fb_k = fb_k
 
         # Nonlinearities and initializations
         if isinstance(self.recurrent_nl, basestring):
             self.recurrent_nl = self.interpret_nl(self.recurrent_nl)
 
-        # Handle BN scope reuse
-        if self.reuse:
-            self.scope_reuse = tf.AUTO_REUSE
-        else:
-            self.scope_reuse = None
         self.param_initializer = {
             'moving_mean': tf.constant_initializer(0., dtype=self.dtype),
             'moving_variance': tf.constant_initializer(1., dtype=self.dtype),
@@ -88,12 +87,7 @@ class hGRU(object):
 
         These are adjusted by a passed aux dict variable."""
         return {
-            'lesion_alpha': False,
-            'lesion_mu': False,
-            'lesion_omega': False,
-            'lesion_kappa': False,
             'dtype': tf.float32,
-            'hidden_init': 'zeros',
             'gate_bias_init': 'chronos',
             'train': True,
             'recurrent_nl': tf.nn.tanh,
@@ -102,19 +96,11 @@ class hGRU(object):
             'normal_initializer': True,
             'symmetric_weights': False,
             'symmetric_gate_weights': False,
-            'hgru_gate_dhw': [[1, 1, 1],[1, 1, 1],[1, 1, 1], [1, 1, 1], [1, 1, 1]],  # Gate kernel size
-            'hgru_dilations': [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
-            'gamma': True,  # Scale P
-            'alpha': True,  # divisive eCRF
-            'mu': True,  # subtractive eCRF
-            'adapation': False,
-            'reuse': False,
-            'multiplicative_excitation': True,
+            'adapation': True,
+            'bn_reuse':None,
             'readout': 'fb',  # l2 or fb
-            'hgru_ids': ['h0', 'h1', 'h2'],  # Labels for the hGRUs
             'include_pooling': True,
-            'resize_kernel': tf.image.ResizeMethod.BILINEAR,
-            'batch_norm': False,  # Not working
+            'resize_kernel': tf.image.ResizeMethod.BILINEAR
         }
 
     def interpret_nl(self, nl_type):
@@ -163,7 +149,7 @@ class hGRU(object):
                         name='weights',
                         dtype=self.dtype,
                         initializer=initialization.xavier_initializer(
-                            shape=ff_dhw + [lower_feats, higher_feats],
+                            shape=ff_dhw + [lower_feats*3, higher_feats],
                             dtype=self.dtype,
                             uniform=self.normal_initializer),
                         trainable=True))
@@ -180,7 +166,7 @@ class hGRU(object):
         # FEEDBACK KERNELS
         lower_feats = self.in_k
         for idx, (higher_feats, fb_dhw) in enumerate(
-                zip(self.ff_conv_k, self.fb_dhw)):
+                zip(self.fb_k, self.fb_dhw)):
             with tf.variable_scope('fb_%s' % idx):
                 setattr(
                     self,
@@ -204,53 +190,10 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer),
                         trainable=True))
-                setattr(
-                    self,
-                    'fb_%s_remix_kernel_a' % idx,
-                    tf.get_variable(
-                        name='remix_kernel_a',
-                        dtype=self.dtype,
-                        initializer=initialization.xavier_initializer(
-                            shape=[1,1,1] + [lower_feats*6, lower_feats*12],
-                            dtype=self.dtype,
-                            uniform=self.normal_initializer),
-                        trainable=True))
-                setattr(
-                    self,
-                    'fb_%s_remix_bias_a' % idx,
-                    tf.get_variable(
-                        name='remix_bias_a',
-                        dtype=self.dtype,
-                        initializer=initialization.xavier_initializer(
-                            shape=[1,1,1,1] + [lower_feats*12],
-                            dtype=self.dtype,
-                            uniform=self.normal_initializer),
-                        trainable=True))
-                setattr(
-                    self,
-                    'fb_%s_remix_kernel_b' % idx,
-                    tf.get_variable(
-                        name='remix_kernel_b',
-                        dtype=self.dtype,
-                        initializer=initialization.xavier_initializer(
-                            shape=[1,1,1] + [lower_feats*12, lower_feats],
-                            dtype=self.dtype,
-                            uniform=self.normal_initializer),
-                        trainable=True))
-                setattr(
-                    self,
-                    'fb_%s_remix_bias_b' % idx,
-                    tf.get_variable(
-                        name='remix_bias_b',
-                        dtype=self.dtype,
-                        initializer=initialization.xavier_initializer(
-                            shape=[1,1,1,1] + [lower_feats],
-                            dtype=self.dtype,
-                            uniform=self.normal_initializer),
-                        trainable=True))
+            lower_feats = higher_feats
 
         # HGRU KERNELS
-        for idx, layer in enumerate(self.hgru_ids):
+        for idx in range(len(self.hgru_dhw)):
             with tf.variable_scope('hgru_%s' % idx):
                 setattr(
                     self,
@@ -263,7 +206,7 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer),
                         trainable=True))
-                g_shape = self.hgru_gate_dhw[idx] + [self.hgru_k[idx], self.hgru_k[idx]]
+                g_shape = [1,1,1] + [self.hgru_k[idx], self.hgru_k[idx]]
                 setattr(
                     self,
                     'hgru_%s_gain_weights' % idx,
@@ -276,7 +219,7 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer,
                             mask=None)))
-                m_shape = self.hgru_gate_dhw[idx] + [self.hgru_k[idx], self.hgru_k[idx]]
+                m_shape = [1,1,1] + [self.hgru_k[idx], self.hgru_k[idx]]
                 setattr(
                     self,
                     'hgru_%s_mix_weights' % idx,
@@ -322,180 +265,75 @@ class hGRU(object):
                         trainable=True,
                         initializer=bias_init))
 
-                # Divisive params
-                if self.alpha and not self.lesion_alpha:
-                    setattr(
-                        self,
-                        'hgru_%s_alpha' % idx,
-                        tf.get_variable(
-                            name='alpha',
+                # combination params
+                setattr(
+                    self,
+                    'hgru_%s_alpha' % idx,
+                    tf.get_variable(
+                        name='alpha',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1, 1, 1, self.hgru_k[idx]*3, self.hgru_k[idx]],
                             dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=bias_shape,
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer,
-                                mask=None)))
-                elif self.lesion_alpha:
-                    setattr(
-                        self,
-                        'hgru_%s_alpha' % idx,
-                        tf.get_variable(
-                            name='alpha',
+                            uniform=self.normal_initializer,
+                            mask=None)))
+                setattr(
+                    self,
+                    'hgru_%s_mu' % idx,
+                    tf.get_variable(
+                        name='mu',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1, 1, 1, 1, self.hgru_k[idx]],
                             dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
-                else:
-                    setattr(
-                        self,
-                        'hgru_%s_alpha' % idx,
-                        tf.get_variable(
-                            name='alpha',
+                            uniform=self.normal_initializer,
+                            mask=None)))
+                setattr(
+                    self,
+                    'hgru_%s_kappa' % idx,
+                    tf.get_variable(
+                        name='kappa',
+                        dtype=self.dtype,
+                        trainable=False,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1, 1, 1, self.hgru_k[idx] * 3, self.hgru_k[idx]],
                             dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(1.)))
+                            uniform=self.normal_initializer,
+                            mask=None)))
 
-                if self.mu and not self.lesion_mu:
-                    setattr(
-                        self,
-                        'hgru_%s_mu' % idx,
-                        tf.get_variable(
-                            name='mu',
+                setattr(
+                    self,
+                    'hgru_%s_omega' % idx,
+                    tf.get_variable(
+                        name='omega',
+                        dtype=self.dtype,
+                        trainable=False,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1, 1, 1, 1, self.hgru_k[idx]],
                             dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=bias_shape,
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer,
-                                mask=None)))
+                            uniform=self.normal_initializer,
+                            mask=None)))
 
-                elif self.lesion_mu:
-                    setattr(
-                        self,
-                        'hgru_%s_mu' % idx,
-                        tf.get_variable(
-                            name='mu',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
-                else:
-                    setattr(
-                        self,
-                        'hgru_%s_mu' % idx,
-                        tf.get_variable(
-                            name='mu',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(1.)))
-
-                if self.gamma:
-                    setattr(
-                        self,
-                        'hgru_%s_gamma' % idx,
-                        tf.get_variable(
-                            name='gamma',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=bias_shape,
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer,
-                                mask=None)))
-                else:
-                    setattr(
-                        self,
-                        'hgru_%s_gamma' % idx,
-                        tf.get_variable(
-                            name='gamma',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(1.)))
-
-                if self.multiplicative_excitation:
-                    if self.lesion_kappa:
-                        setattr(
-                            self,
-                            'hgru_%s_kappa' % idx,
-                            tf.get_variable(
-                                name='kappa',
-                                dtype=self.dtype,
-                                trainable=False,
-                                initializer=tf.constant(0.)))
-                    else:
-                        setattr(
-                            self,
-                            'hgru_%s_kappa' % idx,
-                            tf.get_variable(
-                                name='kappa',
-                                dtype=self.dtype,
-                                initializer=initialization.xavier_initializer(
-                                    shape=bias_shape,
-                                    dtype=self.dtype,
-                                    uniform=self.normal_initializer,
-                                    mask=None)))
-                    if self.lesion_omega:
-                        setattr(
-                            self,
-                            'hgru_%s_omega' % idx,
-                            tf.get_variable(
-                                name='omega',
-                                dtype=self.dtype,
-                                trainable=False,
-                                initializer=tf.constant(0.)))
-                    else:
-                        setattr(
-                            self,
-                            'hgru_%s_omega' % idx,
-                            tf.get_variable(
-                                name='omega',
-                                dtype=self.dtype,
-                                initializer=initialization.xavier_initializer(
-                                    shape=bias_shape,
-                                    dtype=self.dtype,
-                                    uniform=self.normal_initializer,
-                                    mask=None)))
-                else:
-                    setattr(
-                        self,
-                        'hgru_%s_kappa' % idx,
-                        tf.get_variable(
-                            name='kappa',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
-                    setattr(
-                        self,
-                        'hgru_%s_omega' % idx,
-                        tf.get_variable(
-                            name='omega',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
+                # adaptation params
                 if self.adapation:
                     setattr(
                         self,
-                        'hgru_%s_eta' % idx,
+                        'eta_%s' % idx,
                         tf.get_variable(
                             name='eta',
                             dtype=self.dtype,
-                            initializer=tf.random_uniform(
-                                [self.timesteps], dtype=tf.float32)))
-                if self.lesion_omega:
+                            initializer=tf.ones(
+                                [self.timesteps+1], dtype=tf.float32)))
                     setattr(
                         self,
-                        'hgru_%s_omega' % idx,
+                        'eta2_%s' % idx,
                         tf.get_variable(
-                            name='omega',
+                            name='eta2',
                             dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
-                if self.lesion_kappa:
-                    setattr(
-                        self,
-                        'hgru_%s_kappa' % idx,
-                        tf.get_variable(
-                            name='kappa',
-                            dtype=self.dtype,
-                            trainable=False,
-                            initializer=tf.constant(0.)))
-                if self.reuse:
+                            initializer=tf.ones(
+                                [self.timesteps+1], dtype=tf.float32)))
+
+                if self.bn_reuse:
                     # Make the batchnorm variables
                     scopes = ['g1_bn', 'g2_bn', 'c1_bn', 'c2_bn']
                     bn_vars = ['moving_mean', 'moving_variance', 'gamma']
@@ -608,7 +446,7 @@ class hGRU(object):
             raise RuntimeError
         return activities
 
-    def circuit_input(self, h2, var_scope, layer_idx):
+    def circuit_input(self, h2, var_scope):
         """Calculate gain and inh horizontal activities."""
         with tf.variable_scope(var_scope, reuse=True):
             gain_kernels = tf.get_variable("gain_weights")
@@ -619,21 +457,19 @@ class hGRU(object):
             weights=gain_kernels,
             strides=[1, 1, 1, 1, 1],
             symmetric_weights=self.symmetric_gate_weights,
-            dilations=self.hgru_dilations[layer_idx])
-        with tf.variable_scope(
-                '%s/g1_bn' % var_scope,
-                reuse=self.scope_reuse) as scope:
-            g1_intermediate = tf.contrib.layers.batch_norm(
-                inputs=g1_intermediate + gain_bias,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                scope=scope,
-                reuse=self.reuse,
-                is_training=self.train)
+            dilations=[1, 1, 1, 1, 1])
+        # with tf.variable_scope(
+        #         '%s/g1_bn' % var_scope) as scope:
+        g1_intermediate = tf.contrib.layers.batch_norm(
+            inputs=g1_intermediate + gain_bias,
+            scale=True,
+            center=False,
+            fused=True,
+            renorm=False,
+            param_initializers=self.param_initializer,
+            updates_collections=None,
+            reuse=self.bn_reuse,
+            is_training=self.train)
         g1 = self.gate_nl(g1_intermediate)
         h2 *= g1
 
@@ -643,10 +479,10 @@ class hGRU(object):
             weights=horizontal_kernels,
             strides=[1, 1, 1, 1, 1],
             symmetric_weights=self.symmetric_weights,
-            dilations=self.hgru_dilations[layer_idx])
+            dilations=[1, 1, 1, 1, 1])
         return c1, g1
 
-    def circuit_output(self, h1, var_scope, layer_idx):
+    def circuit_output(self, h1, var_scope):
         """Calculate mix and exc horizontal activities."""
         with tf.variable_scope(var_scope, reuse=True):
             mix_kernels = tf.get_variable("mix_weights")
@@ -657,22 +493,21 @@ class hGRU(object):
             weights=mix_kernels,
             strides=[1, 1, 1, 1, 1],
             symmetric_weights=self.symmetric_gate_weights,
-            dilations=self.hgru_dilations[layer_idx])
+            dilations=[1, 1, 1, 1, 1])
 
-        with tf.variable_scope(
-                '%s/g2_bn' % var_scope,
-                reuse=self.scope_reuse) as scope:
-            g2_intermediate = tf.contrib.layers.batch_norm(
-                inputs=g2_intermediate + mix_bias,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                scope=scope,
-                reuse=self.reuse,
-                is_training=self.train)
+        # with tf.variable_scope(
+        #         '%s/g2_bn' % var_scope,
+        #         reuse=self.bn_reuse) as scope:
+        g2_intermediate = tf.contrib.layers.batch_norm(
+            inputs=g2_intermediate + mix_bias,
+            scale=True,
+            center=False,
+            fused=True,
+            renorm=False,
+            param_initializers=self.param_initializer,
+            updates_collections=None,
+            reuse=self.bn_reuse,
+            is_training=self.train)
         g2 = self.gate_nl(g2_intermediate)
 
         # Horizontal activities
@@ -681,7 +516,7 @@ class hGRU(object):
             weights=horizontal_kernels,
             strides=[1, 1, 1, 1, 1],
             symmetric_weights=self.symmetric_weights,
-            dilations=self.hgru_dilations[layer_idx])
+            dilations=[1, 1, 1, 1, 1])
         return c2, g2
 
     def input_integration(self, x, c1, h2, var_scope):
@@ -689,7 +524,7 @@ class hGRU(object):
         with tf.variable_scope(var_scope, reuse=True):
             alpha = tf.get_variable("alpha")
             mu = tf.get_variable("mu")
-        stacked = tf.concat([h2, h2*c1, c1], axis=4)
+        stacked = tf.concat([x, x*c1, c1], axis=4)
         stacked = tf.nn.conv3d(
             stacked,
             alpha,
@@ -697,74 +532,69 @@ class hGRU(object):
             padding='SAME') + mu
         return self.recurrent_nl(stacked)
 
-    def output_integration(self, h1, c2, g2, h2, layer, var_scope):
+    def output_integration(self, h1, c2, g2, h2, var_scope):
         """Integration on the output."""
-        if self.multiplicative_excitation:
-            """Integration on the input."""
-            with tf.variable_scope(var_scope, reuse=True):
-                kappa = tf.get_variable("kappa")
-                omega = tf.get_variable("omega")
-            stacked = tf.concat([h1, h1*c2, c2], axis=4)
-            stacked = tf.nn.conv3d(
-                stacked,
-                kappa,
-                [1,1,1,1,1],
-                padding='SAME') + omega
-            stacked = self.recurrent_nl(stacked)
-        else:
-            return NotImplementedError('jk: not implemented')
+        """Integration on the input."""
+        with tf.variable_scope(var_scope, reuse=True):
+            kappa = tf.get_variable("kappa")
+            omega = tf.get_variable("omega")
+        stacked = tf.concat([h1, h1*c2, c2], axis=4)
+        stacked = tf.nn.conv3d(
+            stacked,
+            kappa,
+            [1,1,1,1,1],
+            padding='SAME') + omega
+        stacked = self.recurrent_nl(stacked)
         return (g2 * h2) + ((1 - g2) * stacked)
 
     def hgru_ops(self, i0, x, h2, var_scope, layer_idx):
         """hGRU body."""
-
-        # Circuit input receives recurrent output h2
         c1, g1 = self.circuit_input(
             h2=h2,
-            var_scope=var_scope,
-            layer_idx=layer_idx)
-        with tf.variable_scope(
-                '%s/c1_bn' % var_scope,
-                reuse=self.scope_reuse) as scope:
-            c1 = tf.contrib.layers.batch_norm(
-                inputs=c1,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                scope=scope,
-                reuse=self.reuse,
-                is_training=self.train)
+            var_scope=var_scope)
+
+        # Circuit input receives recurrent output h2
+        # with tf.variable_scope(
+        #         '%s/c1_bn' % var_scope,
+        #         reuse=self.bn_reuse) as scope:
+        c1 = tf.contrib.layers.batch_norm(
+            inputs=c1,
+            scale=True,
+            center=False,
+            fused=True,
+            renorm=False,
+            param_initializers=self.param_initializer,
+            updates_collections=None,
+            reuse=self.bn_reuse,
+            is_training=self.train)
 
         # Calculate input (-) integration: h1 (4)
+
         h1 = self.input_integration(
             x=x,
             c1=c1,
             h2=h2,
             var_scope=var_scope)
 
+
         # Circuit output receives recurrent input h1
         c2, g2 = self.circuit_output(
             h1=h1,
-            var_scope=var_scope,
-            layer_idx=layer_idx)
+            var_scope=var_scope)
 
-        with tf.variable_scope(
-                '%s/c2_bn' % var_scope,
-                reuse=self.scope_reuse) as scope:
-            c2 = tf.contrib.layers.batch_norm(
-                inputs=c2,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                scope=scope,
-                reuse=self.reuse,
-                is_training=self.train)
+        # with tf.variable_scope(
+        #         '%s/c2_bn' % var_scope,
+        #         reuse=self.bn_reuse) as scope:
+        c2 = tf.contrib.layers.batch_norm(
+            inputs=c2,
+            scale=True,
+            center=False,
+            fused=True,
+            renorm=False,
+            param_initializers=self.param_initializer,
+            updates_collections=None,
+            reuse=self.bn_reuse,
+            is_training=self.train)
 
         # Calculate output (+) integration: h2 (8, 9)
         h2 = self.output_integration(
@@ -778,10 +608,60 @@ class hGRU(object):
             eta = getattr(self, 'eta_%s' % layer_idx)
             e = tf.gather(eta, i0, axis=-1)
             h2 *= e
+
         return h1, h2
 
 
-    def full(self, i0, x, l1_h2, l2_h2, l3_h2, fb_h2):
+    def cap(self, x, fb_h2, l0_h2):
+        # Intermediate FF - h0
+        idx = 0
+        if self.adapation:
+            eta2 = getattr(self, 'eta2_%s' % idx)
+            e2 = tf.gather(eta2, self.timesteps, axis=-1)
+            fb_h2_processed = fb_h2*e2
+        with tf.variable_scope('ff_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
+            processed_x = tf.nn.conv3d(
+                input=tf.concat([x, fb_h2_processed*x, fb_h2_processed], axis=4),
+                filter=weights,
+                strides=self.ff_conv_strides[idx],
+                padding=self.padding)
+            processed_x = tf.nn.bias_add(
+                processed_x,
+                bias)
+            processed_x = self.ff_nl(processed_x)
+        # if self.include_pooling:
+        #     processed_x = max_pool3d(
+        #         bottom=processed_x,
+        #         k=self.ff_pool_dhw[idx],
+        #         s=self.ff_pool_strides[idx],
+        #         name='ff_pool_%s' % 0)
+        if self.batch_norm:
+            # with tf.variable_scope('ff_bn_%s' % idx,
+            #         reuse=self.bn_reuse) as scope:
+            processed_x = tf.contrib.layers.batch_norm(
+                inputs=processed_x,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
+        for i in range(self.h_repeat):
+            _, l0_h2 = self.hgru_ops(
+                i0=self.timesteps,
+                x=processed_x,
+                h2=l0_h2,
+                var_scope = 'hgru_%s' % idx,
+                layer_idx=idx)
+
+        return l0_h2
+
+
+    def full(self, i0, x, l0_h2, l1_h2, l2_h2, fb_h2):
         """hGRU body.
         Take the recurrent h2 from a low level and imbue it with
         information froma high layer. This means to treat the lower
@@ -815,19 +695,18 @@ class hGRU(object):
         #         s=self.ff_pool_strides[idx],
         #         name='ff_pool_%s' % 0)
         if self.batch_norm:
-            with tf.variable_scope('ff_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                processed_x = tf.contrib.layers.batch_norm(
-                    inputs=processed_x,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('ff_bn_%s' % idx,
+            #         reuse=self.bn_reuse) as scope:
+            processed_x = tf.contrib.layers.batch_norm(
+                inputs=processed_x,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
         for i in range(self.h_repeat):
             _, l0_h2 = self.hgru_ops(
                 i0=i0,
@@ -835,7 +714,6 @@ class hGRU(object):
                 h2=l0_h2,
                 var_scope = 'hgru_%s' % idx,
                 layer_idx=idx)
-
 
 
         #Intermediate FF - h1
@@ -864,19 +742,18 @@ class hGRU(object):
                 s=self.ff_pool_strides[idx],
                 name='ff_pool_%s' % idx)
         if self.batch_norm:
-            with tf.variable_scope('ff_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                processed_l0 = tf.contrib.layers.batch_norm(
-                    inputs=processed_l0,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('ff_bn_%s' % idx,
+            #         reuse=self.bn_reuse) as scope:
+            processed_l0 = tf.contrib.layers.batch_norm(
+                inputs=processed_l0,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
         for i in range(self.h_repeat):
             _, l1_h2 = self.hgru_ops(
                 i0=i0,
@@ -913,19 +790,18 @@ class hGRU(object):
                 s=self.ff_pool_strides[idx],
                 name='ff_pool_%s' % idx)
         if self.batch_norm:
-            with tf.variable_scope('ff_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                processed_l1 = tf.contrib.layers.batch_norm(
-                    inputs=processed_l1,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('ff_bn_%s' % idx,
+            #         reuse=self.bn_reuse) as scope:
+            processed_l1 = tf.contrib.layers.batch_norm(
+                inputs=processed_l1,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
         for i in range(self.h_repeat):
             _, l2_h2 = self.hgru_ops(
                 i0=i0,
@@ -963,80 +839,90 @@ class hGRU(object):
                 s=self.ff_pool_strides[idx],
                 name='ff_pool_%s' % idx)
         if self.batch_norm:
-            with tf.variable_scope('ff_bn_%s' % idx,
-                    reuse=self.scope_reuse) as scope:
-                top = tf.contrib.layers.batch_norm(
-                    inputs=top,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('ff_bn_%s' % idx,
+            #         reuse=self.bn_reuse) as scope:
+            top = tf.contrib.layers.batch_norm(
+                inputs=top,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
+
 
 
 
         # FB
+        idx=2
+        with tf.variable_scope('fb_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
         top = self.resize_x_to_y(x=top, y=l2_h2,
-                                  kernel=self.fb_kernel_2,
-                                  bias=self.fb_kernel_2,
+                                  kernel=weights,
+                                  bias=bias,
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[3])
         if self.batch_norm:
-            with tf.variable_scope('fb_bn' % 2,
-                    reuse=self.scope_reuse) as scope:
-                top = tf.contrib.layers.batch_norm(
-                    inputs=top,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('fb_bn' % 2,
+            #         reuse=self.bn_reuse) as scope:
+            top = tf.contrib.layers.batch_norm(
+                inputs=top,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
+        idx=1
+        with tf.variable_scope('fb_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
         top = self.resize_x_to_y(x=top, y=l1_h2,
-                                  kernel=self.fb_kernel_1,
-                                  bias=self.fb_kernel_1,
+                                  kernel=weights,
+                                  bias=bias,
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[2])
         if self.batch_norm:
-            with tf.variable_scope('fb_bn' % 1,
-                    reuse=self.scope_reuse) as scope:
-                top = tf.contrib.layers.batch_norm(
-                    inputs=top,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('fb_bn' % 1,
+            #         reuse=self.bn_reuse) as scope:
+            top = tf.contrib.layers.batch_norm(
+                inputs=top,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
+        idx=0
+        with tf.variable_scope('fb_%s' % idx, reuse=True):
+            weights = tf.get_variable("weights")
+            bias = tf.get_variable("bias")
         top = self.resize_x_to_y(x=top, y=fb_h2,
-                                  kernel=self.fb_kernel_0,
-                                  bias=self.fb_kernel_0,
+                                  kernel=weights,
+                                  bias=bias,
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[1])
         if self.batch_norm:
-            with tf.variable_scope('fb_bn' % 0,
-                    reuse=self.scope_reuse) as scope:
-                top = tf.contrib.layers.batch_norm(
-                    inputs=top,
-                    scale=True,
-                    center=True,
-                    fused=True,
-                    renorm=False,
-                    param_initializers=self.param_initializer,
-                    updates_collections=None,
-                    scope=scope,
-                    reuse=self.reuse,
-                    is_training=self.train)
+            # with tf.variable_scope('fb_bn' % 0,
+            #         reuse=self.bn_reuse) as scope:
+            top = tf.contrib.layers.batch_norm(
+                inputs=top,
+                scale=True,
+                center=True,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                reuse=self.bn_reuse,
+                is_training=self.train)
+
         _, fb_h2 = self.hgru_ops(
             i0=i0,
             x=top,
@@ -1045,12 +931,11 @@ class hGRU(object):
             layer_idx=3)
 
 
-
         # Iterate loop
         i0 += 1
-        return i0, x, l1_h2, l2_h2, l3_h2, fb_h2
+        return i0, x, l0_h2, l1_h2, l2_h2, fb_h2
 
-    def condition(self, i0, x, l1_h2, l2_h2, l3_h2, fb_h2):
+    def condition(self, i0, x, l0_h2, l1_h2, l2_h2, fb_h2):
         """While loop halting condition."""
         return i0 < self.timesteps
 
@@ -1067,47 +952,47 @@ class hGRU(object):
 
         # Calculate l2 hidden state size
         x_shape = x.get_shape().as_list()
-        x_shape[-1] = x_shape[-1]*2
         if self.include_pooling:
-            l2_shape = [
+            l0_shape = [
                     x_shape[0],
                     self.compute_shape(x_shape[1], self.ff_pool_strides[0][0]),
                     self.compute_shape(x_shape[2], self.ff_pool_strides[0][1]),
                     self.compute_shape(x_shape[3], self.ff_pool_strides[0][2]),
-                    self.ff_conv_k[0]*2]
-            l3_shape = [
+                    self.ff_conv_k[0]]
+            l1_shape = [
                     x_shape[0],
-                    self.compute_shape(l2_shape[1], self.ff_pool_strides[1][0]),
-                    self.compute_shape(l2_shape[2], self.ff_pool_strides[1][1]),
-                    self.compute_shape(l2_shape[3], self.ff_pool_strides[1][2]),
-                    self.ff_conv_k[1]*2]
+                    self.compute_shape(l0_shape[1], self.ff_pool_strides[1][0]),
+                    self.compute_shape(l0_shape[2], self.ff_pool_strides[1][1]),
+                    self.compute_shape(l0_shape[3], self.ff_pool_strides[1][2]),
+                    self.ff_conv_k[1]]
+            l2_shape = [
+                    x_shape[0],
+                    self.compute_shape(l1_shape[1], self.ff_pool_strides[2][0]),
+                    self.compute_shape(l1_shape[2], self.ff_pool_strides[2][1]),
+                    self.compute_shape(l1_shape[3], self.ff_pool_strides[2][2]),
+                    self.ff_conv_k[2]]
+            fb_shape = x_shape
         else:
+            l0_shape = tf.identity(x_shape)
+            l1_shape = tf.identity(x_shape)
             l2_shape = tf.identity(x_shape)
+            fb_shape = tf.identity(x_shape)
 
         # Initialize hidden layer activities
-        if self.hidden_init == 'random':
-            l1_h2 = tf.random_normal(x_shape, dtype=self.dtype)
-            l2_h2 = tf.random_normal(l2_shape, dtype=self.dtype)
-            l3_h2 = tf.random_normal(l3_shape, dtype=self.dtype)
-        elif self.hidden_init == 'zeros':
-            l1_h2 = tf.zeros(x_shape, dtype=self.dtype)
-            l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
-            l3_h2 = tf.zeros(l3_shape, dtype=self.dtype)
-        else:
-            raise RuntimeError
+        l0_h2 = tf.zeros(l0_shape, dtype=self.dtype)
+        l1_h2 = tf.zeros(l1_shape, dtype=self.dtype)
+        l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
+        fb_h2 = tf.tile(seed, [1, 1, 1, 1, fb_shape[-1]])
 
         # While loop
-        x_f = x*seed
-        x_g = x - x_f
-        x_fg = tf.concat([x_f, x_g], axis=4)
         elems = [
             i0,
-            x_fg,
+            x,
+            l0_h2,
             l1_h2,
             l2_h2,
-            l3_h2
+            fb_h2
         ]
-
 
         returned = tf.while_loop(
             self.condition,
@@ -1117,6 +1002,9 @@ class hGRU(object):
             swap_memory=False)
 
         # Prepare output
-        i0, x, l1_h2, l2_h2, l3_h2, fb_h2 = returned
+        i0, x, l0_h2, l1_h2, l2_h2, fb_h2 = returned
 
-        return l1_h2
+        # stabilizer
+        l0_h2 = self.cap(x, fb_h2, l0_h2)
+
+        return l0_h2

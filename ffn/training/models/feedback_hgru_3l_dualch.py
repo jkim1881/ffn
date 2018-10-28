@@ -52,12 +52,12 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                                 aux=None,
                                                 train=True)
 
-  # TODO: TEST GPU
-  # TODO: implement layer-wise horizontal timestep
-  # TODO: implement layer-wise num_features
-  # TODO: implement h to have independent num_feats
-  # TODO: implement FF bypass
-  net = hgru_net.build(x)
+      # TODO: TEST GPU
+      # TODO: implement layer-wise horizontal timestep
+      # TODO: implement layer-wise num_features
+      # TODO: implement h to have independent num_feats
+      # TODO: implement FF bypass
+      net = hgru_net.build(x)
 
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',

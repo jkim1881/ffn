@@ -12,7 +12,7 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[3])
 
     script_root = '/home/jk/PycharmProjects/ffn'
-    net_name_obj = 'feedback_hgru_3l_fg' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     dataset_name_list = ['neuroproof',
                          'berson',
@@ -25,12 +25,12 @@ if __name__ == '__main__':
     fov_type = 'traditional_fov'
     fov_size = [33, 33, 33]
     deltas = [8, 8, 8]
-    fov_type = 'flat_fov'
-    fov_size = [41, 41, 21]
-    deltas = [10, 10, 5]
-    fov_type = 'wide_fov'
-    fov_size = [57, 57, 13]
-    deltas = [14, 14, 3]
+    # fov_type = 'flat_fov'
+    # fov_size = [41, 41, 21]
+    # deltas = [10, 10, 5]
+    # fov_type = 'wide_fov'
+    # fov_size = [57, 57, 13]
+    # deltas = [14, 14, 3]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)

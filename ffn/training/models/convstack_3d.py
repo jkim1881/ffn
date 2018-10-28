@@ -45,6 +45,13 @@ def _predict_object_mask(net, depth=9):
   net = tf.nn.relu(net)
   logits = conv(net, 1, (1, 1, 1), activation_fn=None, scope='conv_lom')
 
+  import numpy as np
+  acc = 0
+  for x in tf.trainable_variables():
+      prod = np.prod(x.get_shape().as_list())
+      acc += prod
+  print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: '+str(acc))
+
   return logits
 
 

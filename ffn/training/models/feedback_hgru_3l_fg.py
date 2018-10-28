@@ -51,18 +51,24 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                                 aux=None,
                                                 train=True)
 
-  # TODO: TEST GPU
-  # TODO: implement layer-wise horizontal timestep
-  # TODO: implement layer-wise num_features
-  # TODO: implement h to have independent num_feats
-  # TODO: implement FF bypass
-  net = hgru_net.build(x, input_seed)
+      # TODO: TEST GPU
+      # TODO: implement layer-wise horizontal timestep
+      # TODO: implement layer-wise num_features
+      # TODO: implement h to have independent num_feats
+      # TODO: implement FF bypass
+      net = hgru_net.build(x, input_seed)
 
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
+  import numpy as np
+  acc = 0
+  for x in tf.trainable_variables():
+      prod = np.prod(x.get_shape().as_list())
+      acc += prod
+  print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + str(acc))
   return logits
 
 
