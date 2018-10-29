@@ -1,5 +1,5 @@
 image { 
-  hdf5: "/media/data_cifs/connectomics/datasets/third_party/traditional/neuroproof/val/grayscale_maps.h5:raw" 
+  hdf5: "/media/data_cifs/connectomics/datasets/third_party/traditional_fov/neuroproof/val/grayscale_maps.h5:raw" 
 }image_mean: 128
 image_stddev: 33
 seed_policy: "PolicyPeaks" 
