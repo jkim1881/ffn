@@ -861,9 +861,7 @@ class hGRU(object):
         fb1 = self.resize_x_to_y(x=fb2, y=ff0,
                                   kernel=weights,
                                   mode=self.fb_mode,
-                                  strides=self.ff_pool_strides[2])
-        import ipdb
-        ipdb.set_trace()
+                                  strides=self.ff_pool_strides[1])
         if self.batch_norm:
             # with tf.variable_scope('fb_bn' % 2,
             #         reuse=self.bn_reuse) as scope:
@@ -892,7 +890,7 @@ class hGRU(object):
         fb0 = self.resize_x_to_y(x=fb1, y=x,
                                   kernel=weights,
                                   mode=self.fb_mode,
-                                  strides=self.ff_pool_strides[2])
+                                  strides=self.ff_pool_strides[0])
         if self.batch_norm:
             # with tf.variable_scope('fb_bn' % 2,
             #         reuse=self.bn_reuse) as scope:
