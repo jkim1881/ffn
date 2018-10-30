@@ -46,9 +46,11 @@ if __name__ == '__main__':
     deltas = [8, 8, 8] #[10, 10, 5] #[8,8,8]
 
     net_name = 'feedback_hgru_generic_longfb_3l'
+    checkpoint_num = 46480
+
     train_dataset_name = 'neuroproof'
-    dataset_name_list = ['neuroproof','cremi_a','cremi_b','cremi_c','berson','isbi2013']
-    dataset_type = 'train' #'train'
+    dataset_name_list = ['cremi_a','cremi_b','cremi_c','berson','isbi2013'] # 'neuroproof'
+    dataset_type = 'val' #'train'
     test_dataset_shape_list = [[520, 520, 520], #[250, 250, 250],
                                [1250, 625, 125],
                                [1250, 625, 125],
@@ -76,11 +78,11 @@ if __name__ == '__main__':
                 continue
 
             net_cond_name = net_name + '_' + train_dataset_name + '_r' + str(irep)
-            ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-40733')
+            ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
 
             request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_on_' + test_dataset_name + '_'+dataset_type+'.pbtxt')
             hdf_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, dataset_type, 'grayscale_maps.h5')
-            output_fullpath = os.path.join(output_root, fov_type, net_cond_name, test_dataset_name, dataset_type)
+            output_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, dataset_type)
 
             #ckpt_fullpath = os.path.join(ckpt_root, fov_type, 'convstack_3d_pretrained/model.ckpt-27465036')
 

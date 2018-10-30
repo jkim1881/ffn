@@ -4,7 +4,7 @@ image {
 image_stddev: 33
 seed_policy: "PolicyPeaks" 
 model_checkpoint_path: "/media/data_cifs/connectomics/ffn_ckpts/traditional_fov/feedback_hgru_generic_longfb_3l_neuroproof_r0/model.ckpt-40733" 
-model_name: "convstack_3d.ConvStack3DFFNModel" 
+model_name: "feedback_hgru_generic_longfb_3l.ConvStack3DFFNModel" 
 model_args: "{\"depth\": 12, \"fov_size\": [33, 33, 33], \"deltas\": [8, 8, 8]}" 
 segmentation_output_dir: "/media/data_cifs/connectomics/ffn_inferred/traditional_fov/feedback_hgru_generic_longfb_3l_neuroproof_r0/cremi_b/train" 
 inference_options { 
