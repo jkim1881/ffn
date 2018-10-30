@@ -508,7 +508,7 @@ class hGRU(object):
             strides=[1, 1, 1, 1, 1],
             symmetric_weights=self.symmetric_weights,
             dilations=[1, 1, 1, 1, 1])
-        return c1
+        return c1, x_gated
 
     def circuit_output(self, h1, fb, var_scope):
         """Calculate mix and exc horizontal activities."""
@@ -565,7 +565,7 @@ class hGRU(object):
 
     def hgru_ops(self, i0, x, h2, fb, var_scope):
         """hGRU body."""
-        c1 = self.circuit_input(
+        c1, x_gated = self.circuit_input(
             x = x,
             h2=h2,
             fb=fb,
@@ -581,7 +581,7 @@ class hGRU(object):
             reuse=self.bn_reuse,
             is_training=self.train)
         h1 = self.input_integration(
-            x=x,
+            x=x_gated,
             c1=c1,
             h2=h2,
             var_scope=var_scope)
