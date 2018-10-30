@@ -862,6 +862,8 @@ class hGRU(object):
                                   kernel=weights,
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[2])
+        import ipdb
+        ipdb.set_trace()
         if self.batch_norm:
             # with tf.variable_scope('fb_bn' % 2,
             #         reuse=self.bn_reuse) as scope:
