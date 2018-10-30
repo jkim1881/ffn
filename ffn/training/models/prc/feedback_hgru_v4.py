@@ -931,18 +931,13 @@ class hGRU(object):
         # Calculate l2 hidden state size
         x_shape = x.get_shape().as_list()
         if self.include_pooling:
-            l0_shape = [
-                    x_shape[0],
-                    self.compute_shape(x_shape[1], self.ff_pool_strides[0][0]),
-                    self.compute_shape(x_shape[2], self.ff_pool_strides[0][1]),
-                    self.compute_shape(x_shape[3], self.ff_pool_strides[0][2]),
-                    self.ff_conv_k[0]]
+            l0_shape = x_shape
             l1_shape = [
                     x_shape[0],
-                    self.compute_shape(l0_shape[1], self.ff_pool_strides[1][0]),
-                    self.compute_shape(l0_shape[2], self.ff_pool_strides[1][1]),
-                    self.compute_shape(l0_shape[3], self.ff_pool_strides[1][2]),
-                    self.ff_conv_k[1]]
+                    self.compute_shape(l0_shape[1], self.ff_pool_strides[0][0]),
+                    self.compute_shape(l0_shape[2], self.ff_pool_strides[0][1]),
+                    self.compute_shape(l0_shape[3], self.ff_pool_strides[0][2]),
+                    self.ff_conv_k[0]]
         else:
             l0_shape = tf.identity(x_shape)
             l1_shape = tf.identity(x_shape)
