@@ -832,7 +832,6 @@ class hGRU(object):
             bias = tf.get_variable("bias")
         fb2 = self.resize_x_to_y(x=ff2, y=ff1,
                                   kernel=weights,
-                                  bias=bias,
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[2])
         if self.batch_norm:
