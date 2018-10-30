@@ -58,12 +58,12 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       net = hgru_net.build(x, input_seed)
 
   logits = tf.contrib.layers.conv3d(net,
-                                    scope='conv_lom',
-                                    num_outputs=1,
+                                    scope='conv_lom1',
+                                    num_outputs=in_k,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
   logits = tf.contrib.layers.conv3d(logits,
-                                    scope='conv_lom',
+                                    scope='conv_lom2',
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
