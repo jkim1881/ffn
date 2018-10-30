@@ -219,7 +219,7 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer),
                         trainable=True))
-                g_shape = [1,1,1] + [self.hgru_k[idx]*2, self.hgru_k[idx]]
+                g_shape = [1,1,1] + [self.hgru_k[idx]*3, self.hgru_k[idx]]
                 setattr(
                     self,
                     'hgru_%s_gain_a_weights' % idx,
@@ -244,7 +244,7 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer,
                             mask=None)))
-                m_shape = [1,1,1] + [self.hgru_k[idx]*2, self.hgru_k[idx]]
+                m_shape = [1,1,1] + [self.hgru_k[idx]*3, self.hgru_k[idx]]
                 setattr(
                     self,
                     'hgru_%s_mix_weights' % idx,
