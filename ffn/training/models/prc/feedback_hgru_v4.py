@@ -624,8 +624,9 @@ class hGRU(object):
         # HGRU 0
         idx = 0
         if self.adapation:
-            eta1 = getattr(self, 'eta1_%s' % idx)
-            eta2 = getattr(self, 'eta2_%s' % idx)
+            with tf.variable_scope('hgru_%s' % idx, reuse=True):
+                eta1 = tf.get_variable("eta1")
+                eta2 = tf.get_variable("eta2")
             e2 = tf.gather(eta2, i0, axis=-1)
             e1 = tf.gather(eta1, i0, axis=-1)
             l0_fb *= e2
@@ -708,8 +709,9 @@ class hGRU(object):
         # HGRU 1
         idx = 1
         if self.adapation:
-            eta1 = getattr(self, 'eta1_%s' % idx)
-            eta2 = getattr(self, 'eta2_%s' % idx)
+            with tf.variable_scope('hgru_%s' % idx, reuse=True):
+                eta1 = tf.get_variable("eta1")
+                eta2 = tf.get_variable("eta2")
             e2 = tf.gather(eta2, i0, axis=-1)
             e1 = tf.gather(eta1, i0, axis=-1)
             l1_fb *= e2
