@@ -28,7 +28,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   """Computes single-object mask prediction."""
 
   in_k = 24
-  ff_k = [32, 48, 64]
+  ff_k = [32, 32, 32]
   x = tf.contrib.layers.conv3d(tf.concat([input_patches], axis=4),
                                  scope='conv0_a',
                                  num_outputs=in_k,
@@ -42,7 +42,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         timesteps=3,
                                         h_repeat=2,
                                         hgru_dhw=[[3, 7, 7], [3, 5, 5]],
-                                        hgru_k=[in_k, 32],
+                                        hgru_k=[in_k, ff_k[0]],
                                         ff_conv_dhw=[[1, 5, 5], [2, 5, 5], [2, 3, 3]],
                                         ff_conv_k=ff_k,
                                         ff_pool_dhw=[[1, 2, 2], [1, 2, 2], [1, 1, 1]],
