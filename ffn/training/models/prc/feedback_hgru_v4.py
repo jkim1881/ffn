@@ -151,7 +151,7 @@ class hGRU(object):
                             name='spot_weights',
                             dtype=self.dtype,
                             initializer=initialization.xavier_initializer(
-                                shape=[1,1,1] + [lower_feats*3, higher_feats],
+                                shape=[1,1,1] + [lower_feats*3, lower_feats],
                                 dtype=self.dtype,
                                 uniform=self.normal_initializer),
                             trainable=True))
