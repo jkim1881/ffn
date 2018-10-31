@@ -48,6 +48,9 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name):
 
 if __name__ == '__main__':
 
+    num_machines = int(sys.argv[1])
+    i_machine = int(sys.argv[2])
+
     script_root = '/home/jk/PycharmProjects/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
@@ -73,9 +76,15 @@ if __name__ == '__main__':
     image_mean = 128
     image_stddev = 33
 
+    kth_job = 0
     for test_dataset_name, test_dataset_shape in zip(dataset_name_list, test_dataset_shape_list):
         for irep in range(num_model_repeats):
 
+            kth_job += 1
+            if np.mod(kth_job, num_machines) != i_machine and num_machines != i_machine:
+                continue
+            elif np.mod(kth_job, num_machines) != 0 and num_machines == i_machine:
+                continue
 
             net_cond_name = net_name + '_' + train_dataset_name + '_r' + str(irep)
             request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_on_' + test_dataset_name + '_' + dataset_type + '.pbtxt')
