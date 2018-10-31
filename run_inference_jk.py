@@ -87,6 +87,7 @@ if __name__ == '__main__':
                 continue
 
             net_cond_name = net_name + '_' + train_dataset_name + '_r' + str(irep)
+            net_cond_name = net_name + '_' + test_dataset_name + '_r' + str(irep) ############ TODO (jk): modified for finetuning-eval
             request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_on_' + test_dataset_name + '_' + dataset_type + '.pbtxt')
             hdf_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, dataset_type, 'grayscale_maps.h5')
 
