@@ -7,45 +7,25 @@ from scipy import ndimage
 import skimage.feature
 import skimage.measure
 import skimage.morphology 
+import sys
+
+portion = 8
 
 in_root = '/media/data_cifs/andreas/connectomics'
-out_root = '/media/data_cifs/connectomics/datasets/third_party/traditional'
+out_root = '/media/data_cifs/connectomics/datasets/third_party/traditional_fov_'+str(portion)
 
-# ISBI2012
-# name = 'isbi2012'
-# path = os.path.join(in_root, 'ISBI_2012_data/train')
-# files = ['train-labels.tif','train-volume.tif']
-# instances = io.imread(os.path.join(path,files[0]))
-# volume = io.imread(os.path.join(path,files[1]))
-# print(name + ' inst: ' + str(instances.shape))
-# print(name + ' vol: ' + str(volume.shape))
-
-# for i in range(1):
-# 	plt.subplot(3,1,1)
-# 	plt.imshow(segments1[i,:,:])
-# 	plt.subplot(3,1,2)
-# 	plt.imshow(segments2[i,:,:])
-# 	plt.subplot(3,1,3)
-# 	plt.imshow(volume[i,:,:], cmap='gray')
-# 	plt.show()
-
-# ISBI2013
-name = 'isbi2013'
-path = os.path.join(in_root, 'ISBI_2013_data/train')
-files = ['train-labels.tif','train-input.tif']
-instances = io.imread(os.path.join(path,files[0]))
-volume = io.imread(os.path.join(path,files[1]))
+# BERSON 384 384 384
+name = 'berson'
+path = os.path.join(in_root, 'Berson')
+file = 'updated_Berson.h5'
+data = h5py.File(os.path.join(path, file), 'r')
+instances = np.array(data['masks'])
+volume = data['volume']
 print(name + ' inst: ' + str(instances.shape))
 print(name + ' vol: ' + str(volume.shape))
 
 # RELABEL FROM ONE
 print('before re-labeling: ' + str(len(np.unique(instances))))
-# replacement_label = 0
-# instances_new = np.zeros_like(instances, dtype=)
-# for label in unique_labels:
-# 	print('replacing label: ' + str(replacement_label))
-# 	instances_new[instances==label] = replacement_label
-# 	replacement_label += 1
 instances_new, _, _ = skimage.segmentation.relabel_sequential(instances, offset=1)
 print('after re-labeling: ' + str(len(np.unique(instances_new))))
 
@@ -61,28 +41,83 @@ print('after re-labeling: ' + str(len(np.unique(instances_new))))
 # 	plt.show()
 
 # # WRITE TRAIN
+# [:,:192,:] full training half
+# [:192,:192,:] 1/2 reduction
+# [:192,:192,:192] 1/4 reduction
+# [96:192,:192,:192] 1/8 reduction
 write_dir = os.path.join(out_root,name,'train')
 if not os.path.isdir(write_dir):
 	os.makedirs(write_dir)
 writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-writer.create_dataset('stack', data=instances_new[:,:512,:], dtype='<i8')
+writer.create_dataset('stack', data=instances_new[96:192,:192,:192], dtype='<i8')
 writer.close()
 writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
-writer.create_dataset('raw', data=volume[:,:512,:], dtype='|u1')
+writer.create_dataset('raw', data=volume[96:192,:192,:192], dtype='|u1')
 writer.close()
 # # WRITE VAL
-write_dir = os.path.join(out_root,name,'val')
+# write_dir = os.path.join(out_root,name,'val')
+# if not os.path.isdir(write_dir):
+# 	os.makedirs(write_dir)
+# writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
+# writer.create_dataset('stack', data=instances_new[:,192:,:], dtype='<i8')
+# writer.close()
+# writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
+# writer.create_dataset('raw', data=volume[:,192:,:], dtype='|u1')
+# writer.close()
+
+
+# ISBI2013 100 1024 1024
+name = 'isbi2013'
+path = os.path.join(in_root, 'ISBI_2013_data/train')
+files = ['train-labels.tif','train-input.tif']
+instances = io.imread(os.path.join(path,files[0]))
+volume = io.imread(os.path.join(path,files[1]))
+print(name + ' inst: ' + str(instances.shape))
+print(name + ' vol: ' + str(volume.shape))
+
+# RELABEL FROM ONE
+print('before re-labeling: ' + str(len(np.unique(instances))))
+instances_new, _, _ = skimage.segmentation.relabel_sequential(instances, offset=1)
+print('after re-labeling: ' + str(len(np.unique(instances_new))))
+
+# for i in range(1):
+# 	plt.subplot(2,2,1)
+# 	plt.imshow(instances[i,:,:])
+# 	plt.subplot(2,2,2)
+# 	plt.imshow(volume[i,:,:], cmap='gray')
+# 	plt.subplot(2,2,3)
+# 	plt.imshow(instances[:,:,i])
+# 	plt.subplot(2,2,4)
+# 	plt.imshow(volume[:,:,i], cmap='gray')
+# 	plt.show()
+
+# # WRITE TRAIN
+# [:,:512,:] full training half
+# [:,:512,:512] 1/2 reduction
+# [:,256:512,:512] 1/4 reduction
+# [:,256:512,256:512] 1/8 reduction
+write_dir = os.path.join(out_root,name,'train')
 if not os.path.isdir(write_dir):
 	os.makedirs(write_dir)
 writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-writer.create_dataset('stack', data=instances_new[:,512:,:], dtype='<i8')
+writer.create_dataset('stack', data=instances_new[:,256:512,256:512], dtype='<i8')
 writer.close()
-writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
-writer.create_dataset('raw', data=volume[:,512:,:], dtype='|u1')
+writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
+writer.create_dataset('raw', data=volume[:,256:512,256:512], dtype='|u1')
 writer.close()
+# # WRITE VAL
+# write_dir = os.path.join(out_root,name,'val')
+# if not os.path.isdir(write_dir):
+# 	os.makedirs(write_dir)
+# writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
+# writer.create_dataset('stack', data=instances_new[:,512:,:], dtype='<i8')
+# writer.close()
+# writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
+# writer.create_dataset('raw', data=volume[:,512:,:], dtype='|u1')
+# writer.close()
 
 
-# CREMI
+# CREMI 125 1250 1250
 names = ['cremi_a', 'cremi_b', 'cremi_c']
 path = os.path.join(in_root, 'CREMI_data/train')
 files = ['sample_A_20160501.hdf', 'sample_B_20160501.hdf', 'sample_C_20160501.hdf']
@@ -95,12 +130,6 @@ for (file, name) in zip(files, names):
 
 	# RELABEL FROM ONE
 	print('before re-labeling: ' + str(len(np.unique(instances))))
-	# replacement_label = 0
-	# instances_new = np.zeros_like(instances, dtype=)
-	# for label in unique_labels:
-	# 	print('replacing label: ' + str(replacement_label))
-	# 	instances_new[instances==label] = replacement_label
-	# 	replacement_label += 1
 	instances_new, _, _ = skimage.segmentation.relabel_sequential(instances, offset=1)
 	print('after re-labeling: ' + str(len(np.unique(instances_new))))
 
@@ -111,80 +140,34 @@ for (file, name) in zip(files, names):
 	# 	plt.imshow(volume[i,:,:], cmap='gray')
 	# 	plt.show()
 
+	# # WRITE TRAIN
+	# [:,:625,:] full training half
+	# [:,:625,:625] 1/2 reduction
+	# [:,312:625,:625] 1/4 reduction
+	# [:,312:625,312:625] 1/8 reduction
 	write_dir = os.path.join(out_root,name,'train')
 	if not os.path.isdir(write_dir):
 		os.makedirs(write_dir)
 	writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-	writer.create_dataset('stack', data=instances_new[:,:625,:], dtype='<i8')
+	writer.create_dataset('stack', data=instances_new[:,312:625,312:625], dtype='<i8')
 	writer.close()
 	writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
-	writer.create_dataset('raw', data=volume[:,:625,:], dtype='|u1')
+	writer.create_dataset('raw', data=volume[:,312:625,312:625], dtype='|u1')
 	writer.close()
 	# WRITE VAL
-	write_dir = os.path.join(out_root,name,'val')
-	if not os.path.isdir(write_dir):
-		os.makedirs(write_dir)
-	writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-	writer.create_dataset('stack', data=instances_new[:,625:,:], dtype='<i8')
-	writer.close()
-	writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
-	writer.create_dataset('raw', data=volume[:,625:,:], dtype='|u1')
-	writer.close()
+	# write_dir = os.path.join(out_root,name,'val')
+	# if not os.path.isdir(write_dir):
+	# 	os.makedirs(write_dir)
+	# writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
+	# writer.create_dataset('stack', data=instances_new[:,625:,:], dtype='<i8')
+	# writer.close()
+	# writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
+	# writer.create_dataset('raw', data=volume[:,625:,:], dtype='|u1')
+	# writer.close()
 
 #  "<i8, <i4 "|u1""
 
-# BERSON
-name = 'berson'
-path = os.path.join(in_root, 'Berson')
-file = 'updated_Berson.h5'
-data = h5py.File(os.path.join(path, file), 'r')
-instances = np.array(data['masks'])
-volume = data['volume']
-print(name + ' inst: ' + str(instances.shape))
-print(name + ' vol: ' + str(volume.shape))
 
-# RELABEL FROM ONE
-print('before re-labeling: ' + str(len(np.unique(instances))))
-# replacement_label = 0
-# instances_new = np.zeros_like(instances, dtype=)
-# for label in unique_labels:
-# 	print('replacing label: ' + str(replacement_label))
-# 	instances_new[instances==label] = replacement_label
-# 	replacement_label += 1
-instances_new, _, _ = skimage.segmentation.relabel_sequential(instances, offset=1)
-print('after re-labeling: ' + str(len(np.unique(instances_new))))
-
-# for i in range(1):
-# 	plt.subplot(2,2,1)
-# 	plt.imshow(instances[i,:,:])
-# 	plt.subplot(2,2,2)
-# 	plt.imshow(volume[i,:,:], cmap='gray')
-# 	plt.subplot(2,2,3)
-# 	plt.imshow(instances[:,:,i])
-# 	plt.subplot(2,2,4)
-# 	plt.imshow(volume[:,:,i], cmap='gray')
-# 	plt.show()
-
-# # WRITE TRAIN
-write_dir = os.path.join(out_root,name,'train')
-if not os.path.isdir(write_dir):
-	os.makedirs(write_dir)
-writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-writer.create_dataset('stack', data=instances_new[:,:192,:], dtype='<i8')
-writer.close()
-writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
-writer.create_dataset('raw', data=volume[:,:192,:], dtype='|u1')
-writer.close()
-# # WRITE VAL
-write_dir = os.path.join(out_root,name,'val')
-if not os.path.isdir(write_dir):
-	os.makedirs(write_dir)
-writer = h5py.File(os.path.join(write_dir,'groundtruth.h5'), 'w')
-writer.create_dataset('stack', data=instances_new[:,192:,:], dtype='<i8')
-writer.close()
-writer = h5py.File(os.path.join(out_root,name,'val','grayscale_maps.h5'), 'w')
-writer.create_dataset('raw', data=volume[:,192:,:], dtype='|u1')
-writer.close()
 
 
 # PREP TRAINING DATA

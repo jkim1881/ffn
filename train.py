@@ -180,7 +180,7 @@ class EvalTracker(object):
     self.images_xz = deque(maxlen=16)
     self.images_yz = deque(maxlen=16)
 
-  def slice_image(self, labels, predicted, weights, slice_axis):
+  def slice_image(self, labels, predicted, grayscale, slice_axis): #TODO(jk) weights-> grayscale
     """Builds a tf.Summary showing a slice of an object mask.
 
     The object mask slice is shown side by side with the corresponding
@@ -208,10 +208,10 @@ class EvalTracker(object):
     buf = BytesIO()
     labels = (labels[selector] * 255).astype(np.uint8)
     predicted = (predicted[selector] * 255).astype(np.uint8)
-    weights = (weights[selector] * 255).astype(np.uint8)
+    grayscale = (grayscale[selector] * 255).astype(np.uint8)
 
     im = PIL.Image.fromarray(np.concatenate([labels, predicted,
-                                             weights], axis=1), 'L')
+                                             grayscale], axis=1), 'L')
     im.save(buf, 'PNG')
 
     axis_names = 'zyx'
@@ -223,13 +223,14 @@ class EvalTracker(object):
             height=h, width=w * 3, colorspace=1,  # greyscale
             encoded_image_string=buf.getvalue()))
 
-  def add_patch(self, labels, predicted, weights,
+  def add_patch(self, labels, predicted, weights, grayscale, #TODO(jk) added grayscale
                 coord=None, volname=None, patches=None):
     """Evaluates single-object segmentation quality."""
 
     predicted = mask.crop_and_pad(predicted, (0, 0, 0), self._eval_shape)
     weights = mask.crop_and_pad(weights, (0, 0, 0), self._eval_shape)
     labels = mask.crop_and_pad(labels, (0, 0, 0), self._eval_shape)
+    grayscale =  mask.crop_and_pad(grayscale, (0, 0, 0), self._eval_shape)
     loss, = self.sess.run([self.eval_loss], {self.eval_labels: labels,
                                              self.eval_preds: predicted})
     self.loss += loss
@@ -248,9 +249,9 @@ class EvalTracker(object):
     self.num_patches += 1
 
     predicted = expit(predicted)
-    self.images_xy.append(self.slice_image(labels, predicted, weights, 0))
-    self.images_xz.append(self.slice_image(labels, predicted, weights, 1))
-    self.images_yz.append(self.slice_image(labels, predicted, weights, 2))
+    self.images_xy.append(self.slice_image(labels, predicted, grayscale, 0))
+    self.images_xz.append(self.slice_image(labels, predicted, grayscale, 1))
+    self.images_yz.append(self.slice_image(labels, predicted, grayscale, 2))
 
   def get_summaries(self):
     """Gathers tensorflow summaries into single list."""
@@ -552,7 +553,7 @@ def get_example(load_example, eval_tracker, model, get_offsets):
       yield predicted, patches, labels, weights
 
     eval_tracker.add_patch(
-        full_labels, seed, loss_weights, coord, volname, full_patches)
+        full_labels, seed, loss_weights, full_patches, coord, volname, full_patches)
 
 
 def get_batch(load_example, eval_tracker, model, batch_size, get_offsets):
@@ -647,19 +648,16 @@ def train_ffn(model_cls, **model_kwargs):
         eval_tracker.sess = sess
 
         # TODO (jk): load from ckpt
-	#import ipdb
-	#ipdb.set_trace()
         if FLAGS.load_from_ckpt != 'None':
-            logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-            model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
-            logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-	#import ipdb
-	#ipdb.set_trace()
+          logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+          model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+          logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
+
         step = int(sess.run(model.global_step))
-	if FLAGS.load_from_ckpt != 'None':
-	    #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
-	    FLAGS.max_steps += step
-	    logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from '+str(step))
+        if FLAGS.load_from_ckpt != 'None':
+          #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
+          FLAGS.max_steps += step
+          logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from '+str(step))
 
         if FLAGS.task > 0:
           # To avoid early instabilities when using multiple replicas, we use
@@ -708,13 +706,13 @@ def train_ffn(model_cls, **model_kwargs):
           t_curr = time.time()
 
           seed, patches, labels, weights = next(batch_it)
-	  # TODO (jk): added an item to set offset_label off according to old version
+          # TODO (jk): added an item to set offset_label off according to old version
           updated_seed, step, summ = run_training_step(
               sess, model, summ_op,
               feed_dict={
                   model.loss_weights: weights,
                   model.labels: labels,
-		  model.offset_label: 'off',
+                  model.offset_label: 'off',
                   model.input_patches: patches,
                   model.input_seed: seed,
               })
@@ -722,7 +720,7 @@ def train_ffn(model_cls, **model_kwargs):
           # Save prediction results in the original seed array so that
           # they can be used in subsequent steps.
           mask.update_at(seed, (0, 0, 0), updated_seed)
-	  
+
           # Record summaries.
           if summ is not None:
 
