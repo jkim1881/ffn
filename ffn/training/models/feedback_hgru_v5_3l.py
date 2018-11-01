@@ -43,6 +43,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         h_repeat=2,
                                         hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],
                                         hgru_k=[in_k, ff_k[0], ff_k[1]],
+                                        hgru_symmetric_weights=True,
                                         ff_conv_dhw=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
                                         ff_conv_k=ff_k,
                                         ff_kpool_multiplier=2,
@@ -70,11 +71,31 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
   import numpy as np
-  acc = 0
+  extras = 0
+  hgru_w = 0
+  ff_fb = 0
   for x in tf.trainable_variables():
       prod = np.prod(x.get_shape().as_list())
-      acc += prod
-  print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: '+str(acc))
+      if ('hgru' in x.name):
+          if ('W' in x.name):
+              hgru_w += prod/4
+          elif ('mlp' in x.name):
+              hgru_w += prod
+          else:
+              print(x.name + ' '+ str(prod))
+              extras += prod
+      elif ('ff' in x.name) | ('fb' in x.name) | ('conv0' in x.name) | ('conv_lom' in x.name):
+          if ('weight' in x.name):
+              ff_fb += prod
+          else:
+              print(x.name + ' ' + str(prod))
+              extras += prod
+      else:
+          print(x.name + ' ' + str(prod))
+          extras += prod
+  hgru_w = int(hgru_w)
+  print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'horizontal('+str(hgru_w)+') vertical('+str(ff_fb)+') extras('+str(extras)+')')
+  print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'total(' + str(hgru_w+ff_fb+extras) + ')')
   return logits
 
 
