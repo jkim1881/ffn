@@ -45,7 +45,7 @@ def _predict_object_mask(net, depth=9):
           pool_strides=[1, 4, 4],
           padding='SAME',
           aux={
-              'symmetric_weights': True,
+              'symmetric_weights': False, ## Setting it to True return error
               'dilations': [
                   [1, 1, 1, 1, 1],
                   [1, 1, 1, 1, 1],
@@ -73,12 +73,12 @@ def _predict_object_mask(net, depth=9):
             },
       updates_collections=None,
       is_training=True)
-  logits = tf.contrib.layers.conv3d(net,
+  net = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
-  return logits
+  return net
 
 
 class ConvStack3DFFNModel(model.FFNModel):
