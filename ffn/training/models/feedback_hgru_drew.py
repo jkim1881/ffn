@@ -29,7 +29,7 @@ def _predict_object_mask(net, depth=9):
   """Computes single-object mask prediction."""
   net = tf.contrib.layers.conv3d(net,
                                  scope='conv0_a',
-                                 num_outputs=16,
+                                 num_outputs=14,
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
@@ -40,7 +40,7 @@ def _predict_object_mask(net, depth=9):
       hgru = feedback_hgru_drew.hGRU(
           layer_name='hgru_net',
           x_shape=net.get_shape().as_list(),
-          timesteps=8,
+          timesteps=5,
           h_ext=[[1, 7, 7], [3, 7, 7], [3, 7, 7], [1, 1, 1], [1, 1, 1]],
           strides=[1, 1, 1, 1, 1],
           pool_strides=[1, 4, 4],
@@ -57,7 +57,7 @@ def _predict_object_mask(net, depth=9):
               'batch_norm': True,
               'dtype': tf.float32,  # tf.bfloat16,
               'pooling_kernel': [1, 4, 4],
-              'intermediate_ff': [16,16],  # + filters,
+              'intermediate_ff': [14,14],  # + filters,
               'intermediate_ks': [[1,5,5], [1,5,5]]},
           train=True)
       net = hgru.build(net)
