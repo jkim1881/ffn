@@ -611,7 +611,7 @@ def save_flags():
                                'flags.%d' % time.time()), 'w') as f:
     for mod, flag_list in FLAGS.flags_by_module_dict().items():
       if (mod.startswith('google3.research.neuromancer.tensorflow') or
-          mod.startswith('/')):
+        mod.startswith('/')):
         for flag in flag_list:
           f.write('%s\n' % flag.serialize())
 
