@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
             current_best_arand = 99.
             ickpt = 0
-            while ickpt < 4:
+            while (ickpt < 4) | (ickpt == -9):
 
                 checkpoint_num = find_checkpoint(-ickpt, ckpt_root, fov_type, net_cond_name)
                 # ckpt_fullpath = os.path.join(ckpt_root, fov_type, 'convstack_3d_pretrained/model.ckpt-27465036')
@@ -140,12 +140,14 @@ if __name__ == '__main__':
                 eval_result_txt.write("\n")
                 eval_result_txt.close()
 
+                if ickpt == -9:
+                    ickpt = 99
                 if arand < current_best_arand:
                     current_best_arand = arand
                     ickpt += 1
                 else:
                     print('Accuracy stopped improving. (new=' + str(arand) + ' vs old=' + str(current_best_arand) + ') Terminating eval.')
-                    ickpt = 99
+                    ickpt = -9
 
 # .npz
 # #

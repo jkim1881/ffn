@@ -33,32 +33,46 @@ def _predict_object_mask(net, depth=9):
                                  kernel_size=(3, 3, 3),
                                  padding='SAME')
 
-  from .prc import feedback_hgru_2l
-  hgru_net = feedback_hgru_2l.hGRU(layer_name='hgru_net',
-                                   num_in_feats=16,
-                                   timesteps=3,
-                                   hgru_dhw=[[1, 7, 7], [3, 5, 5], [1, 1, 1]], #z to 3
-                                   hgru_k=[16, 16, 16],
-                                   ff_conv_dhw=[[3, 5, 5]],
-                                   ff_conv_k=[16, 16],
-                                   ff_conv_strides=[[1, 1, 1, 1, 1]],
-                                   ff_pool_dhw=[[1, 2, 2]],
-                                   ff_pool_strides=[[1, 2, 2]],
-                                   fb_mode='transpose',
-                                   fb_dhw=[[5, 7, 7]],
-                                   padding='SAME',
-                                   peephole=False,
-                                   aux=None,
-                                   train=True)
-
-
-  # TODO: TEST GPU
-  # TODO: implement layer-wise horizontal timestep
-  # TODO: implement layer-wise num_features
-  # TODO: implement h to have independent num_feats
-  # TODO: implement FF bypass
-  net = hgru_net.build(net)
-
+  from .prc import feedback_hgru_drew
+  with tf.variable_scope('recurrent'):
+      net = tf.nn.elu(net)
+      hgru = feedback_hgru_drew.hGRU(
+          layer_name='hgru_net',
+          x_shape=net.get_shape().as_list(),
+          timesteps=8,
+          h_ext=[[1, 7, 7], [3, 7, 7], [3, 7, 7], [1, 1, 1], [1, 1, 1]],
+          strides=[1, 1, 1, 1, 1],
+          pool_strides=[1, 4, 4],
+          padding='SAME',
+          aux={
+              'symmetric_weights': True,
+              'dilations': [
+                  [1, 1, 1, 1, 1],
+                  [1, 1, 1, 1, 1],
+                  [1, 1, 1, 1, 1],
+                  [1, 1, 1, 1, 1],
+                  [1, 1, 1, 1, 1]
+              ],
+              'batch_norm': True,
+              'dtype': tf.float32,  # tf.bfloat16,
+              'pooling_kernel': [1, 4, 4],
+              'intermediate_ff': [14,14],  # + filters,
+              'intermediate_ks': [[1,5,5], [1,5,5]]},
+          train=True)
+      net = hgru.build(net)
+  net = tf.contrib.layers.batch_norm(
+      inputs=net,
+      scale=True,
+      center=True,
+      fused=True,
+      renorm=False,
+      param_initializers={
+            'moving_mean': tf.constant_initializer(0., dtype=tf.float32),
+            'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
+            'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
+            },
+      updates_collections=None,
+      is_training=True)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom',
                                     num_outputs=1,

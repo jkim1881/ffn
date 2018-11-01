@@ -10,8 +10,7 @@ if __name__ == '__main__':
 
     script_root = '/home/jk/PycharmProjects/ffn'
     train_dataset_name = ['neurproof']
-    test_dataset_name_list = ['neuroproof',
-                         'berson',
+    test_dataset_name_list = ['berson',
                          'isbi2013',
                          'cremi_a',
                          'cremi_b',
@@ -20,7 +19,7 @@ if __name__ == '__main__':
     test_dataset_type = 'val' #'train'
 
 
-    net_cond_name = 'convstack_3d_provided'#'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_cond_name = 'feedback_hgru_generic_longfb_3l_neuroproof_r0_46959'#'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
 
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
