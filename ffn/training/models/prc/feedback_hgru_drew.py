@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import initialization
 from pooling import max_pool3d
-
+import gradients
 
 # Dependency for symmetric weight ops is in models/layers/ff.py
 class hGRU(object):

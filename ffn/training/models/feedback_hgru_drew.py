@@ -34,6 +34,7 @@ def _predict_object_mask(net, depth=9):
                                  padding='SAME')
 
   from .prc import feedback_hgru_drew
+  from .prc import gradients
   with tf.variable_scope('recurrent'):
       net = tf.nn.elu(net)
       hgru = feedback_hgru_drew.hGRU(
@@ -45,7 +46,7 @@ def _predict_object_mask(net, depth=9):
           pool_strides=[1, 4, 4],
           padding='SAME',
           aux={
-              'symmetric_weights': False, ## Setting it to True return error
+              'symmetric_weights': True, ## Setting it to True return error
               'dilations': [
                   [1, 1, 1, 1, 1],
                   [1, 1, 1, 1, 1],
