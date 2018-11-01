@@ -839,15 +839,20 @@ class hGRU(object):
         """While loop halting condition."""
         return i0 < self.timesteps
 
+    def compute_shape(self, in_length, stride):
+        if in_length % stride == 0:
+            return in_length/stride
+        else:
+            return in_length/stride + 1
+
     def build(self, x):
         """Run the backprop version of the Circuit."""
         self.prepare_tensors()
         i0 = tf.constant(0)
 
         # Calculate l2 hidden state size
-        x_shape = tf.shape(x)
+        x_shape = x.get_shape().as_list()
         if self.include_pooling and len(self.intermediate_ff):
-            pooling_factor = self.pooling_kernel[1]
             if len(self.intermediate_ff):
                 final_dim = self.intermediate_ff[-1]
             else:
@@ -856,15 +861,15 @@ class hGRU(object):
                 [
                     x_shape[0],
                     x_shape[1],
-                    x_shape[2] / pooling_factor,
-                    x_shape[3] / pooling_factor,
+                    self.compute_shape(x_shape[2], self.pool_strides[1]),
+                    self.compute_shape(x_shape[3], self.pool_strides[1]),
                     final_dim])
             l3_shape = tf.stack(
                 [
                     x_shape[0],
                     x_shape[1],
-                    x_shape[2] / (pooling_factor * pooling_factor),
-                    x_shape[3] / (pooling_factor * pooling_factor),
+                    self.compute_shape(l2_shape[2], self.pool_strides[1]),
+                    self.compute_shape(l2_shape[3], self.pool_strides[1]),
                     final_dim])
         else:
             l2_shape = tf.identity(x_shape)
