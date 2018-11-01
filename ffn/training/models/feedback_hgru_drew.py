@@ -56,7 +56,7 @@ def _predict_object_mask(net, depth=9):
               'batch_norm': True,
               'dtype': tf.float32,  # tf.bfloat16,
               'pooling_kernel': [1, 4, 4],
-              'intermediate_ff': [14,14],  # + filters,
+              'intermediate_ff': [16,16],  # + filters,
               'intermediate_ks': [[1,5,5], [1,5,5]]},
           train=True)
       net = hgru.build(net)
