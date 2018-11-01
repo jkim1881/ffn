@@ -488,15 +488,13 @@ class hGRU(object):
                         data,
                         weights,
                         self.strides,
-                        padding=self.padding,
-                        dilations=dilations)
+                        padding=self.padding)
             else:
                 activities = tf.nn.conv3d(
                     data,
                     weights,
                     self.strides,
-                    padding=self.padding,
-                    dilations=dilations)
+                    padding=self.padding)
         else:
             raise RuntimeError
         return activities
