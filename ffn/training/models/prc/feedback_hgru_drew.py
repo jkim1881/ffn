@@ -2,8 +2,8 @@
 import warnings
 import numpy as np
 import tensorflow as tf
-from ops import initialization
-from layers.feedforward.pooling import max_pool3d
+import initialization
+from pooling import max_pool3d
 
 
 # Dependency for symmetric weight ops is in models/layers/ff.py
