@@ -10,10 +10,10 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
                          fov_size, deltas,
                          image_mean=128, image_stddev=33):
     # 'validate_request_' + str(validate_jobid) + '.txt'
-    directory = os.path.split(eval_result_txt_fullpath)[0]
-    if os.path.isdie(directory):
+    directory = os.path.split(request_txt_fullpath)[0]
+    if not os.path.isdir(directory):
         os.makedirs(directory)
-    file = open(request_txt_fullpath,"w")
+    file = open(request_txt_fullpath,"w+")
     file.write('image { \n')
     file.write('  hdf5: "' + hdf_fullpath + ':raw" \n')
     file.write('}')
@@ -84,6 +84,7 @@ if __name__ == '__main__':
                                    [1250, 625, 125],
                                    [1250, 625, 125]]
     test_dataset_type = 'val'  # 'train'
+    include_self_test = True
 
     image_mean = 128
     image_stddev = 33
@@ -101,6 +102,11 @@ if __name__ == '__main__':
                                                                          (finetune_dataset_name, test_dataset_type, finetune_dataset_shape)]:
             if test_dataset_name == 'provided':
                 test_dataset_name ='neuroproof'
+
+            if test_dataset_name == train_dataset_name:
+                if not include_self_test:
+                    continue
+
             ### DEFINE NAMES
             net_cond_name = net_name + '_' + train_dataset_name + '_' + finetune_dataset_name + '_r0' ############ TODO (jk): modified for finetuning-eval
             request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_teston_' + test_dataset_name + '_' + test_dataset_type + '.pbtxt')
@@ -112,7 +118,7 @@ if __name__ == '__main__':
             if os.path.isfile(eval_result_txt_fullpath):
                 eval_result_txt = open(eval_result_txt_fullpath, "a")
             else:
-                eval_result_txt = open(eval_result_txt_fullpath, "w")
+                eval_result_txt = open(eval_result_txt_fullpath, "w+")
             eval_result_txt.write('TEST DATASET: ' + test_dataset_name + ', FOV: ' + fov_type)
             eval_result_txt.write("\n")
             eval_result_txt.close()
