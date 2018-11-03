@@ -208,7 +208,7 @@ class EvalTracker(object):
     buf = BytesIO()
     labels = (labels[selector] * 255).astype(np.uint8)
     predicted = (predicted[selector] * 255).astype(np.uint8)
-    grayscale = (grayscale[selector] * 255).astype(np.uint8)
+    grayscale = (grayscale[selector]).astype(np.uint8)
 
     im = PIL.Image.fromarray(np.concatenate([labels, predicted,
                                              grayscale], axis=1), 'L')
@@ -363,12 +363,12 @@ def define_data_input(model, queue_batch=None):
   label_volume_map = {}
   for vol in FLAGS.label_volumes.split(','):
     volname, path, dataset = vol.split(':')
-    label_volume_map[volname] = h5py.File(path)[dataset]
+    label_volume_map[volname] = h5py.File(path, 'r')[dataset]
 
   image_volume_map = {}
   for vol in FLAGS.data_volumes.split(','):
     volname, path, dataset = vol.split(':')
-    image_volume_map[volname] = h5py.File(path)[dataset]
+    image_volume_map[volname] = h5py.File(path, 'r')[dataset]
 
   if queue_batch is None:
     queue_batch = FLAGS.batch_size

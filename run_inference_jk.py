@@ -2,6 +2,8 @@ import sys
 import os
 import subprocess
 import numpy as np
+import metrics
+import h5py
 
 def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, output_fullpath,
                          net_name,
@@ -58,73 +60,83 @@ if __name__ == '__main__':
     output_root = '/media/data_cifs/connectomics/ffn_inferred'
 
     fov_type = 'traditional_fov'
-    fov_size = [33, 33, 33] #[41, 41, 21] # [33,33,33]
-    deltas = [8, 8, 8] #[10, 10, 5] #[8,8,8]
+    fov_size = [33, 33, 33]
+    deltas = [8, 8, 8]
+    # fov_type = 'flat_fov'
+    # fov_size = [41, 41, 21]
+    # deltas = [10, 10, 5]
+    # fov_type = 'wide_fov'
+    # fov_size = [57, 57, 13]
+    # deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d_provided'
-    checkpoint_num = -1 # 0 if last -k for the last (k/10) ckpts
-
+    net_name = 'convstack_3d'
     train_dataset_name = 'neuroproof'
-    dataset_name_list = ['berson','isbi2013', 'cremi_a','cremi_b','cremi_c']
-    dataset_type = 'val' #'train'
-    test_dataset_shape_list = [[384, 192, 384],
-                               [1024, 512, 100],
-                               [1250, 625, 125],
-                               [1250, 625, 125],
-                               [1250, 625, 125]]
-    num_model_repeats = 1 # 5
+    train_dataset_shape = [520, 520, 520]
+    train_dataset_type = 'train'
+
+    finetune_dataset_name = ['berson','isbi2013', 'cremi_a','cremi_b','cremi_c']
+    finetune_dataset_shape_list = [[384, 192, 384],
+                                   [1024, 512, 100],
+                                   [1250, 625, 125],
+                                   [1250, 625, 125],
+                                   [1250, 625, 125]]
+    test_dataset_type = 'val'  # 'train'
+
     image_mean = 128
     image_stddev = 33
 
     kth_job = 0
-    for test_dataset_name, test_dataset_shape in zip(dataset_name_list, test_dataset_shape_list):
-        for irep in range(num_model_repeats):
+    for finetune_dataset_name, finetune_dataset_shape in zip(finetune_dataset_name, finetune_dataset_shape_list):
 
-            kth_job += 1
-            if np.mod(kth_job, num_machines) != i_machine and num_machines != i_machine:
-                continue
-            elif np.mod(kth_job, num_machines) != 0 and num_machines == i_machine:
-                continue
+        kth_job += 1
+        if np.mod(kth_job, num_machines) != i_machine and num_machines != i_machine:
+            continue
+        elif np.mod(kth_job, num_machines) != 0 and num_machines == i_machine:
+            continue
 
-            net_cond_name = net_name + '_' + train_dataset_name + '_r' + str(irep)
-            net_cond_name = net_name + '_' + test_dataset_name + '_r' + str(irep) ############ TODO (jk): modified for finetuning-eval
-            request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_on_' + test_dataset_name + '_' + dataset_type + '.pbtxt')
-            hdf_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, dataset_type, 'grayscale_maps.h5')
+        for test_dataset_name, test_dataset_type, test_dataset_shape in [(train_dataset_name, train_dataset_type, train_dataset_shape),
+                                                                         (finetune_dataset_name, test_dataset_type, finetune_dataset_shape)]:
 
-            eval_result_txt = open(os.path.join(ckpt_root, fov_type, net_cond_name, 'eval.txt'), "w")
+            ### DEFINE NAMES
+            net_cond_name = net_name + '_' + train_dataset_name + '_' + finetune_dataset_name + '_r0' ############ TODO (jk): modified for finetuning-eval
+            request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_teston_' + test_dataset_name + '_' + test_dataset_type + '.pbtxt')
+            hdf_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, test_dataset_type, 'grayscale_maps.h5')
+            gt_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, test_dataset_type, 'groundtruth.h5')
+
+            ### OPEN TEXT
+            eval_result_txt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'eval_on_'+ test_dataset_name + '.txt')
+            if os.exists(eval_result_txt_fullpath):
+                eval_result_txt = open(eval_result_txt_fullpath, "a")
+            else:
+                eval_result_txt = open(eval_result_txt_fullpath, "w")
             eval_result_txt.write('TEST DATASET: ' + test_dataset_name + ', FOV: ' + fov_type)
             eval_result_txt.write("\n")
             eval_result_txt.close()
 
             current_best_arand = 99.
             ickpt = 0
-            while (ickpt < 4) | (ickpt == -9):
+            while (ickpt < 10):
 
+                ### DEFINE NAMES
                 checkpoint_num = find_checkpoint(-ickpt, ckpt_root, fov_type, net_cond_name)
-                # ckpt_fullpath = os.path.join(ckpt_root, fov_type, 'convstack_3d_pretrained/model.ckpt-27465036')
                 ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
+                inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, test_dataset_type)
 
-                output_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num),test_dataset_name, dataset_type)
-                write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, output_fullpath,
+                ### RUN INFERENCE
+                write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, inference_fullpath,
                                      net_name,
                                      fov_size, deltas,
                                      image_mean, image_stddev)
                 command = 'python ' + os.path.join(script_root,'run_inference.py') + \
                           ' --inference_request="$(cat ' + request_txt_fullpath + ')"' +\
-                          ' --bounding_box "start { x:0 y:0 z:0 } size { x:' + str(test_dataset_shape[0]) +' y:' + str(test_dataset_shape[1]) + ' z:' + str(test_dataset_shape[2]) + ' }"'
+                          ' --bounding_box "start { x:0 y:0 z:0 } size { x:' + str(test_dataset_shape[0]) + ' y:' + str(test_dataset_shape[1]) + ' z:' + str(test_dataset_shape[2]) + ' }"'
                 subprocess.call(command, shell=True)
 
-
                 #### EVALUATE INFERRENCE
-                import metrics
-                import h5py
-                gt_fullpath = os.path.join(hdf_root, fov_type, test_dataset_name, dataset_type, 'groundtruth.h5')
                 data = h5py.File(gt_fullpath, 'r')
                 gt = np.array(data['stack'])
                 gt_unique = np.unique(gt)
-
-                inference_fullpath = os.path.join(output_fullpath, '0/0', 'seg-0_0_0.npz')
-
+                inference_fullpath = os.path.join(inference_fullpath, 'inferred.npz')
                 seg = np.load(inference_fullpath)['segmentation']
                 seg_unique = np.unique(seg)
 
@@ -140,14 +152,9 @@ if __name__ == '__main__':
                 eval_result_txt.write("\n")
                 eval_result_txt.close()
 
-                if ickpt == -9:
-                    ickpt = 99
+                ickpt += 1
                 if arand < current_best_arand:
                     current_best_arand = arand
-                    ickpt += 1
-                else:
-                    print('Accuracy stopped improving. (new=' + str(arand) + ' vs old=' + str(current_best_arand) + ') Terminating eval.')
-                    ickpt = -9
 
 # .npz
 # #

@@ -35,7 +35,7 @@ if __name__ == '__main__':
             gt = np.array(data['stack'])
             gt_unique = np.unique(gt)
 
-            inference_fullpath = os.path.join(inference_root, net_cond_name, test_dataset_name, test_dataset_type, '0/0', 'seg-0_0_0.npz')
+            inference_fullpath = os.path.join(inference_root, net_cond_name, test_dataset_name, test_dataset_type, 'inferred.npz')
             seg = np.load(inference_fullpath)['segmentation']
             seg_unique = np.unique(seg)
 

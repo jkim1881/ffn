@@ -54,6 +54,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
+                                        bn_reuse=False, ## TRUE NOT COMPLETELY IMPLEMENTED
                                         gate_bn=True,
                                         aux=None,
                                         train=True)

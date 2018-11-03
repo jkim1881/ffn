@@ -34,6 +34,7 @@ class hGRU(object):
             fb_k=[8, 16, 32],
             padding='SAME',
             batch_norm=True,
+            bn_reuse=True,
             gate_bn=True,
             aux=None,
             train=True):
@@ -47,6 +48,11 @@ class hGRU(object):
         self.fb_mode = fb_mode # 'transpose', 'replicate_n_transpose'
         self.h_repeat = h_repeat
         self.batch_norm=batch_norm
+        self.bn_reuse=bn_reuse
+        if self.bn_reuse:
+            self.scope_reuse = tf.AUTO_REUSE
+        else:
+            self.scope_reuse = None
         self.gate_bn = gate_bn
         self.symmetric_weights= hgru_symmetric_weights
 
@@ -103,7 +109,6 @@ class hGRU(object):
             'symmetric_weights': True,
             'symmetric_gate_weights': False,
             'adapation': True,
-            'bn_reuse':None,
             'readout': 'fb',  # l2 or fb
             'include_pooling': True,
             'resize_kernel': tf.image.ResizeMethod.BILINEAR
@@ -552,7 +557,7 @@ class hGRU(object):
 
                 if self.bn_reuse:
                     # Make the batchnorm variables
-                    scopes = ['g1_bn', 'g2_bn', 'c1_bn', 'c2_bn']
+                    scopes = ['g1a_bn', 'g1b_bn', 'g2_bn', 'c1_bn', 'c2_bn']
                     bn_vars = ['moving_mean', 'moving_variance', 'gamma']
                     for s in scopes:
                         with tf.variable_scope(s):
@@ -651,16 +656,31 @@ class hGRU(object):
         g1a_intermediate = tf.nn.conv3d(g1a_intermediate, gain_a_kernels_mlp,
                                         padding='SAME', strides=[1,1,1,1,1]) + gain_a_bias
         if self.gate_bn:
-            g1a_intermediate = tf.contrib.layers.batch_norm(
-                inputs=g1a_intermediate,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                reuse=self.bn_reuse,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    '%s/g1a_bn' % var_scope,
+                    reuse=self.scope_reuse) as scope:
+                    g1a_intermediate = tf.contrib.layers.batch_norm(
+                        inputs=g1a_intermediate,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                g1a_intermediate = tf.contrib.layers.batch_norm(
+                    inputs=g1a_intermediate,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         g1a = self.gate_nl(g1a_intermediate)
         h2_gated = h2*g1a
         ## COMPUTE g1b
@@ -671,16 +691,31 @@ class hGRU(object):
         g1b_intermediate = tf.nn.conv3d(g1b_intermediate, gain_b_kernels_mlp,
                                         padding='SAME', strides=[1, 1, 1, 1, 1]) + gain_b_bias
         if self.gate_bn:
-            g1b_intermediate = tf.contrib.layers.batch_norm(
-                inputs=g1b_intermediate,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                reuse=self.bn_reuse,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    '%s/g1b_bn' % var_scope,
+                    reuse=self.scope_reuse) as scope:
+                    g1b_intermediate = tf.contrib.layers.batch_norm(
+                        inputs=g1b_intermediate,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                g1b_intermediate = tf.contrib.layers.batch_norm(
+                    inputs=g1b_intermediate,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         g1b = self.gate_nl(g1b_intermediate)
         x_gated = x*g1b
 
@@ -709,16 +744,31 @@ class hGRU(object):
         g2_intermediate = tf.nn.conv3d(g2_intermediate, mix_kernels_mlp,
                                        padding='SAME', strides=[1, 1, 1, 1, 1]) + mix_bias
         if self.gate_bn:
-            g2_intermediate = tf.contrib.layers.batch_norm(
-                inputs=g2_intermediate,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                reuse=self.bn_reuse,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    '%s/g2_bn' % var_scope,
+                    reuse=self.scope_reuse) as scope:
+                    g2_intermediate = tf.contrib.layers.batch_norm(
+                        inputs=g2_intermediate,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        reuse=self.scope_reuse,
+                        scope=scope,
+                        is_training=self.train)
+            else:
+                g2_intermediate = tf.contrib.layers.batch_norm(
+                    inputs=g2_intermediate,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         g2 = self.gate_nl(g2_intermediate)
         # Horizontal activities
         c2 = self.conv_3d_op(
@@ -758,16 +808,31 @@ class hGRU(object):
             h2=h2,
             fb=fb,
             var_scope=var_scope)
-        c1 = tf.contrib.layers.batch_norm(
-            inputs=c1,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.param_initializer,
-            updates_collections=None,
-            reuse=self.bn_reuse,
-            is_training=self.train)
+        if self.bn_reuse:
+            with tf.variable_scope(
+                    '%s/c1_bn' % var_scope,
+                    reuse=self.scope_reuse) as scope:
+                c1 = tf.contrib.layers.batch_norm(
+                    inputs=c1,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    reuse=self.scope_reuse,
+                    scope=scope,
+                    is_training=self.train)
+        else:
+            c1 = tf.contrib.layers.batch_norm(
+                inputs=c1,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                is_training=self.train)
         h1 = self.input_integration(
             x=x_gated,
             c1=c1,
@@ -780,16 +845,31 @@ class hGRU(object):
             h1=h1,
             fb=fb,
             var_scope=var_scope)
-        c2 = tf.contrib.layers.batch_norm(
-            inputs=c2,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.param_initializer,
-            updates_collections=None,
-            reuse=self.bn_reuse,
-            is_training=self.train)
+        if self.bn_reuse:
+            with tf.variable_scope(
+                    '%s/c2_bn' % var_scope,
+                    reuse=self.scope_reuse) as scope:
+                c2 = tf.contrib.layers.batch_norm(
+                    inputs=c2,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    reuse=self.scope_reuse,
+                    scope=scope,
+                    is_training=self.train)
+        else:
+            c2 = tf.contrib.layers.batch_norm(
+                inputs=c2,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.param_initializer,
+                updates_collections=None,
+                is_training=self.train)
         h2 = self.output_integration(
             h1=h1,
             c2=c2,
@@ -837,7 +917,7 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
+                reuse=self.scope_reuse,
                 is_training=self.train)
         else:
             ff0 = l0_h2
@@ -864,7 +944,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         ff0 = self.ff_nl(ff0) + 1
         ff0 = tf.nn.conv3d(
@@ -881,7 +960,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
@@ -932,7 +1010,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         else:
             ff1 = l1_h2
@@ -959,7 +1036,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         ff1 = self.ff_nl(ff1) + 1
         ff1 = tf.nn.conv3d(
@@ -976,7 +1052,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
@@ -1026,7 +1101,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         else:
             ff2 = l1_h2
@@ -1053,7 +1127,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         ff2 = tf.nn.conv3d(
             input=ff2,
@@ -1069,7 +1142,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
@@ -1111,7 +1183,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         fb2 = tf.nn.bias_add(
             fb2,
@@ -1140,7 +1211,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         fb1 = tf.nn.bias_add(
             fb1,
@@ -1169,7 +1239,6 @@ class hGRU(object):
                 renorm=False,
                 param_initializers=self.param_initializer,
                 updates_collections=None,
-                reuse=self.bn_reuse,
                 is_training=self.train)
         fb0 = tf.nn.bias_add(
             fb0,
