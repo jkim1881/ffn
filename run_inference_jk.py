@@ -70,7 +70,7 @@ if __name__ == '__main__':
     # deltas = [8, 8, 3]
 
     net_name = 'convstack_3d'
-    train_dataset_name = 'neuroproof'
+    train_dataset_name = 'pretrained'
     train_dataset_shape = [520, 520, 520]
     train_dataset_type = 'train'
 
@@ -96,7 +96,8 @@ if __name__ == '__main__':
 
         for test_dataset_name, test_dataset_type, test_dataset_shape in [(train_dataset_name, train_dataset_type, train_dataset_shape),
                                                                          (finetune_dataset_name, test_dataset_type, finetune_dataset_shape)]:
-
+            if test_dataset_name == 'pretrained':
+                test_dataset_name ='neuroproof'
             ### DEFINE NAMES
             net_cond_name = net_name + '_' + train_dataset_name + '_' + finetune_dataset_name + '_r0' ############ TODO (jk): modified for finetuning-eval
             request_txt_fullpath = os.path.join(request_txt_root, fov_type, net_cond_name + '_teston_' + test_dataset_name + '_' + test_dataset_type + '.pbtxt')
