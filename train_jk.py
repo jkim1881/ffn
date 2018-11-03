@@ -22,15 +22,15 @@ if __name__ == '__main__':
                          'cremi_c']
     dataset_type = 'train' #'val' #'train'
 
-    fov_type = 'traditional_fov'
-    fov_size = [33, 33, 33]
-    deltas = [8, 8, 8]
+    # fov_type = 'traditional_fov'
+    # fov_size = [33, 33, 33]
+    # deltas = [8, 8, 8]
     # fov_type = 'flat_fov'
     # fov_size = [41, 41, 21]
     # deltas = [10, 10, 5]
-    # fov_type = 'wide_fov'
-    # fov_size = [57, 57, 13]
-    # deltas = [8, 8, 3]
+    fov_type = 'wide_fov'
+    fov_size = [57, 57, 13]
+    deltas = [8, 8, 3]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
