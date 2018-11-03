@@ -133,6 +133,8 @@ if __name__ == '__main__':
                 inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, test_dataset_type)
 
                 ### RUN INFERENCE
+                print('>>>>>>>>>>>>>> Model: ' + net_cond_name)
+                print('>>>>>>>>>>>>>> Tested on: ' + test_dataset_name, ' fov: ' + fov_type)
                 write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, inference_fullpath,
                                      net_name,
                                      fov_size, deltas,
@@ -149,10 +151,8 @@ if __name__ == '__main__':
                 inference_fullpath = os.path.join(inference_fullpath, 'inferred.npz')
                 seg = np.load(inference_fullpath)['segmentation']
                 seg_unique = np.unique(seg)
-
                 arand, precision, recall = metrics.adapted_rand(seg, gt, all_stats=True)
-                print('>>>>>>>>>>>>>> Model: ' + net_cond_name)
-                print('>>>>>>>>>>>>>> Tested on: ' + test_dataset_name, ' fov: ' + fov_type)
+
                 print('gt_unique_lbls: ' + str(gt_unique.shape) + ' seg_unique_lbls: ' + str(seg_unique.shape))
                 print('arand: ' + str(arand) + ', precision: ' + str(precision) + ' recall: ' + str(recall))
                 eval_result_txt = open(os.path.join(ckpt_root, fov_type, net_cond_name, 'eval.txt'), "a")
