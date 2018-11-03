@@ -103,7 +103,7 @@ if __name__ == '__main__':
             if test_dataset_name == 'provided':
                 test_dataset_name ='neuroproof'
 
-            if test_dataset_name == train_dataset_name:
+            if (test_dataset_name == train_dataset_name)|((test_dataset_name=='neuroproof')&(train_dataset_name=='provided')):
                 if not include_self_test:
                     continue
 
