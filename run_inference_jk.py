@@ -10,6 +10,9 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
                          fov_size, deltas,
                          image_mean=128, image_stddev=33):
     # 'validate_request_' + str(validate_jobid) + '.txt'
+    directory = os.path.split(eval_result_txt_fullpath)[0]
+    if os.path.isdie(directory):
+        os.makedirs(directory)
     file = open(request_txt_fullpath,"w")
     file.write('image { \n')
     file.write('  hdf5: "' + hdf_fullpath + ':raw" \n')
@@ -70,7 +73,7 @@ if __name__ == '__main__':
     # deltas = [8, 8, 3]
 
     net_name = 'convstack_3d'
-    train_dataset_name = 'pretrained'
+    train_dataset_name = 'provided'
     train_dataset_shape = [520, 520, 520]
     train_dataset_type = 'train'
 
@@ -96,7 +99,7 @@ if __name__ == '__main__':
 
         for test_dataset_name, test_dataset_type, test_dataset_shape in [(train_dataset_name, train_dataset_type, train_dataset_shape),
                                                                          (finetune_dataset_name, test_dataset_type, finetune_dataset_shape)]:
-            if test_dataset_name == 'pretrained':
+            if test_dataset_name == 'provided':
                 test_dataset_name ='neuroproof'
             ### DEFINE NAMES
             net_cond_name = net_name + '_' + train_dataset_name + '_' + finetune_dataset_name + '_r0' ############ TODO (jk): modified for finetuning-eval
@@ -106,7 +109,7 @@ if __name__ == '__main__':
 
             ### OPEN TEXT
             eval_result_txt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'eval_on_'+ test_dataset_name + '.txt')
-            if os.exists(eval_result_txt_fullpath):
+            if os.path.isfile(eval_result_txt_fullpath):
                 eval_result_txt = open(eval_result_txt_fullpath, "a")
             else:
                 eval_result_txt = open(eval_result_txt_fullpath, "w")
