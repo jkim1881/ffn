@@ -527,7 +527,8 @@ class hGRU(object):
             gain_b_bias = tf.get_variable("gain_b_bias")
             horizontal_kernels = tf.get_variable("W")
         ## COMPUTE g1a
-        g1a_intermediate = tf.nn.conv3d(x, gain_a_kernels_mlp) + gain_a_bias
+        g1a_intermediate = tf.nn.conv3d(x, gain_a_kernels_mlp,
+                                        padding='SAME', strides=[1, 1, 1, 1, 1]) + gain_a_bias
         if self.gate_bn:
             g1a_intermediate = tf.contrib.layers.batch_norm(
                 inputs=g1a_intermediate,
@@ -542,7 +543,8 @@ class hGRU(object):
         g1a = self.gate_nl(g1a_intermediate)
         h2_gated = h2*g1a
         ## COMPUTE g1b
-        g1b_intermediate = tf.nn.conv3d(h2, gain_b_kernels_mlp) + gain_b_bias
+        g1b_intermediate = tf.nn.conv3d(h2, gain_b_kernels_mlp,
+                                        padding='SAME', strides=[1, 1, 1, 1, 1]) + gain_b_bias
         if self.gate_bn:
             g1b_intermediate = tf.contrib.layers.batch_norm(
                 inputs=g1b_intermediate,
@@ -572,7 +574,8 @@ class hGRU(object):
             mix_kernels_mlp = tf.get_variable("mix_weights_mlp")
             mix_bias = tf.get_variable("mix_bias")
             horizontal_kernels = tf.get_variable("W")
-        g2_intermediate = tf.nn.conv3d(h1, mix_kernels_mlp) + mix_bias
+        g2_intermediate = tf.nn.conv3d(h1, mix_kernels_mlp,
+                                       padding='SAME', strides=[1, 1, 1, 1, 1]) + mix_bias
         if self.gate_bn:
             g2_intermediate = tf.contrib.layers.batch_norm(
                 inputs=g2_intermediate,
