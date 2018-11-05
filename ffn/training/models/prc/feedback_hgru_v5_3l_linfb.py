@@ -22,6 +22,7 @@ class hGRU(object):
             h_repeat=2,
             hgru_dhw=[[3, 7, 7], [3, 5, 5]],
             hgru_k=[24, 32],
+            hgru_symmetric_weights=True,
             ff_conv_dhw=[[1, 5, 5], [2, 5, 5], [2, 3, 3]],
             ff_conv_k=[32, 48, 64],
             ff_kpool_multiplier=2,
@@ -33,6 +34,7 @@ class hGRU(object):
             fb_k=[8, 16, 32],
             padding='SAME',
             batch_norm=True,
+            bn_reuse=True,
             gate_bn=True,
             aux=None,
             train=True):
@@ -46,7 +48,12 @@ class hGRU(object):
         self.fb_mode = fb_mode # 'transpose', 'replicate_n_transpose'
         self.h_repeat = h_repeat
         self.batch_norm=batch_norm
+        if self.bn_reuse:
+            self.scope_reuse = tf.AUTO_REUSE
+        else:
+            self.scope_reuse = None
         self.gate_bn = gate_bn
+        self.symmetric_weights= hgru_symmetric_weights
 
         # Sort through and assign the auxilliary variables
         default_vars = self.defaults()
