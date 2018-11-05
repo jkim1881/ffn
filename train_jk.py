@@ -36,6 +36,7 @@ if __name__ == '__main__':
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     load_from_ckpt = os.path.join(ckpt_root, net_name_obj+ '_neuroproof_r0', 'model.ckpt-68101')
+    net_name += '_neuroproof'
     #load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
 
