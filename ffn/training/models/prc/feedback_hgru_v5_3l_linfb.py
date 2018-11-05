@@ -48,6 +48,7 @@ class hGRU(object):
         self.fb_mode = fb_mode # 'transpose', 'replicate_n_transpose'
         self.h_repeat = h_repeat
         self.batch_norm=batch_norm
+        self.bn_reuse = bn_reuse
         if self.bn_reuse:
             self.scope_reuse = tf.AUTO_REUSE
         else:
