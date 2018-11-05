@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
 
     num_model_repeats = 1
-    max_steps = 64*100000/batch_size 
+    max_steps = 16*100000 #64*100000/batch_size 
     optimizer = 'adam' #'adam' #'sgd'
     image_mean = 128
     image_stddev = 33
