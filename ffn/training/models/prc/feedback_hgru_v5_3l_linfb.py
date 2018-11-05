@@ -750,7 +750,7 @@ class hGRU(object):
             running_max = ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
             for i in range(self.ff_kpool_multiplier-1):
                 low_k += self.ff_conv_k[idx]
-                running_max = tf.math.maximum(running_max, ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]])
+                running_max = tf.maximum(running_max, ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]])
             ff0 = running_max
         ff0 = tf.nn.bias_add(
             ff0,
