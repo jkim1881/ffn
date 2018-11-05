@@ -877,13 +877,13 @@ class hGRU(object):
             spot_weights = tf.get_variable("spot_weights")
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
-        ff1 = self.generic_combine(
-            ff0,
+        ff2 = self.generic_combine(
             ff1,
+            ff2,
             spot_weights)
         if self.batch_norm:
-            ff1 = tf.contrib.layers.batch_norm(
-                inputs=ff1,
+            ff2 = tf.contrib.layers.batch_norm(
+                inputs=ff2,
                 scale=True,
                 center=True,
                 fused=True,
