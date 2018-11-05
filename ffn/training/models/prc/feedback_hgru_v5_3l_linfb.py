@@ -708,9 +708,9 @@ class hGRU(object):
         # FEEDFORWARD 0
         idx = 0
         with tf.variable_scope('ff_%s' % idx, reuse=True):
-            spot_weights_x = tf.get_variable("spot_x")
-            spot_weights_y = tf.get_variable("spot_y")
-            spot_weights_xy = tf.get_variable("spot_xy")
+            spot_weights_x = tf.get_variable("spot_weights_x")
+            spot_weights_y = tf.get_variable("spot_weights_y")
+            spot_weights_xy = tf.get_variable("spot_weights_xy")
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
         ff0 = self.generic_combine(
@@ -799,9 +799,9 @@ class hGRU(object):
         # FEEDFORWARD 1
         idx = 1
         with tf.variable_scope('ff_%s' % idx, reuse=True):
-            spot_weights_x = tf.get_variable("spot_x")
-            spot_weights_y = tf.get_variable("spot_y")
-            spot_weights_xy = tf.get_variable("spot_xy")
+            spot_weights_x = tf.get_variable("spot_weights_x")
+            spot_weights_y = tf.get_variable("spot_weights_y")
+            spot_weights_xy = tf.get_variable("spot_weights_xy")
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
         ff1 = self.generic_combine(
@@ -889,9 +889,9 @@ class hGRU(object):
         # FEEDFORWARD 2
         idx = 2
         with tf.variable_scope('ff_%s' % idx, reuse=True):
-            spot_weights_x = tf.get_variable("spot_x")
-            spot_weights_y = tf.get_variable("spot_y")
-            spot_weights_xy = tf.get_variable("spot_xy")
+            spot_weights_x = tf.get_variable("spot_weights_x")
+            spot_weights_y = tf.get_variable("spot_weights_y")
+            spot_weights_xy = tf.get_variable("spot_weights_xy")
             weights = tf.get_variable("weights")
             bias = tf.get_variable("bias")
         ff2 = self.generic_combine(
