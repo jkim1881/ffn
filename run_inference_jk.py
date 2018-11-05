@@ -36,19 +36,16 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
 
 
 def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name):
-    if checkpoint_num >0:
-        return checkpoint_num
-    else:
-        raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
-        items = []
-        for item in raw_items:
-            if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
-                items.append(int(item.split('.')[1].split('-')[1]))
-        items.sort()
-        interval = len(items)/10
+    raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
+    items = []
+    for item in raw_items:
+        if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
+            items.append(int(item.split('.')[1].split('-')[1]))
+    items.sort()
+    interval = len(items)/10
 
-        checkpoint_num = items[checkpoint_num*interval - 1]
-        return checkpoint_num
+    checkpoint_num = items[checkpoint_num*interval]
+    return checkpoint_num
 
 
 if __name__ == '__main__':
@@ -148,14 +145,14 @@ if __name__ == '__main__':
                 data = h5py.File(gt_fullpath, 'r')
                 gt = np.array(data['stack'])
                 gt_unique = np.unique(gt)
-                inference_fullpath = os.path.join(inference_fullpath, 'inferred.npz')
+                inference_fullpath = os.path.join(inference_fullpath, '0/0/seg-0_0_0.npz')
                 seg = np.load(inference_fullpath)['segmentation']
                 seg_unique = np.unique(seg)
                 arand, precision, recall = metrics.adapted_rand(seg, gt, all_stats=True)
 
                 print('gt_unique_lbls: ' + str(gt_unique.shape) + ' seg_unique_lbls: ' + str(seg_unique.shape))
                 print('arand: ' + str(arand) + ', precision: ' + str(precision) + ' recall: ' + str(recall))
-                eval_result_txt = open(os.path.join(ckpt_root, fov_type, net_cond_name, 'eval.txt'), "a")
+                eval_result_txt = open(eval_result_txt_fullpath, "a")
                 eval_result_txt.write('>> CKPT: ' + str(checkpoint_num))
                 eval_result_txt.write("\n")
                 eval_result_txt.write('>>>> arand: ' + str(arand) + ', precision: ' + str(precision) + ', recall: ' + str(recall))
