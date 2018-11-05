@@ -747,10 +747,10 @@ class hGRU(object):
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
-            running_max = ff0[:,:,:,:,low_k:low_k+self.conv_k[idx]]
+            running_max = ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
             for i in range(self.ff_kpool_multiplier)-1:
-                low_k += self.conv_k[idx]
-                running_max = tf.math.maximum(running_max, ff0[:,:,:,:,low_k:low_k+self.conv_k[idx]])
+                low_k += self.ff_conv_k[idx]
+                running_max = tf.math.maximum(running_max, ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]])
             ff0 = running_max
         ff0 = tf.nn.bias_add(
             ff0,
@@ -838,10 +838,10 @@ class hGRU(object):
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
-            running_max = ff1[:,:,:,:,low_k:low_k+self.conv_k[idx]]
+            running_max = ff1[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
             for i in range(self.ff_kpool_multiplier)-1:
-                low_k += self.conv_k[idx]
-                running_max = tf.math.maximum(running_max, ff1[:,:,:,:,low_k:low_k+self.conv_k[idx]])
+                low_k += self.ff_conv_k[idx]
+                running_max = tf.math.maximum(running_max, ff1[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]])
             ff1 = running_max
         ff1 = tf.nn.bias_add(
             ff1,
@@ -927,10 +927,10 @@ class hGRU(object):
                 is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
-            running_max = ff2[:,:,:,:,low_k:low_k+self.conv_k[idx]]
+            running_max = ff2[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
             for i in range(self.ff_kpool_multiplier)-1:
-                low_k += self.conv_k[idx]
-                running_max = tf.math.maximum(running_max, ff2[:,:,:,:,low_k:low_k+self.conv_k[idx]])
+                low_k += self.ff_conv_k[idx]
+                running_max = tf.math.maximum(running_max, ff2[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]])
             ff2 = running_max
         ff2 = tf.nn.bias_add(
             ff2,
