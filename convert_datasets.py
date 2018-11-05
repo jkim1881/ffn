@@ -45,6 +45,8 @@ print('after re-labeling: ' + str(len(np.unique(instances_new))))
 # [:192,:192,:] 1/2 reduction
 # [:192,:192,:192] 1/4 reduction
 # [96:192,:192,:192] 1/8 reduction
+# [96:192,96:192,:192] 1/16 reduction
+# [96:192,96:192,96:192] 1/32 reduction
 write_dir = os.path.join(out_root,name,'train')
 if not os.path.isdir(write_dir):
 	os.makedirs(write_dir)
@@ -96,6 +98,8 @@ print('after re-labeling: ' + str(len(np.unique(instances_new))))
 # [:,:512,:512] 1/2 reduction
 # [:,256:512,:512] 1/4 reduction
 # [:,256:512,256:512] 1/8 reduction
+# [:50,256:512,256:512] 1/16 reduction
+# [:50,384:512,256:512] 1/32 reduction
 write_dir = os.path.join(out_root,name,'train')
 if not os.path.isdir(write_dir):
 	os.makedirs(write_dir)
@@ -145,6 +149,8 @@ for (file, name) in zip(files, names):
 	# [:,:625,:625] 1/2 reduction
 	# [:,312:625,:625] 1/4 reduction
 	# [:,312:625,312:625] 1/8 reduction
+	# [:62,312:625,312:625] 1/16 reduction
+	# [:62,468:625,312:625] 1/32 reduction
 	write_dir = os.path.join(out_root,name,'train')
 	if not os.path.isdir(write_dir):
 		os.makedirs(write_dir)
