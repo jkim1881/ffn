@@ -153,43 +153,41 @@ class hGRU(object):
         for idx, (higher_feats, ff_dhw) in enumerate(
                 zip(self.ff_conv_k, self.ff_conv_dhw)):
             with tf.variable_scope('ff_%s' % idx):
-                if idx < len(self.ff_conv_dhw)-1:
-                    # last conv layer doesn't have spot weights
-                    setattr(
-                        self,
-                        'ff_%s_spot_weights_x' % idx,
-                        tf.get_variable(
-                            name='spot_weights_x',
+                setattr(
+                    self,
+                    'ff_%s_spot_weights_x' % idx,
+                    tf.get_variable(
+                        name='spot_weights_x',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1,1] + [lower_feats],
                             dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=[1,1,1,1] + [lower_feats],
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer),
-                            trainable=True))
-                    # last conv layer doesn't have spot weights
-                    setattr(
-                        self,
-                        'ff_%s_spot_weights_y' % idx,
-                        tf.get_variable(
-                            name='spot_weights_y',
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                # last conv layer doesn't have spot weights
+                setattr(
+                    self,
+                    'ff_%s_spot_weights_y' % idx,
+                    tf.get_variable(
+                        name='spot_weights_y',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1,1] + [lower_feats],
                             dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=[1,1,1,1] + [lower_feats],
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer),
-                            trainable=True))
-                    # last conv layer doesn't have spot weights
-                    setattr(
-                        self,
-                        'ff_%s_spot_weights_xy' % idx,
-                        tf.get_variable(
-                            name='spot_weights_xy',
+                            uniform=self.normal_initializer),
+                        trainable=True))
+                # last conv layer doesn't have spot weights
+                setattr(
+                    self,
+                    'ff_%s_spot_weights_xy' % idx,
+                    tf.get_variable(
+                        name='spot_weights_xy',
+                        dtype=self.dtype,
+                        initializer=initialization.xavier_initializer(
+                            shape=[1,1,1,1] + [lower_feats],
                             dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=[1,1,1,1] + [lower_feats],
-                                dtype=self.dtype,
-                                uniform=self.normal_initializer),
-                            trainable=True))
+                            uniform=self.normal_initializer),
+                        trainable=True))
                 setattr(
                     self,
                     'ff_%s_weights' % idx,
