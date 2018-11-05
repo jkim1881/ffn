@@ -37,7 +37,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
 
   from .prc import feedback_hgru_v5_3l_linfb
   with tf.variable_scope('recurrent'):
-      hgru_net = feedback_hgru_v5_3l.hGRU(layer_name='hgru_net',
+      hgru_net = feedback_hgru_v5_3l_linfb.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
                                         timesteps=3,
                                         h_repeat=2,
