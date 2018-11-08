@@ -65,6 +65,11 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
       'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
   }
+  finalbn_param_trainable = {
+      'moving_mean': False,
+      'moving_variance': False,
+      'gamma': True
+  }
   net = tf.contrib.layers.batch_norm(
       inputs=net,
       scale=True,
@@ -73,7 +78,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       renorm=False,
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
-      is_training=True)
+      is_training=finalbn_param_trainable)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom1',
                                     num_outputs=in_k,
@@ -87,7 +92,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       renorm=False,
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
-      is_training=True)
+      is_training=finalbn_param_trainable)
   logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
