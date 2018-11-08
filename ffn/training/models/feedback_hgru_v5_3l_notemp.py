@@ -60,12 +60,35 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         train=True)
 
       net = hgru_net.build(x, input_seed)
-
+  finalbn_param_initializer = {
+      'moving_mean': tf.constant_initializer(0., dtype=tf.float32),
+      'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
+      'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
+  }
+  net = tf.contrib.layers.batch_norm(
+      inputs=net,
+      scale=True,
+      center=False,
+      fused=True,
+      renorm=False,
+      param_initializers=finalbn_param_initializer,
+      updates_collections=None,
+      is_training=True)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom1',
                                     num_outputs=in_k,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
+  logits = tf.contrib.layers.batch_norm(
+      inputs=logits,
+      scale=True,
+      center=False,
+      fused=True,
+      renorm=False,
+      param_initializers=finalbn_param_initializer,
+      updates_collections=None,
+      is_training=True)
+  logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
                                     num_outputs=1,
