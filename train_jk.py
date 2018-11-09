@@ -11,8 +11,8 @@ if __name__ == '__main__':
     i_machine = int(sys.argv[2])
     batch_size = int(sys.argv[3])
 
-    script_root = '/home/drew/ffn'
-    net_name_obj = 'feedback_hgru_v5_3l'#'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    script_root = '/home/jk/PycharmProjects/ffn'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp'#'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     dataset_name_list = ['neuroproof',
                          'berson',
@@ -35,8 +35,9 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
-    load_from_ckpt = os.path.join(ckpt_root, net_name_obj+ '_neuroproof_r0', 'model.ckpt-68101')
-    net_name += '_neuroproof'
+    load_from_ckpt='None'
+    #load_from_ckpt = os.path.join(ckpt_root, net_name_obj+ '_cremi_a_cremi_c_r0', 'model.ckpt-79999')
+    net_name += '_cremi_a'
     #load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
 
