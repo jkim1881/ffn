@@ -726,10 +726,10 @@ def train_ffn(model_cls, **model_kwargs):
 
             # TODO (jk): text log of learning curve
             learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
-            precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)
-            recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)
+            precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
+            recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
             accuracy = (eval_tracker.tp + eval_tracker.tn) / (
-            eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)
+            eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
             learning_curve_txt.write('step_' + str(step) +
                                    '_precision_' + str(precision) +
                                    '_recall_' + str(recall) +
