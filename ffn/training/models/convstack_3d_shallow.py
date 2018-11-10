@@ -27,7 +27,7 @@ from .. import model
 # TruncatedNormalInitializedVariable with stddev = 0.01.
 def _predict_object_mask(net, depth=2):
   """Computes single-object mask prediction."""
-  depth = 3
+  depth = 4
   conv = tf.contrib.layers.conv3d
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
                                       kernel_size=(3, 3, 3),
