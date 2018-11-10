@@ -267,6 +267,7 @@ class EvalTracker(object):
         summary.tag += '/%d' % i
 
     summaries = (
+        # TODO(jk): removed image summary.
         # list(self.images_xy) + list(self.images_xz) + list(self.images_yz) + [
         [
             tf.Summary.Value(tag='masked_voxel_fraction',

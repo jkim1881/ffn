@@ -24,7 +24,7 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(input_patches, input_seed, depth=9):
+def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
   in_k = 14
@@ -57,7 +57,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         bn_reuse=False, ## TRUE NOT COMPLETELY IMPLEMENTED
                                         gate_bn=True,
                                         aux=None,
-                                        train=True)
+                                        train=is_training)
 
       net = hgru_net.build(x, input_seed)
   finalbn_param_initializer = {
@@ -68,7 +68,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   finalbn_param_trainable = {
       'moving_mean': False,
       'moving_variance': False,
-      'gamma': True
+      'gamma': is_training
   }
   net = tf.contrib.layers.batch_norm(
       inputs=net,
@@ -131,10 +131,11 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, fov_size=None, deltas=None, batch_size=None, depth=9):
+  def __init__(self, is_training=True, fov_size=None, deltas=None, batch_size=None, depth=9):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
+    self.is_training = is_training
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -145,7 +146,7 @@ class ConvStack3DFFNModel(model.FFNModel):
           name='patches')
 
     with tf.variable_scope('seed_update', reuse=False):
-      logit_update = _predict_object_mask(self.input_patches, self.input_seed, self.depth)
+      logit_update = _predict_object_mask(self.input_patches, self.input_seed, self.depth, is_training=self.is_training)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 

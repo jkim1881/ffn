@@ -24,7 +24,7 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(input_patches, input_seed, depth=9):
+def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
   in_k = 14
@@ -57,7 +57,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
                                         bn_reuse=False, ## TRUE NOT COMPLETELY IMPLEMENTED
                                         gate_bn=True,
                                         aux=None,
-                                        train=True)
+                                        train=is_training)
 
       net = hgru_net.build(x, input_seed)
   finalbn_param_initializer = {
@@ -68,7 +68,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   finalbn_param_trainable = {
       'moving_mean': False,
       'moving_variance': False,
-      'gamma': True
+      'gamma': is_training
   }
   net = tf.contrib.layers.batch_norm(
       inputs=net,

@@ -898,6 +898,7 @@ class Runner(object):
       args = {}
 
     args['batch_size'] = batch_size
+    args['is_training'] = False
     self.model = model_class(**args)
 
     if exec_cls is None:
