@@ -39,8 +39,8 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_2l.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
-                                        timesteps=3,
-                                        h_repeat=2,
+                                        timesteps=8, #3,
+                                        h_repeat=1, #2,
                                         hgru_dhw=[[1, 7, 7], [3, 5, 5]],
                                         hgru_k=[in_k, ff_k[0]],
                                         hgru_symmetric_weights=True,
