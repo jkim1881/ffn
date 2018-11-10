@@ -121,8 +121,7 @@ if __name__ == '__main__':
             eval_result_txt.close()
 
             current_best_arand = 99.
-            ickpt = 0
-            while (ickpt < 10):
+            for ickpt in [0,1,2,3,4,5,6,7,8,9]:
 
                 ### DEFINE NAMES
                 checkpoint_num = find_checkpoint(-ickpt, ckpt_root, fov_type, net_cond_name)
@@ -159,7 +158,6 @@ if __name__ == '__main__':
                 eval_result_txt.write("\n")
                 eval_result_txt.close()
 
-                ickpt += 1
                 if arand < current_best_arand:
                     current_best_arand = arand
 
