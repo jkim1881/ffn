@@ -58,7 +58,7 @@ def _predict_object_mask(net, depth=9):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, fov_size=None, deltas=None, batch_size=None, depth=9):
+  def __init__(self, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
