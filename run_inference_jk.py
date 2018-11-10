@@ -35,14 +35,14 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.close()
 
 
-def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name):
+def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
     raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
     items = []
     for item in raw_items:
         if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
             items.append(int(item.split('.')[1].split('-')[1]))
     items.sort()
-    interval = len(items)/10
+    interval = len(items)/factor
 
     checkpoint_num = items[checkpoint_num*interval]
     return checkpoint_num
@@ -121,10 +121,11 @@ if __name__ == '__main__':
             eval_result_txt.close()
 
             current_best_arand = 99.
-            for ickpt in [0,1,2,3,4,5,6,7,8,9]:
+            for ickpt in [0,1,2,3,16,17,18,19]:
+                factor = 20
 
                 ### DEFINE NAMES
-                checkpoint_num = find_checkpoint(-ickpt, ckpt_root, fov_type, net_cond_name)
+                checkpoint_num = find_checkpoint(ickpt, ckpt_root, fov_type, net_cond_name, factor)
                 ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
                 inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, test_dataset_type)
 
