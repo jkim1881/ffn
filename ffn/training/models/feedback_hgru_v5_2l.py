@@ -28,29 +28,29 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
   """Computes single-object mask prediction."""
 
   in_k = 14
-  ff_k = [18, 18, 18]
+  ff_k = [18, 18]
   x = tf.contrib.layers.conv3d(tf.concat([input_patches], axis=4),
                                  scope='conv0_a',
                                  num_outputs=in_k,
                                  kernel_size=(1, 7, 7),
                                  padding='SAME')
 
-  from .prc import feedback_hgru_v5_3l_linfb
+  from .prc import feedback_hgru_v5_2l
   with tf.variable_scope('recurrent'):
-      hgru_net = feedback_hgru_v5_3l_linfb.hGRU(layer_name='hgru_net',
+      hgru_net = feedback_hgru_v5_2l.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
-                                        timesteps=8,
-                                        h_repeat=1,
-                                        hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
-                                        hgru_k=[in_k, ff_k[0], ff_k[1], ff_k[1], ff_k[0], in_k],
+                                        timesteps=3,
+                                        h_repeat=2,
+                                        hgru_dhw=[[1, 7, 7], [3, 5, 5]],
+                                        hgru_k=[in_k, ff_k[0]],
                                         hgru_symmetric_weights=True,
-                                        ff_conv_dhw=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
+                                        ff_conv_dhw=[[1, 7, 7], [1, 5, 5]],
                                         ff_conv_k=ff_k,
                                         ff_kpool_multiplier=2,
-                                        ff_pool_dhw=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
-                                        ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
+                                        ff_pool_dhw=[[1, 2, 2], [2, 2, 2]],
+                                        ff_pool_strides=[[1, 2, 2], [2, 2, 2]],
                                         fb_mode='transpose',
-                                        fb_dhw=[[1, 8, 8], [2, 6, 6], [1, 6, 6]],
+                                        fb_dhw=[[1, 8, 8], [2, 6, 6]],
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
@@ -93,7 +93,6 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
       is_training=finalbn_param_trainable)
-  logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
                                     num_outputs=1,

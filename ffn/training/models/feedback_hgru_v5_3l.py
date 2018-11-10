@@ -93,6 +93,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9):
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
       is_training=finalbn_param_trainable)
+  logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
                                     num_outputs=1,
