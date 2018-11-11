@@ -35,6 +35,16 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.close()
 
 
+def find_all_ckpts(ckpt_root, fov_type, net_cond_name):
+    raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
+    items = []
+    for item in raw_items:
+        if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
+            items.append(int(item.split('.')[1].split('-')[1]))
+    items.sort()
+    return items
+
+
 def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
     raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
     items = []
@@ -71,6 +81,10 @@ if __name__ == '__main__':
 
     net_name = 'convstack_3d'
     train_dataset_name = 'provided'
+    min_ckpt = None
+    max_ckpt = None
+    ckpt_steps = 5000  ## <500 for
+
     train_dataset_shape = [520, 520, 520]
     train_dataset_type = 'train'
 
@@ -121,11 +135,36 @@ if __name__ == '__main__':
             eval_result_txt.close()
 
             current_best_arand = 99.
-            for ickpt in [0,1,2,3,16,17,18,19]:
-                factor = 20
+
+            ## Get list of ckpts to load
+            print('>>>>> TRIMMING CKPS')
+            ckpt_list = find_all_ckpts(ckpt_root, fov_type, net_cond_name)
+            if min_ckpt != None:
+                for ckpt in ckpt_list:
+                    if ckpt < min_ckpt:
+                        ckpt_list.remove(ckpt)
+            if max_ckpt != None:
+                for ckpt in ckpt_list:
+                    if ckpt > max_ckpt:
+                        ckpt_list.remove(ckpt)
+            if ckpt_steps<500:
+                interval = len(ckpt_list)/ckpt_steps
+                for i, ckpt in enumerate(ckpt_list):
+                    if i % interval != 0:
+                        ckpt_list.remove(ckpt)
+            else:
+                interval = ckpt_steps
+                accumulator = -1
+                for i, ckpt in enumerate(ckpt_list):
+                    if ckpt / interval >= accumulator:
+                        accumulator += 1
+                    else:
+                        ckpt_list.remove(ckpt)
+            print('>>>>> DONE.')
+            print('>>>>> CKPTS :: '+ str(ckpt_list))
+            for checkpoint_num in ckpt_list:
 
                 ### DEFINE NAMES
-                checkpoint_num = find_checkpoint(ickpt, ckpt_root, fov_type, net_cond_name, factor)
                 ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
                 inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, test_dataset_type)
 
