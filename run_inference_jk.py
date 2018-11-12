@@ -162,7 +162,8 @@ if __name__ == '__main__':
                     else:
                         to_remove.append(ckpt)
             for ckpt in to_remove:
-                ckpt_list.remove(ckpt)
+                if ckpt in ckpt_list:
+                    ckpt_list.remove(ckpt)
             print('>>>>> DONE.')
             print('>>>>> CKPTS :: '+ str(ckpt_list))
             for checkpoint_num in ckpt_list:
