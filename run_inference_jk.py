@@ -139,19 +139,20 @@ if __name__ == '__main__':
             ## Get list of ckpts to load
             print('>>>>> TRIMMING CKPS')
             ckpt_list = find_all_ckpts(ckpt_root, fov_type, net_cond_name)
+            to_remove = []
             if min_ckpt != None:
                 for ckpt in ckpt_list:
                     if ckpt < min_ckpt:
-                        ckpt_list.remove(ckpt)
+                        to_remove.append(ckpt)
             if max_ckpt != None:
                 for ckpt in ckpt_list:
                     if ckpt > max_ckpt:
-                        ckpt_list.remove(ckpt)
+                        to_remove.append(ckpt)
             if ckpt_steps<500:
                 interval = len(ckpt_list)/ckpt_steps
                 for i, ckpt in enumerate(ckpt_list):
                     if i % interval != 0:
-                        ckpt_list.remove(ckpt)
+                        to_remove.append(ckpt)
             else:
                 interval = ckpt_steps
                 accumulator = -1
@@ -159,7 +160,9 @@ if __name__ == '__main__':
                     if ckpt / interval >= accumulator:
                         accumulator += 1
                     else:
-                        ckpt_list.remove(ckpt)
+                        to_remove.append(ckpt)
+            for ckpt in to_remove:
+                ckpt_list.remove(ckpt)
             print('>>>>> DONE.')
             print('>>>>> CKPTS :: '+ str(ckpt_list))
             for checkpoint_num in ckpt_list:
