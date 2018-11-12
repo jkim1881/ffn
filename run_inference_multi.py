@@ -60,26 +60,23 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    num_machines = int(sys.argv[1])
-    i_machine = int(sys.argv[2])
-
-    script_root = '/home/jk/PycharmProjects/ffn/'
+    script_root = '/home/drew/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
     output_root = '/media/data_cifs/connectomics/ffn_inferred'
 
-    fov_type = 'traditional_fov'
-    fov_size = [33, 33, 33]
-    deltas = [8, 8, 8]
+    # fov_type = 'traditional_fov'
+    # fov_size = [33, 33, 33]
+    # deltas = [8, 8, 8]
     # fov_type = 'flat_fov'
     # fov_size = [41, 41, 21]
     # deltas = [10, 10, 5]
-    # fov_type = 'wide_fov'
-    # fov_size = [57, 57, 13]
-    # deltas = [8, 8, 3]
+    fov_type = 'wide_fov'
+    fov_size = [57, 57, 13]
+    deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d'
+    net_name = 'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
     min_ckpt = None
@@ -89,11 +86,9 @@ if __name__ == '__main__':
     test_dataset_name = 'berson'
     test_dataset_shape = [384, 192, 384]
     test_dataset_type = 'val'  # 'train'
-    include_self_test = True
 
     image_mean = 128
     image_stddev = 33
-
 
 
     ### DEFINE NAMES
