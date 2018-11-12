@@ -107,7 +107,7 @@ if __name__ == '__main__':
     else:
         suffix += '.txt'
 
-        eval_result_txt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'eval_on_'+ test_dataset_name + suffix)
+    eval_result_txt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'eval_on_'+ test_dataset_name + suffix)
     if os.path.isfile(eval_result_txt_fullpath):
         eval_result_txt = open(eval_result_txt_fullpath, "a")
     else:
