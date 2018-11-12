@@ -60,7 +60,7 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/drew/ffn/'
+    script_root = '/home/jk/PycharmProjects/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
@@ -83,8 +83,8 @@ if __name__ == '__main__':
     max_ckpt = 75000
     ckpt_steps = 5000  ## <500 for
 
-    test_dataset_name = 'berson'
-    test_dataset_shape = [384, 192, 384]
+    test_dataset_name = 'cremi_b' #'berson'
+    test_dataset_shape = [1250, 625, 125]# [384, 192, 384]
     test_dataset_type = 'val'  # 'train'
 
     image_mean = 128

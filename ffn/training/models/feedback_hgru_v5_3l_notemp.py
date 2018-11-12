@@ -39,7 +39,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_3l.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
-                                        timesteps=6, #8,
+                                        timesteps=8, #6, #8,
                                         h_repeat=1,
                                         hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],
                                         hgru_k=[in_k, ff_k[0], ff_k[1]],
@@ -125,6 +125,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   hgru_w = int(hgru_w)
   print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'horizontal('+str(hgru_w)+') vertical('+str(ff_fb)+') extras('+str(extras)+')')
   print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'total(' + str(hgru_w+ff_fb+extras) + ')')
+  print('>>>>>>>>>>>>>>>>>>>>>>IS_TRAINING: ' + str(is_training))
   return logits
 
 

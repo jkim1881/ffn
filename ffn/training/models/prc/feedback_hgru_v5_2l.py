@@ -38,6 +38,14 @@ class hGRU(object):
             gate_bn=True,
             aux=None,
             train=True):
+
+        # Sort through and assign the auxilliary variables
+        default_vars = self.defaults()
+        if aux is not None and isinstance(aux, dict):
+            for k, v in aux.iteritems():
+                default_vars[k] = v
+        self.update_params(default_vars)
+
         """Global initializations and settings."""
         self.in_k = num_in_feats
         self.ff_kpool_multiplier=ff_kpool_multiplier
@@ -55,13 +63,6 @@ class hGRU(object):
             self.scope_reuse = None
         self.gate_bn = gate_bn
         self.symmetric_weights= hgru_symmetric_weights
-
-        # Sort through and assign the auxilliary variables
-        default_vars = self.defaults()
-        if aux is not None and isinstance(aux, dict):
-            for k, v in aux.iteritems():
-                default_vars[k] = v
-        self.update_params(default_vars)
 
         # Kernel shapes
         self.ff_conv_dhw = ff_conv_dhw
