@@ -79,8 +79,8 @@ if __name__ == '__main__':
     net_name = 'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
-    min_ckpt = None
-    max_ckpt = None
+    min_ckpt = 0
+    max_ckpt = 75000
     ckpt_steps = 5000  ## <500 for
 
     test_dataset_name = 'berson'
