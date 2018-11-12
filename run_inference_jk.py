@@ -81,12 +81,12 @@ if __name__ == '__main__':
 
     net_name = 'convstack_3d'
     train_dataset_name = 'provided'
+    train_dataset_shape = [520, 520, 520]
+    train_dataset_type = 'train'
+
     min_ckpt = None
     max_ckpt = None
     ckpt_steps = 5000  ## <500 for
-
-    train_dataset_shape = [520, 520, 520]
-    train_dataset_type = 'train'
 
     finetune_dataset_name = ['berson','isbi2013', 'cremi_a','cremi_b','cremi_c']
     finetune_dataset_shape_list = [[384, 192, 384],
