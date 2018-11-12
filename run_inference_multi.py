@@ -60,7 +60,7 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/jk/PycharmProjects/ffn/'
+    script_root = '/home/drew/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
@@ -76,15 +76,15 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
+    net_name = 'feedback_hgru_v5_3l_linfb'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
     min_ckpt = 0
-    max_ckpt = 75000
+    max_ckpt = 90000
     ckpt_steps = 5000  ## <500 for
 
-    test_dataset_name = 'cremi_b' #'berson'
-    test_dataset_shape = [1250, 625, 125]# [384, 192, 384]
+    test_dataset_name = 'berson'
+    test_dataset_shape = [384, 192, 384] #[1250, 625, 125]# [384, 192, 384]
     test_dataset_type = 'val'  # 'train'
 
     image_mean = 128
