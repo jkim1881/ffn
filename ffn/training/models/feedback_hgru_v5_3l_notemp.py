@@ -125,7 +125,6 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   hgru_w = int(hgru_w)
   print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'horizontal('+str(hgru_w)+') vertical('+str(ff_fb)+') extras('+str(extras)+')')
   print('>>>>>>>>>>>>>>>>>>>>>>TRAINABLE VARS: ' + 'total(' + str(hgru_w+ff_fb+extras) + ')')
-  print('>>>>>>>>>>>>>>>>>>>>>>IS_TRAINING: ' + str(is_training))
   return logits
 
 

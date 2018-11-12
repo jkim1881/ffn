@@ -94,7 +94,7 @@ class hGRU(object):
             'moving_variance': None,  # [tf.GraphKeys.UPDATE_OPS],
             'gamma': None
         }
-
+        print('>>>>>>>>>>>>>>>>>>>>>>IS_TRAINING: ' + str(self.train))
     def defaults(self):
         """A dictionary containing defaults for auxilliary variables.
 
