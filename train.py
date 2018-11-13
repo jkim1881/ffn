@@ -555,8 +555,6 @@ def get_example(load_example, eval_tracker, model, get_offsets):
       yield predicted, patches, labels, weights
 
     import matplotlib.pyplot as plt
-    plt.subplot(121);plt.imshow(seed[0,:,:])
-    plt.subplot(122);plt.imshow(full_labels[0,:,:])
     eval_tracker.add_patch(
         full_labels, seed, loss_weights, full_patches, coord, volname, full_patches)
 
