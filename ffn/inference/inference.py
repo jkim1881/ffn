@@ -611,7 +611,7 @@ class Canvas(object):
           continue
 
         # Original seed too weak?
-        if self.seed[pos] < self.options.move_threshold:
+        if self.seed[pos] < 0.7: #self.options.move_threshold:
           # Mark this location as excluded.
           if self.segmentation[pos] == 0:
             self.segmentation[pos] = -1
