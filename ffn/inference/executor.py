@@ -48,8 +48,7 @@ except ImportError:  # for Python 3 compat
 class BatchExecutor(object):
   """Base class for FFN executors."""
 
-  def __init__(self, model, session, counters, batch_size):
-    self.session = session
+  def __init__(self, model , counters, batch_size):
     self.model = model
     self.counters = counters
 
@@ -126,8 +125,8 @@ class ThreadingBatchExecutor(BatchExecutor):
   if the batch size is 1.
   """
 
-  def __init__(self, model, session, counters, batch_size, expected_clients=1):
-    super(ThreadingBatchExecutor, self).__init__(model, session, counters,
+  def __init__(self, model, counters, batch_size, expected_clients=1):
+    super(ThreadingBatchExecutor, self).__init__(model, counters,
                                                  batch_size)
     self._lock = threading.Lock()
     self.outputs = {}  # Will be populated by Queues as clients register.
@@ -215,10 +214,7 @@ class ThreadingBatchExecutor(BatchExecutor):
     """Schedules a single batch for execution."""
     with timer_counter(self.counters, 'executor-inference'):
       try:
-        ret = self.session.run(
-            fetches, {
-                self.model.input_seed: self.input_seed,
-                self.model.input_patches: self.input_image})
+        ret = self.session.run(fetches, {self.model.input_seed: self.input_seed,self.model.input_patches: self.input_image})
       except Exception as e:  # pylint:disable=broad-except
         logging.exception(e)
         # If calling TF didn't work (faulty hardware, misconfiguration, etc),

@@ -9,8 +9,8 @@ if __name__ == '__main__':
 
     batch_size = int(sys.argv[1])
 
-    script_root = '/home/drew/ffn'#'/home/jk/PycharmProjects/ffn'# '/home/drew/ffn'
-    net_name_obj = 'feedback_hgru_v5_2l' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    script_root = '/home/jk/PycharmProjects/ffn'# '/home/drew/ffn'
+    net_name_obj = 'convstack_3d_shallow' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     dataset_name_list = ['neuroproof',
                          'isbi2013',

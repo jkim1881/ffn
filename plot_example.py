@@ -11,7 +11,7 @@ if __name__ == '__main__':
     test_dataset_name = 'berson'
     dataset_type = 'val'
     idx = [50, 100, 150, 200, 342]
-    cond_name = 'feedback_hgru_v5_3l_linfb_allbutberson_r0_50191' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
+    cond_name = 'feedback_hgru_v5_3l_notemp_allbutberson_r0_55125' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
 
     # dataset_shape_list = [[250, 250, 250],
     #                       [384, 384, 300],
@@ -40,6 +40,9 @@ if __name__ == '__main__':
     import skimage.feature
     import skimage.measure
     import skimage.morphology 
+
+    print('mean ='+ str(np.mean(volume.flatten())))
+    print('std ='+str(np.std(volume.flatten())))
 
     i=0
     for iz in idx:

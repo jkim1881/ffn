@@ -618,7 +618,7 @@ def save_flags():
           f.write('%s\n' % flag.serialize())
 
 
-def train_ffn(model_cls, **model_kwargs):
+def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
   with tf.Graph().as_default():
     with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
       # The constructor might define TF ops/placeholders, so it is important
@@ -637,127 +637,131 @@ def train_ffn(model_cls, **model_kwargs):
       summary_writer = None
       saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
       scaffold = tf.train.Scaffold(saver=saver)
-      with tf.train.MonitoredTrainingSession(
+      if save_ckpt is False:
+          secs = 999999
+      else:
+          secs = 200
+      sess =  tf.train.MonitoredTrainingSession(
           master=FLAGS.master,
           is_chief=(FLAGS.task == 0),
           save_summaries_steps=None,
-          save_checkpoint_secs=200,#save_checkpoint_steps=10000/FLAGS.batch_size,
+          save_checkpoint_secs=secs,#save_checkpoint_steps=10000/FLAGS.batch_size,
           config=tf.ConfigProto(
               log_device_placement=False, allow_soft_placement=True),
           checkpoint_dir=FLAGS.train_dir,
-          scaffold=scaffold) as sess:
+          scaffold=scaffold)
 
-        eval_tracker.sess = sess
+      eval_tracker.sess = sess
 
-        # TODO (jk): load from ckpt
-        if FLAGS.load_from_ckpt != 'None':
-          logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-          model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
-          logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
+      # TODO (jk): load from ckpt
+      if FLAGS.load_from_ckpt != 'None':
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
+        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
-        step = int(sess.run(model.global_step))
-        if FLAGS.load_from_ckpt != 'None':
-          #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
-          FLAGS.max_steps += step
-          logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from '+str(step))
+      step = int(sess.run(model.global_step))
+      if FLAGS.load_from_ckpt != 'None':
+        #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
+        FLAGS.max_steps += step
+        logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from '+str(step))
 
-        if FLAGS.task > 0:
-          # To avoid early instabilities when using multiple replicas, we use
-          # a launch schedule where new replicas are brought online gradually.
-          logging.info('Delaying replica start.')
-          while step < FLAGS.replica_step_delay * FLAGS.task:
-            time.sleep(5.0)
-            step = int(sess.run(model.global_step))
+      if FLAGS.task > 0:
+        # To avoid early instabilities when using multiple replicas, we use
+        # a launch schedule where new replicas are brought online gradually.
+        logging.info('Delaying replica start.')
+        while step < FLAGS.replica_step_delay * FLAGS.task:
+          time.sleep(5.0)
+          step = int(sess.run(model.global_step))
+      else:
+        summary_writer = tf.summary.FileWriterCache.get(FLAGS.train_dir)
+        summary_writer.add_session_log(
+            tf.summary.SessionLog(status=tf.summary.SessionLog.START), step)
+
+      fov_shifts = list(model.shifts)  # x, y, z
+      if FLAGS.shuffle_moves:
+        random.shuffle(fov_shifts)
+
+      policy_map = {
+          'fixed': partial(fixed_offsets, fov_shifts=fov_shifts),
+          'max_pred_moves': max_pred_offsets
+      }
+      batch_it = get_batch(lambda: sess.run(load_data_ops),
+                           eval_tracker, model, FLAGS.batch_size,
+                           policy_map[FLAGS.fov_policy])
+
+      t_last = time.time()
+
+      # TODO (jk): text log of learning curve. refresh file.
+      learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "w")
+      learning_curve_txt.close()
+
+      while not sess.should_stop() and step < FLAGS.max_steps:
+        if (step % 10 == 0) & (step > 0):
+          # TODO (jk): text log of learning curve. refresh file.
+          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+                   ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
+                   ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)))
+
+        # Run summaries periodically.
+        # TODO (jk): ITERATION-BASED SUMMARY
+        if (step % 100 == 0) & (step > 0):
+            summ_op = merge_summaries_op
         else:
-          summary_writer = tf.summary.FileWriterCache.get(FLAGS.train_dir)
-          summary_writer.add_session_log(
-              tf.summary.SessionLog(status=tf.summary.SessionLog.START), step)
+            summ_op = None
 
-        fov_shifts = list(model.shifts)  # x, y, z
-        if FLAGS.shuffle_moves:
-          random.shuffle(fov_shifts)
+        t_curr = time.time()
 
-        policy_map = {
-            'fixed': partial(fixed_offsets, fov_shifts=fov_shifts),
-            'max_pred_moves': max_pred_offsets
-        }
-        batch_it = get_batch(lambda: sess.run(load_data_ops),
-                             eval_tracker, model, FLAGS.batch_size,
-                             policy_map[FLAGS.fov_policy])
+        seed, patches, labels, weights = next(batch_it)
+        # TODO (jk): added an item to set offset_label off according to old version
+        updated_seed, step, summ = run_training_step(
+            sess, model, summ_op,
+            feed_dict={
+                model.loss_weights: weights,
+                model.labels: labels,
+                model.offset_label: 'off',
+                model.input_patches: patches,
+                model.input_seed: seed,
+            })
 
-        t_last = time.time()
+        # Save prediction results in the original seed array so that
+        # they can be used in subsequent steps.
+        mask.update_at(seed, (0, 0, 0), updated_seed)
 
-        # TODO (jk): text log of learning curve. refresh file.
-        learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "w")
-        learning_curve_txt.close()
+        # Record summaries.
+        if summ is not None:
 
-        while not sess.should_stop() and step < FLAGS.max_steps:
-          if (step % 10 == 0) & (step > 0):
-            # TODO (jk): text log of learning curve. refresh file.
-            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
-                     ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
-                     ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)))
-
-          # Run summaries periodically.
-          # TODO (jk): ITERATION-BASED SUMMARY
-          if (step % 100 == 0) & (step > 0):
-              summ_op = merge_summaries_op
-          else:
-              summ_op = None
-
-          t_curr = time.time()
-
-          seed, patches, labels, weights = next(batch_it)
-          # TODO (jk): added an item to set offset_label off according to old version
-          updated_seed, step, summ = run_training_step(
-              sess, model, summ_op,
-              feed_dict={
-                  model.loss_weights: weights,
-                  model.labels: labels,
-                  model.offset_label: 'off',
-                  model.input_patches: patches,
-                  model.input_seed: seed,
-              })
-
-          # Save prediction results in the original seed array so that
-          # they can be used in subsequent steps.
-          mask.update_at(seed, (0, 0, 0), updated_seed)
-
-          # Record summaries.
-          if summ is not None:
-
-            # TODO (jk): text log of learning curve
-            learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
-            precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
-            recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
-            accuracy = (eval_tracker.tp + eval_tracker.tn) / (
-            eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
-            learning_curve_txt.write('step_' + str(step) +
-                                   '_precision_' + str(precision) +
-                                   '_recall_' + str(recall) +
-                                   '_accuracy_' + str(accuracy))
-            learning_curve_txt.write("\n")
-            learning_curve_txt.close()
+          # TODO (jk): text log of learning curve
+          learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
+          precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
+          recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
+          accuracy = (eval_tracker.tp + eval_tracker.tn) / (
+          eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
+          learning_curve_txt.write('step_' + str(step) +
+                                 '_precision_' + str(precision) +
+                                 '_recall_' + str(recall) +
+                                 '_accuracy_' + str(accuracy))
+          learning_curve_txt.write("\n")
+          learning_curve_txt.close()
 
 
-            logging.info('Saving summaries.')
-            summ = tf.Summary.FromString(summ)
+          logging.info('Saving summaries.')
+          summ = tf.Summary.FromString(summ)
 
-            # Compute a loss over the whole training patch (i.e. more than a
-            # single-step field of view of the network). This quantifies the
-            # quality of the final object mask.
-            summ.value.extend(eval_tracker.get_summaries())
-            eval_tracker.reset()
+          # Compute a loss over the whole training patch (i.e. more than a
+          # single-step field of view of the network). This quantifies the
+          # quality of the final object mask.
+          summ.value.extend(eval_tracker.get_summaries())
+          eval_tracker.reset()
 
-            assert summary_writer is not None
-            summary_writer.add_summary(summ, step)
+          assert summary_writer is not None
+          summary_writer.add_summary(summ, step)
 
-            if np.min([precision, recall]) > 0.9:
-                logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
-                break
+          if np.min([precision, recall]) > 0.9:
+              logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
+              break
       if summary_writer is not None:
         summary_writer.flush()
-
+  return sess, model.saver
 
 def main(argv=()):
   del argv  # Unused.
@@ -768,9 +772,47 @@ def main(argv=()):
   logging.info('Random seed: %r', seed)
   random.seed(seed)
 
+  sess, saver = \
   train_ffn(model_class, batch_size=FLAGS.batch_size,
             **json.loads(FLAGS.model_args))
+  sess.close()
 
+def global_main(
+        train_coords,
+        train_dir,
+        data_volumes,
+        label_volumes,
+        model_name,
+        model_args,
+        image_mean,
+        image_stddev,
+        max_steps,
+        optimizer,
+        load_from_ckpt,
+        batch_size):
+    """Convert args to globals then run main."""
+    FLAGS.train_coords = train_coords
+    FLAGS.train_dir = train_dir
+    FLAGS.data_volumes = data_volumes
+    FLAGS.label_volumes = label_volumes
+    FLAGS.model_name = model_name
+    FLAGS.model_args = model_args
+    FLAGS.image_mean= image_mean
+    FLAGS.image_stddev= image_stddev
+    FLAGS.max_steps = max_steps
+    FLAGS.optimizer = optimizer
+    FLAGS.load_from_ckpt = load_from_ckpt
+    FLAGS.batch_size = batch_size
+
+    model_class = import_symbol(FLAGS.model_name)
+    seed = int(time.time() + FLAGS.task * 3600 * 24)
+    logging.info('Random seed: %r', seed)
+    random.seed(seed)
+
+    sess, saver = \
+        train_ffn(model_class, batch_size=FLAGS.batch_size, save_ckpt=False,
+                  **json.loads(FLAGS.model_args))
+    return sess, saver
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('train_coords')

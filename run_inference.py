@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Runs FFN inference within a dense bounding box.
-
 Inference is performed within a single process.
 """
 

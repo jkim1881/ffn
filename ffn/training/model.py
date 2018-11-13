@@ -55,7 +55,7 @@ class FFNModel(object):
   # TF op to call to perform loss optimization on the model.
   train_op = None
 
-  def __init__(self, deltas, batch_size=None):
+  def __init__(self, deltas, batch_size=None, tag=''):
     assert self.dim is not None
 
     self.deltas = deltas
@@ -73,13 +73,15 @@ class FFNModel(object):
 
     # Mask identifying valid examples within the batch. Only valid examples
     # contribute to the loss and see object mask updates.
-    self.offset_label = tf.placeholder(tf.string, name='offset_label')
-    self.global_step = tf.Variable(0, name='global_step', trainable=False)
+    self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag)
+
+    if not len(tag):
+      self.global_step = tf.Variable(0, name='global_step%s' % tag, trainable=False)
 
     # The seed is always a placeholder which is fed externally from the
     # training/inference drivers.
-    self.input_seed = tf.placeholder(tf.float32, name='seed')
-    self.input_patches = tf.placeholder(tf.float32, name='patches')
+    self.input_seed = tf.placeholder(tf.float32, name='seed%s' % tag)
+    self.input_patches = tf.placeholder(tf.float32, name='patches%s' % tag)
 
     # For training, labels should be defined as a TF object.
     self.labels = None

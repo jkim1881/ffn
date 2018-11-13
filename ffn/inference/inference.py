@@ -387,7 +387,12 @@ class Canvas(object):
         self.counters['inference-not-predict-ms'].IncrementBy(
             delta_t * MSEC_IN_SEC)
 
-      extra_fetches['logits'] = self.model.logits
+      if hasattr(self.model, 'logits'):
+        extra_fetches['logits'] = self.model.logits
+      else:
+        raise NotImplementedError
+        # print('Falling back to val_logits')
+        # extra_fetches['logits'] = self.model.val_logits
       with timer_counter(self.counters, 'inference'):
         fetches = self.executor.predict(self._exec_client_id,
                                         logit_seed, img, extra_fetches)
@@ -823,9 +828,10 @@ class Runner(object):
       self.model.saver.restore(self.session, checkpoint_path)
       logging.info('Checkpoint loaded.')
 
-  def start(self, request, batch_size=1, exec_cls=None, session=None):
+  def start(self, request, batch_size=1, exec_cls=None, session=None, topup=None, reuse=False, tag=None):
     """Opens input volumes and initializes the FFN."""
     self.request = request
+    self.topup = topup
     assert self.request.segmentation_output_dir
 
     logging.debug('Received request:\n%s', request)
@@ -883,13 +889,6 @@ class Runner(object):
 
     self.stop_executor()
 
-    if session is None:
-      config = tf.ConfigProto()
-      tf.reset_default_graph()
-      session = tf.Session(config=config)
-    self.session = session
-    logging.info('Available TF devices: %r', self.session.list_devices())
-
     # Initialize the FFN model.
     model_class = import_symbol(request.model_name)
     if request.model_args:
@@ -899,18 +898,43 @@ class Runner(object):
 
     args['batch_size'] = batch_size
     args['is_training'] = False
+    args['reuse'] = reuse
+    args['tag'] = tag
     self.model = model_class(**args)
 
     if exec_cls is None:
       exec_cls = executor.ThreadingBatchExecutor
 
-    self.executor = exec_cls(
-        self.model, self.session, self.counters, batch_size)
+    self.executor = exec_cls(self.model, self.counters, batch_size)
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
-    self.saver = tf.train.Saver()
-    self._load_model_checkpoint(request.model_checkpoint_path)
+    if self.topup is None:
+      self.saver = tf.train.Saver()
+      self._load_model_checkpoint(request.model_checkpoint_path)
+    else:
+      self.saver = self.topup
 
+
+    if session is None:
+      config = tf.ConfigProto()
+      # tf.reset_default_graph()
+      session = tf.Session(config=config)
+      logging.info('Available TF devices: %r', session.list_devices())
+    elif session:
+      session = tf.train.MonitoredTrainingSession(
+        master='',
+        is_chief=True,
+        save_summaries_steps=None,
+        save_checkpoint_secs=999999,  # save_checkpoint_steps=10000/FLAGS.batch_size,
+        config=tf.ConfigProto(
+          log_device_placement=False, allow_soft_placement=True),
+        checkpoint_dir=session['train_dir'],
+        scaffold=session['scaffold'])
+    else:
+      raise NotImplementedError
+    self.session = session
+
+    self.executor.session= session
     self.executor.start_server()
 
   def make_restrictor(self, corner, subvol_size, image, alignment):

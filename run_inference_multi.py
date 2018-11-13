@@ -60,7 +60,7 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/drew/ffn/'
+    script_root = '/home/jk/PycharmProjects/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
@@ -76,18 +76,18 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'feedback_hgru_v5_3l_linfb'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
+    net_name = 'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
     min_ckpt = 0
-    max_ckpt = 90000
-    ckpt_steps = 5000  ## <500 for
+    max_ckpt = 240000 # 120000
+    ckpt_steps = 10000  ## <500 for
 
-    test_dataset_name = 'berson'
-    test_dataset_shape = [384, 192, 384] #[1250, 625, 125]# [384, 192, 384]
-    test_dataset_type = 'val'  # 'train'
+    test_dataset_name = 'berson4'#'neuroproof'
+    test_dataset_shape = [192, 192, 192]#[520, 520, 520] # [384, 192, 384] [192,192,192]
+    test_dataset_type = 'train'  # 'train'
 
-    image_mean = 128
+    image_mean = 154 #128
     image_stddev = 33
 
 
@@ -148,12 +148,13 @@ if __name__ == '__main__':
             ckpt_list.remove(ckpt)
     print('>>>>> DONE.')
     print('>>>>> CKPTS :: '+ str(ckpt_list))
+
+    ckpt_list.reverse()
     for checkpoint_num in ckpt_list:
 
         ### DEFINE NAMES
         ckpt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
-        inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_' + str(checkpoint_num), test_dataset_name, test_dataset_type)
-
+        inference_fullpath = os.path.join(output_root, fov_type, net_cond_name + '_topup_'+ str(checkpoint_num), test_dataset_name, test_dataset_type)
         ### RUN INFERENCE
         print('>>>>>>>>>>>>>> Model: ' + net_cond_name)
         print('>>>>>>>>>>>>>> Tested on: ' + test_dataset_name, ' fov: ' + fov_type)
@@ -161,7 +162,7 @@ if __name__ == '__main__':
                              net_name,
                              fov_size, deltas,
                              image_mean, image_stddev)
-        command = 'python ' + os.path.join(script_root,'run_inference.py') + \
+        command = 'python ' + os.path.join(script_root,'run_inference_m.py') + \
                   ' --inference_request="$(cat ' + request_txt_fullpath + ')"' +\
                   ' --bounding_box "start { x:0 y:0 z:0 } size { x:' + str(test_dataset_shape[0]) + ' y:' + str(test_dataset_shape[1]) + ' z:' + str(test_dataset_shape[2]) + ' }"'
         subprocess.call(command, shell=True)

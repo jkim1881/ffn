@@ -131,11 +131,12 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True):
-    super(ConvStack3DFFNModel, self).__init__(deltas, batch_size)
+  def __init__(self, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, reuse=False, tag=''):
+    super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, tag=tag)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
-    self.is_training=is_training
+    self.is_training = is_training
+    self.reuse=reuse
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -145,7 +146,7 @@ class ConvStack3DFFNModel(model.FFNModel):
           tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
           name='patches')
 
-    with tf.variable_scope('seed_update', reuse=False):
+    with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed, self.depth, is_training=self.is_training)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
