@@ -11,7 +11,7 @@ if __name__ == '__main__':
     test_dataset_name = 'berson4'
     dataset_type = 'train'
     idx = [50, 100, 150]
-    cond_name = 'feedback_hgru_v5_3l_notemp_allbutberson_r0_topup_110130' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
+    cond_name = 'convstack_3d_shallow_allbutberson_r0_topup_231180' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
 
     # dataset_shape_list = [[250, 250, 250],
     #                       [384, 384, 300],

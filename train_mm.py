@@ -555,6 +555,7 @@ def get_example(load_example, eval_tracker, model, get_offsets):
             # changes need to be visible in the following iterations.
             assert predicted.base is seed
             yield predicted, patches, labels, weights
+        import matplotlib.pyplot as plt
         plt.subplot(121);
         plt.imshow(seed[0, :, :])
         plt.subplot(122);
