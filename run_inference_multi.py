@@ -76,11 +76,11 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
+    net_name = 'feedback_hgru_v5_3l_notemp'#'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
     min_ckpt = 0
-    max_ckpt = 240000 # 120000
+    max_ckpt = 120000 # 120000
     ckpt_steps = 10000  ## <500 for
 
     test_dataset_name = 'berson4'#'neuroproof'
