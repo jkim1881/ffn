@@ -3,10 +3,10 @@ image {
 }image_mean: 154
 image_stddev: 33
 seed_policy: "PolicyPeaks" 
-model_checkpoint_path: "/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_shallow_allbutberson_r0/model.ckpt-11358" 
+model_checkpoint_path: "/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_shallow_allbutberson_r0/model.ckpt-840" 
 model_name: "convstack_3d_shallow.ConvStack3DFFNModel" 
 model_args: "{\"depth\": 12, \"fov_size\": [57, 57, 13], \"deltas\": [8, 8, 3]}" 
-segmentation_output_dir: "/media/data_cifs/connectomics/ffn_inferred/wide_fov/convstack_3d_shallow_allbutberson_r0_topup_11358/berson4/train" 
+segmentation_output_dir: "/media/data_cifs/connectomics/ffn_inferred/wide_fov/convstack_3d_shallow_allbutberson_r0_topup_840/berson4/train" 
 inference_options { 
   init_activation: 0.95 
   pad_value: 0.05 
