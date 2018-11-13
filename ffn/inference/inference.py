@@ -615,7 +615,7 @@ class Canvas(object):
           # Mark this location as excluded.
           if self.segmentation[pos] == 0:
             self.segmentation[pos] = -1
-          self.log_info('Failed: weak seed')
+          self.log_info('Failed: weak seed' + str(self.seed[pos]))
           self.counters['invalid-weak-time-ms'].IncrementBy(t_seg * MSEC_IN_SEC)
           continue
 
