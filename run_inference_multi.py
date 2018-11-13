@@ -76,7 +76,7 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
+    net_name = 'convstack_3d'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'convstack_3d'
     train_dataset_name = 'allbutberson'
 
     min_ckpt = 0

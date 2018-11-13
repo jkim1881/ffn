@@ -8,10 +8,10 @@ if __name__ == '__main__':
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     output_root = '/media/data_cifs/connectomics/ffn_inferred'
     fov = 'wide_fov'
-    test_dataset_name = 'berson'
-    dataset_type = 'val'
-    idx = [50, 100, 150, 200, 342]
-    cond_name = 'feedback_hgru_v5_3l_notemp_allbutberson_r0_55125' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
+    test_dataset_name = 'berson4'
+    dataset_type = 'train'
+    idx = [50, 100, 150]
+    cond_name = 'feedback_hgru_v5_3l_notemp_allbutberson_r0_topup_110130' #'feedback_hgru_v5_3l_linfb_allbutberson_r0_363'
 
     # dataset_shape_list = [[250, 250, 250],
     #                       [384, 384, 300],
