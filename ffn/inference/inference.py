@@ -423,7 +423,15 @@ class Canvas(object):
     # plt.subplot(236)
     # plt.imshow(logit_seed[:, logits.shape[2] / 2, :])
     # plt.show()
-
+    #
+    # plt.subplot(121)
+    # plt.imshow(logits[4, :, :, 0])
+    # plt.colorbar()
+    # plt.subplot(122)
+    # plt.imshow(img[4, :, :], cmap='gray')
+    # plt.colorbar()
+    # np.any(np.isnan(logits))
+    # plt.show()
     return (prob[..., 0], logits[..., 0]), fetches
 
   def update_at(self, pos, start_pos):
@@ -652,11 +660,8 @@ class Canvas(object):
 
         # We only allow creation of new segments in areas that are currently
         # empty.
-	if np.any(np.isnan(self.seed[sel])):
-	    print('NAN detected...............?? replacing with zero')
-	    import ipdb
-	    ipdb.set_trace()
-	    self.seed[sel] = 0
+        # import ipdb
+        # ipdb.set_trace()
         mask = self.seed[sel] >= self.options.segment_threshold
         raw_segmented_voxels = np.sum(mask)
 

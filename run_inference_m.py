@@ -49,7 +49,7 @@ def main(unused_argv):
   # Training
   import os
   batch_size = 16
-  max_steps = 200#10*250/batch_size #250
+  max_steps = 10#10*250/batch_size #250
   hdf_dir = os.path.split(request.image.hdf5)[0]
   load_ckpt_path = request.model_checkpoint_path
   save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup'

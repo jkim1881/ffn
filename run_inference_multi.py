@@ -60,7 +60,7 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/drew/ffn/'
+    script_root = '/home/jk/PycharmProjects/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
