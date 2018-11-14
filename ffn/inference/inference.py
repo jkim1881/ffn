@@ -402,9 +402,9 @@ class Canvas(object):
     logits = fetches.pop('logits')
     prob = expit(logits)
 
-    import matplotlib.pyplot as plt
-    import ipdb
-    ipdb.set_trace() ## CHECK IMAGE AND LOGITS
+    # import matplotlib.pyplot as plt
+    # import ipdb
+    # ipdb.set_trace() ## CHECK IMAGE AND LOGITS
     # plt.subplot(231)
     # plt.imshow(logits[4, :, :, 0])
     # plt.colorbar()
@@ -851,7 +851,7 @@ class Runner(object):
       self.model.saver.restore(self.session, checkpoint_path)
       logging.info('Checkpoint loaded.')
 
-  def start(self, request, batch_size=1, exec_cls=None, session=None, topup=None, reuse=False, tag=None):
+  def start(self, request, batch_size=1, exec_cls=None, topup=None, reuse=False, tag=None):
     """Opens input volumes and initializes the FFN."""
     self.request = request
     self.topup = topup
@@ -928,22 +928,20 @@ class Runner(object):
     if exec_cls is None:
       exec_cls = executor.ThreadingBatchExecutor
 
+    ########################## INFERENCE GRAPH MADE
     self.executor = exec_cls(self.model, self.counters, batch_size)
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
     if self.topup is None:
       self.saver = tf.train.Saver()
       self._load_model_checkpoint(request.model_checkpoint_path)
-    else:
-      self.saver = self.topup
-
-
-    if session is None:
       config = tf.ConfigProto()
       # tf.reset_default_graph()
       session = tf.Session(config=config)
       logging.info('Available TF devices: %r', session.list_devices())
-    elif session:
+    else:
+      self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
+      scaffold = tf.train.Scaffold(saver=self.saver)
       session = tf.train.MonitoredTrainingSession(
         master='',
         is_chief=True,
@@ -951,13 +949,11 @@ class Runner(object):
         save_checkpoint_secs=999999,  # save_checkpoint_steps=10000/FLAGS.batch_size,
         config=tf.ConfigProto(
           log_device_placement=False, allow_soft_placement=True),
-        checkpoint_dir=session['train_dir'],
-        scaffold=session['scaffold'])
-    else:
-      raise NotImplementedError
-    self.session = session
+        checkpoint_dir=self.topup['train_dir'],
+        scaffold=scaffold)
 
-    self.executor.session= session
+    self.session = session
+    self.executor.session = session
     self.executor.start_server()
 
   def make_restrictor(self, corner, subvol_size, image, alignment):

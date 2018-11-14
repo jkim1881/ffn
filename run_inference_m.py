@@ -49,7 +49,7 @@ def main(unused_argv):
   # Training
   import os
   batch_size = 10
-  max_steps = 500#10*250/batch_size #250
+  max_steps = 200#10*250/batch_size #250
   hdf_dir = os.path.split(request.image.hdf5)[0]
   load_ckpt_path = request.model_checkpoint_path
   save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup'
@@ -57,7 +57,7 @@ def main(unused_argv):
       with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
           # SET UP TRAIN MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP TRAIN MODEL')
-          eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op = train_mm.global_main(
+          eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = train_mm.global_main(
                           train_coords= os.path.join(hdf_dir, 'tf_record_file'),
                           data_volumes='jk:' + os.path.join(hdf_dir, 'grayscale_maps.h5') + ':raw',
                           label_volumes='jk:' + os.path.join(hdf_dir, 'groundtruth.h5') + ':stack',
@@ -73,14 +73,15 @@ def main(unused_argv):
 
           # SET UP INFERENCE MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP INFERENCE MODEL')
+          print('>>>>>>>>>>>>>>>>>>>>>>COUNTED %s VARIABLES PRE-INFERENCE' % len(tf.trainable_variables()))
           runner = inference.Runner()
           runner.start(
               request,
               batch_size=1,
-              topup=saver,
-              session={'scaffold': scaffold, 'train_dir': FLAGS.train_dir},
+              topup={'train_dir': FLAGS.train_dir},
               reuse=tf.AUTO_REUSE,
               tag='_inference') #TAKES SESSION
+          print('>>>>>>>>>>>>>>>>>>>>>>COUNTED %s VARIABLES POST-INFERENCE' % len(tf.trainable_variables()))
 
           # START TRAINING
           print('>>>>>>>>>>>>>>>>>>>>>>START TOPUP TRAINING')

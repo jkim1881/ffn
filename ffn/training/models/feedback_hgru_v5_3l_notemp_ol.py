@@ -38,9 +38,9 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                  kernel_size=(1, 7, 7),
                                  padding='SAME')
 
-  from .prc import feedback_hgru_v5_3l_nu
+  from .prc import feedback_hgru_v5_3l
   with tf.variable_scope('recurrent'):
-      hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
+      hgru_net = feedback_hgru_v5_3l.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
                                         timesteps=8, #6, #8,
                                         h_repeat=1,
@@ -57,7 +57,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
-                                        bn_reuse=True, ## TRUE TRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUE
+                                        bn_reuse=False, ## TRUE NOT COMPLETELY IMPLEMENTED
                                         gate_bn=True,
                                         aux=None,
                                         train=is_training)
@@ -73,7 +73,6 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       'moving_variance': False,
       'gamma': is_training
   }
-  net = tf.nn.relu(net)
   # net = tf.contrib.layers.batch_norm(
   #     inputs=net,
   #     scale=True,
@@ -97,7 +96,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   #     param_initializers=finalbn_param_initializer,
   #     updates_collections=None,
   #     is_training=finalbn_param_trainable)
-  logits = tf.nn.relu(logits)
+  # logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
                                     num_outputs=1,
@@ -167,4 +166,3 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.add_summaries()
 
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
-

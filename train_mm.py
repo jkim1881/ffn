@@ -251,15 +251,15 @@ class EvalTracker(object):
         self.num_patches += 1
 
         #print(self.step)
-        if self.step>110620:
-            tp = np.sum(pred_mask & true_mask)
-            fp = np.sum(pred_mask & true_bg)
-            fn = np.sum(pred_bg & true_mask)
-            tn = np.sum(pred_bg & true_bg)
-            # print('RECALL: ' +str(tp / (tp + fn + 1)))
-            # import matplotlib.pyplot as plt
-            # import ipdb
-            # ipdb.set_trace()
+        # if self.step>152855:
+        #     tp = np.sum(pred_mask & true_mask)
+        #     fp = np.sum(pred_mask & true_bg)
+        #     fn = np.sum(pred_bg & true_mask)
+        #     tn = np.sum(pred_bg & true_bg)
+        #     print('RECALL: ' +str(tp / (tp + fn + 1)))
+        #     import matplotlib.pyplot as plt
+        #     import ipdb
+        #     ipdb.set_trace()
             # plt.subplot(231)
             # plt.imshow(predicted[0, 4, :, :, 0])
             # plt.colorbar()
@@ -667,14 +667,13 @@ def build_train_graph(model_cls, save_ckpt=True, **model_kwargs):
         save_flags()
 
     summary_writer = None
-    saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
-    scaffold = tf.train.Scaffold(saver=saver)
+
     # scaffold= None
     if save_ckpt is False:
         secs = 999999
     else:
         secs = 200
-    return eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op
+    return eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op
 
 
 def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op):
@@ -817,8 +816,8 @@ def global_main(
     logging.info('Random seed: %r', seed)
     random.seed(seed)
 
-    eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op = \
+    eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = \
         build_train_graph(model_class, batch_size=FLAGS.batch_size, save_ckpt=False,
                   **json.loads(FLAGS.model_args))
-    return eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op
+    return eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op
 

@@ -209,13 +209,28 @@ class hGRU(object):
                         dtype=self.dtype,
                         initializer=tf.ones([higher_feats], dtype=self.dtype),
                         trainable=True))
+                if self.bn_reuse:
+                    # Make the batchnorm variables
+                    scopes = ['pre-conv', 'post-conv']
+                    chs = [lower_feats, higher_feats*self.ff_kpool_multiplier]
+                    bn_vars = ['moving_mean', 'moving_variance', 'gamma']
+                    for (s,ch) in zip(scopes, chs):
+                        with tf.variable_scope(s):
+                            for v in bn_vars:
+                                tf.get_variable(
+                                    trainable=self.param_trainable[v],
+                                    name=v,
+                                    dtype=self.dtype,
+                                    shape=[ch],
+                                    collections=self.param_collections[v],
+                                    initializer=self.param_initializer[v])
                 lower_feats = higher_feats
 
         # FEEDBACK KERNELS
         lower_feats = self.in_k
         for idx, (higher_feats, fb_dhw) in enumerate(
                 zip(self.fb_k, self.fb_dhw)):
-            with tf.variable_scope('fb_%s' % idx):
+            with tf.variable_scope('fb_%s' % idx) as scope:
                 setattr(
                     self,
                     'fb_%s_weights' % idx,
@@ -238,6 +253,17 @@ class hGRU(object):
                             dtype=self.dtype,
                             uniform=self.normal_initializer),
                         trainable=True))
+                if self.bn_reuse:
+                    # Make the batchnorm variables
+                    bn_vars = ['moving_mean', 'moving_variance', 'gamma']
+                    for v in bn_vars:
+                        tf.get_variable(
+                            trainable=self.param_trainable[v],
+                            name=v,
+                            dtype=self.dtype,
+                            shape=[lower_feats],
+                            collections=self.param_collections[v],
+                            initializer=self.param_initializer[v])
             lower_feats = higher_feats
 
         # HGRU KERNELS
@@ -559,7 +585,7 @@ class hGRU(object):
 
                 if self.bn_reuse:
                     # Make the batchnorm variables
-                    scopes = ['g1a_bn', 'g1b_bn', 'g2_bn', 'c1_bn', 'c2_bn']
+                    scopes = ['g1a_bn', 'g1b_bn', 'g2_bn', 'c1_bn', 'c2_bn', 'out_bn']
                     bn_vars = ['moving_mean', 'moving_variance', 'gamma']
                     for s in scopes:
                         with tf.variable_scope(s):
@@ -571,7 +597,6 @@ class hGRU(object):
                                     shape=[self.hgru_k[idx]],
                                     collections=self.param_collections[v],
                                     initializer=self.param_initializer[v])
-                    self.param_initializer = None
 
     def resize_x_to_y(
             self,
@@ -911,16 +936,30 @@ class hGRU(object):
                 fb=l0_fb,
                 var_scope = 'hgru_%s' % idx)
         if self.batch_norm:
-            ff0 = tf.contrib.layers.batch_norm(
-                inputs=l0_h2,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                reuse=self.scope_reuse,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                            'hgru_%s/out_bn' % idx, reuse=self.scope_reuse) as scope:
+                    ff0 = tf.contrib.layers.batch_norm(
+                        inputs=l0_h2,
+                        scale=True,
+                        center=True,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff0 = tf.contrib.layers.batch_norm(
+                    inputs=l0_h2,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         else:
             ff0 = l0_h2
 
@@ -938,15 +977,31 @@ class hGRU(object):
             ff0,
             spot_weights_x, spot_weights_y, spot_weights_xy)
         if self.batch_norm:
-            ff0 = tf.contrib.layers.batch_norm(
-                inputs=ff0,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/pre-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff0 = tf.contrib.layers.batch_norm(
+                        inputs=ff0,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff0 = tf.contrib.layers.batch_norm(
+                    inputs=ff0,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         ff0 = self.ff_nl(ff0) + 1
         ff0 = tf.nn.conv3d(
             input=ff0,
@@ -954,15 +1009,31 @@ class hGRU(object):
             strides=self.ff_conv_strides[idx],
             padding=self.padding)
         if self.batch_norm:
-            ff0 = tf.contrib.layers.batch_norm(
-                inputs=ff0,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/post-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff0 = tf.contrib.layers.batch_norm(
+                        inputs=ff0,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff0 = tf.contrib.layers.batch_norm(
+                    inputs=ff0,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1004,15 +1075,30 @@ class hGRU(object):
                 fb=l1_fb,
                 var_scope = 'hgru_%s' % idx)
         if self.batch_norm:
-            ff1 = tf.contrib.layers.batch_norm(
-                inputs=l1_h2,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                            'hgru_%s/out_bn' % idx, reuse=self.scope_reuse) as scope:
+                    ff1 = tf.contrib.layers.batch_norm(
+                        inputs=l1_h2,
+                        scale=True,
+                        center=True,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff1 = tf.contrib.layers.batch_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         else:
             ff1 = l1_h2
 
@@ -1030,15 +1116,31 @@ class hGRU(object):
             ff1,
             spot_weights_x, spot_weights_y, spot_weights_xy)
         if self.batch_norm:
-            ff1 = tf.contrib.layers.batch_norm(
-                inputs=ff1,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/pre-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff1 = tf.contrib.layers.batch_norm(
+                        inputs=ff1,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff1 = tf.contrib.layers.batch_norm(
+                    inputs=ff1,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         ff1 = self.ff_nl(ff1) + 1
         ff1 = tf.nn.conv3d(
             input=ff1,
@@ -1046,15 +1148,31 @@ class hGRU(object):
             strides=self.ff_conv_strides[idx],
             padding=self.padding)
         if self.batch_norm:
-            ff1 = tf.contrib.layers.batch_norm(
-                inputs=ff1,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/post-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff1 = tf.contrib.layers.batch_norm(
+                        inputs=ff1,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff1 = tf.contrib.layers.batch_norm(
+                    inputs=ff1,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff1[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1095,15 +1213,30 @@ class hGRU(object):
                 fb=l2_fb,
                 var_scope = 'hgru_%s' % idx)
         if self.batch_norm:
-            ff2 = tf.contrib.layers.batch_norm(
-                inputs=l2_h2,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                            'hgru_%s/out_bn' % idx, reuse=self.scope_reuse) as scope:
+                    ff2 = tf.contrib.layers.batch_norm(
+                        inputs=l2_h2,
+                        scale=True,
+                        center=True,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff2 = tf.contrib.layers.batch_norm(
+                    inputs=l2_h2,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         else:
             ff2 = l1_h2
 
@@ -1121,30 +1254,62 @@ class hGRU(object):
             ff2,
             spot_weights_x, spot_weights_y, spot_weights_xy)
         if self.batch_norm:
-            ff2 = tf.contrib.layers.batch_norm(
-                inputs=ff2,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/pre-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff2 = tf.contrib.layers.batch_norm(
+                        inputs=ff2,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff2 = tf.contrib.layers.batch_norm(
+                    inputs=ff2,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         ff2 = tf.nn.conv3d(
             input=ff2,
             filter=weights,
             strides=self.ff_conv_strides[idx],
             padding=self.padding)
         if self.batch_norm:
-            ff2 = tf.contrib.layers.batch_norm(
-                inputs=ff2,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'ff_%s/post-conv' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    ff2 = tf.contrib.layers.batch_norm(
+                        inputs=ff2,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                ff2 = tf.contrib.layers.batch_norm(
+                    inputs=ff2,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff2[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1175,17 +1340,31 @@ class hGRU(object):
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[2])
         if self.batch_norm:
-            # with tf.variable_scope('fb_bn' % 2,
-            #         reuse=self.bn_reuse) as scope:
-            fb2 = tf.contrib.layers.batch_norm(
-                inputs=fb2,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'fb_%s' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    fb2 = tf.contrib.layers.batch_norm(
+                        inputs=fb2,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                fb2 = tf.contrib.layers.batch_norm(
+                    inputs=fb2,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         fb2 = tf.nn.bias_add(
             fb2,
             bias)
@@ -1203,17 +1382,31 @@ class hGRU(object):
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[1])
         if self.batch_norm:
-            # with tf.variable_scope('fb_bn' % 2,
-            #         reuse=self.bn_reuse) as scope:
-            fb1 = tf.contrib.layers.batch_norm(
-                inputs=fb1,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'fb_%s' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    fb1 = tf.contrib.layers.batch_norm(
+                        inputs=fb1,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                fb1 = tf.contrib.layers.batch_norm(
+                    inputs=fb1,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         fb1 = tf.nn.bias_add(
             fb1,
             bias)
@@ -1231,17 +1424,31 @@ class hGRU(object):
                                   mode=self.fb_mode,
                                   strides=self.ff_pool_strides[0])
         if self.batch_norm:
-            # with tf.variable_scope('fb_bn' % 2,
-            #         reuse=self.bn_reuse) as scope:
-            fb0 = tf.contrib.layers.batch_norm(
-                inputs=fb0,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.param_initializer,
-                updates_collections=None,
-                is_training=self.train)
+            if self.bn_reuse:
+                with tf.variable_scope(
+                    'fb_%s' % idx,
+                    reuse=self.scope_reuse) as scope:
+                    fb0 = tf.contrib.layers.batch_norm(
+                        inputs=fb0,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        param_initializers=self.param_initializer,
+                        updates_collections=None,
+                        scope=scope,
+                        reuse=self.scope_reuse,
+                        is_training=self.train)
+            else:
+                fb0 = tf.contrib.layers.batch_norm(
+                    inputs=fb0,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.param_initializer,
+                    updates_collections=None,
+                    is_training=self.train)
         fb0 = tf.nn.bias_add(
             fb0,
             bias)
