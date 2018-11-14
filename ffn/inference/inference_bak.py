@@ -51,7 +51,7 @@ from ..utils import ortho_plane_visualization
 from ..utils import bounding_box
 
 MSEC_IN_SEC = 1000
-MAX_SELF_CONSISTENT_ITERS = 50
+MAX_SELF_CONSISTENT_ITERS = 32
 
 
 # Visualization.
@@ -387,12 +387,7 @@ class Canvas(object):
         self.counters['inference-not-predict-ms'].IncrementBy(
             delta_t * MSEC_IN_SEC)
 
-      if hasattr(self.model, 'logits'):
-        extra_fetches['logits'] = self.model.logits
-      else:
-        raise NotImplementedError
-        # print('Falling back to val_logits')
-        # extra_fetches['logits'] = self.model.val_logits
+      extra_fetches['logits'] = self.model.logits
       with timer_counter(self.counters, 'inference'):
         fetches = self.executor.predict(self._exec_client_id,
                                         logit_seed, img, extra_fetches)
@@ -401,29 +396,6 @@ class Canvas(object):
 
     logits = fetches.pop('logits')
     prob = expit(logits)
-
-    import matplotlib.pyplot as plt
-    import ipdb
-    ipdb.set_trace() ## CHECK IMAGE AND LOGITS
-    # plt.subplot(231)
-    # plt.imshow(logits[4, :, :, 0])
-    # plt.colorbar()
-    # plt.subplot(232)
-    # plt.imshow(img[4, :, :], cmap='gray')
-    # plt.colorbar()
-    # plt.subplot(233)
-    # plt.imshow(logit_seed[4, :, :])
-    # plt.colorbar()
-    # plt.subplot(234)
-    # plt.imshow(logits[:, logits.shape[2] / 2, :, 0])
-    # plt.colorbar()
-    # plt.subplot(235)
-    # plt.imshow(img[:, logits.shape[2] / 2, :], cmap='gray')
-    # plt.colorbar()
-    # plt.subplot(236)
-    # plt.imshow(logit_seed[:, logits.shape[2] / 2, :])
-    # plt.show()
-
     return (prob[..., 0], logits[..., 0]), fetches
 
   def update_at(self, pos, start_pos):
@@ -623,7 +595,7 @@ class Canvas(object):
 
         # Try segmentation.
         seg_start = time.time()
-        num_iters = self.segment_at(pos, dynamic_image=DynamicImage()) # TODO : dynimage on
+        num_iters = self.segment_at(pos)
         t_seg = time.time() - seg_start
 
         # Check if segmentation was successful.
@@ -638,7 +610,7 @@ class Canvas(object):
           # Mark this location as excluded.
           if self.segmentation[pos] == 0:
             self.segmentation[pos] = -1
-          self.log_info('Failed: weak seed ' + str(self.seed[pos]) + '<?' + str(self.options.move_threshold))
+          self.log_info('Failed: weak seed')
           self.counters['invalid-weak-time-ms'].IncrementBy(t_seg * MSEC_IN_SEC)
           continue
 
@@ -851,10 +823,9 @@ class Runner(object):
       self.model.saver.restore(self.session, checkpoint_path)
       logging.info('Checkpoint loaded.')
 
-  def start(self, request, batch_size=1, exec_cls=None, session=None, topup=None, reuse=False, tag=None):
+  def start(self, request, batch_size=1, exec_cls=None, session=None):
     """Opens input volumes and initializes the FFN."""
     self.request = request
-    self.topup = topup
     assert self.request.segmentation_output_dir
 
     logging.debug('Received request:\n%s', request)
@@ -912,6 +883,13 @@ class Runner(object):
 
     self.stop_executor()
 
+    if session is None:
+      config = tf.ConfigProto()
+      tf.reset_default_graph()
+      session = tf.Session(config=config)
+    self.session = session
+    logging.info('Available TF devices: %r', self.session.list_devices())
+
     # Initialize the FFN model.
     model_class = import_symbol(request.model_name)
     if request.model_args:
@@ -920,44 +898,18 @@ class Runner(object):
       args = {}
 
     args['batch_size'] = batch_size
-    args['is_training'] = True
-    args['reuse'] = reuse
-    args['tag'] = tag
     self.model = model_class(**args)
 
     if exec_cls is None:
       exec_cls = executor.ThreadingBatchExecutor
 
-    self.executor = exec_cls(self.model, self.counters, batch_size)
+    self.executor = exec_cls(
+        self.model, self.session, self.counters, batch_size)
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
-    if self.topup is None:
-      self.saver = tf.train.Saver()
-      self._load_model_checkpoint(request.model_checkpoint_path)
-    else:
-      self.saver = self.topup
+    self.saver = tf.train.Saver()
+    self._load_model_checkpoint(request.model_checkpoint_path)
 
-
-    if session is None:
-      config = tf.ConfigProto()
-      # tf.reset_default_graph()
-      session = tf.Session(config=config)
-      logging.info('Available TF devices: %r', session.list_devices())
-    elif session:
-      session = tf.train.MonitoredTrainingSession(
-        master='',
-        is_chief=True,
-        save_summaries_steps=None,
-        save_checkpoint_secs=999999,  # save_checkpoint_steps=10000/FLAGS.batch_size,
-        config=tf.ConfigProto(
-          log_device_placement=False, allow_soft_placement=True),
-        checkpoint_dir=session['train_dir'],
-        scaffold=session['scaffold'])
-    else:
-      raise NotImplementedError
-    self.session = session
-
-    self.executor.session= session
     self.executor.start_server()
 
   def make_restrictor(self, corner, subvol_size, image, alignment):
@@ -1240,8 +1192,7 @@ class Runner(object):
         self.request.segmentation_output_dir, corner)
 
     if gfile.Exists(seg_path):
-      print('>>>>>>>>>>>>>>>>>>>>>>SEGMENTATION EXISTS. OVERWRITING.')
-      # return None
+      return None
 
     canvas, alignment = self.make_canvas(corner, subvol_size)
     if canvas is None:

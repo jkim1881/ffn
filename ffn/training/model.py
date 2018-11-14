@@ -124,7 +124,7 @@ class FFNModel(object):
     self.input_patches.set_shape([self.batch_size] +
                                  list(self.input_image_size[::-1]) + [1])
 
-  def set_up_sigmoid_pixelwise_loss(self, logits):
+  def set_up_sigmoid_pixelwise_loss(self, logits, return_logits=False):
     """Sets up the loss function of the model."""
     assert self.labels is not None
     assert self.loss_weights is not None
@@ -135,6 +135,8 @@ class FFNModel(object):
     self.loss = tf.reduce_mean(pixel_loss)
     tf.summary.scalar('pixel_loss', self.loss)
     self.loss = tf.verify_tensor_all_finite(self.loss, 'Invalid loss detected')
+    if return_logits:
+      return logits
 
   def set_up_optimizer(self, loss=None, max_gradient_entry_mag=0.7):
     """Sets up the training op for the model."""

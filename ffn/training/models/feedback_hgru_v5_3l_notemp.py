@@ -29,6 +29,9 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
 
   in_k = 14
   ff_k = [18, 18, 18]
+  ff_kpool_multiplier = 2
+
+
   x = tf.contrib.layers.conv3d(tf.concat([input_patches], axis=4),
                                  scope='conv0_a',
                                  num_outputs=in_k,
@@ -46,7 +49,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                         hgru_symmetric_weights=True,
                                         ff_conv_dhw=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
                                         ff_conv_k=ff_k,
-                                        ff_kpool_multiplier=2,
+                                        ff_kpool_multiplier=ff_kpool_multiplier,
                                         ff_pool_dhw=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
                                         ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
                                         fb_mode='transpose',
@@ -54,7 +57,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
-                                        bn_reuse=False, ## TRUE NOT COMPLETELY IMPLEMENTED
+                                        bn_reuse=True, ## TRUE TRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUE
                                         gate_bn=True,
                                         aux=None,
                                         train=is_training)
@@ -70,6 +73,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       'moving_variance': False,
       'gamma': is_training
   }
+  net = tf.nn.relu(net)
   # net = tf.contrib.layers.batch_norm(
   #     inputs=net,
   #     scale=True,

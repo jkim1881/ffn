@@ -163,9 +163,10 @@ class EvalTracker(object):
             tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=self.eval_preds, labels=self.eval_labels))
         self.reset()
-        self.eval_threshold = logit(0.9)
+        self.eval_threshold = logit(0.6)
         self.sess = None
         self._eval_shape = eval_shape
+        self.step = 0
 
     def reset(self):
         """Resets status of the tracker."""
@@ -248,6 +249,36 @@ class EvalTracker(object):
         self.fn += np.sum(pred_bg & true_mask)
         self.tn += np.sum(pred_bg & true_bg)
         self.num_patches += 1
+
+        #print(self.step)
+        if self.step>110620:
+            tp = np.sum(pred_mask & true_mask)
+            fp = np.sum(pred_mask & true_bg)
+            fn = np.sum(pred_bg & true_mask)
+            tn = np.sum(pred_bg & true_bg)
+            # print('RECALL: ' +str(tp / (tp + fn + 1)))
+            # import matplotlib.pyplot as plt
+            # import ipdb
+            # ipdb.set_trace()
+            # plt.subplot(231)
+            # plt.imshow(predicted[0, 4, :, :, 0])
+            # plt.colorbar()
+            # plt.subplot(232)
+            # plt.imshow(grayscale[0, 4, :, :, 0], cmap='gray')
+            # plt.colorbar()
+            # plt.subplot(233)
+            # plt.imshow(labels[0, 4, :, :, 0])
+            # plt.colorbar()
+            # plt.subplot(234)
+            # plt.imshow(predicted[0, :, predicted.shape[2]/2, :, 0])
+            # plt.colorbar()
+            # plt.subplot(235)
+            # plt.imshow(grayscale[0, :, predicted.shape[2]/2, :, 0], cmap='gray')
+            # plt.colorbar()
+            # plt.subplot(236)
+            # plt.imshow(labels[0, :, predicted.shape[2]/2, :, 0])
+            # plt.colorbar()
+            # plt.show()
 
         predicted = expit(predicted)
         self.images_xy.append(self.slice_image(labels, predicted, grayscale, 0))
@@ -428,12 +459,13 @@ def define_data_input(model, queue_batch=None):
     patch = transform_axes(patch)
     loss_weights = transform_axes(loss_weights)
 
-    # Normalize image data.
-    patch = inputs.offset_and_scale_patches(
-        patch, volname[0],
-        offset_scale_map=_get_offset_and_scale_map(),
-        default_offset=FLAGS.image_mean,
-        default_scale=FLAGS.image_stddev)
+    # Normalize image data. (TODO (jk) : REPLACING WITH MANUAL)
+    # patch = inputs.offset_and_scale_patches(
+    #     patch, volname[0],
+    #     offset_scale_map=_get_offset_and_scale_map(),
+    #     default_offset=FLAGS.image_mean,
+    #     default_scale=FLAGS.image_stddev)
+    patch = (tf.cast(patch, tf.float32) - tf.constant(float(FLAGS.image_mean), dtype=tf.float32)) / tf.constant(float(FLAGS.image_stddev), dtype=tf.float32)
 
     # Create a batch of examples. Note that any TF operation before this line
     # will be hidden behind a queue, so expensive/slow ops can take advantage
@@ -555,11 +587,7 @@ def get_example(load_example, eval_tracker, model, get_offsets):
             # changes need to be visible in the following iterations.
             assert predicted.base is seed
             yield predicted, patches, labels, weights
-        import matplotlib.pyplot as plt
-        plt.subplot(121);
-        plt.imshow(seed[0, :, :])
-        plt.subplot(122);
-        plt.imshow(full_labels[0, :, :])
+
         eval_tracker.add_patch(
             full_labels, seed, loss_weights, full_patches, coord, volname, full_patches)
 
@@ -641,11 +669,12 @@ def build_train_graph(model_cls, save_ckpt=True, **model_kwargs):
     summary_writer = None
     saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
     scaffold = tf.train.Scaffold(saver=saver)
+    # scaffold= None
     if save_ckpt is False:
         secs = 999999
     else:
         secs = 200
-    return eval_tracker, model, scaffold, secs, load_data_ops, summary_writer, merge_summaries_op
+    return eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op
 
 
 def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op):
@@ -708,6 +737,14 @@ def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_su
                 model.input_patches: patches,
                 model.input_seed: seed,
             })
+        eval_tracker.step = step # TODO (jk): debugging purpose
+
+        # if step>110228:
+        #     import matplotlib.pyplot as plt;
+        #     plt.imshow(updated_seed[0, 4, :, :, 0]);
+        #     plt.colorbar();
+        #     plt.show()
+
         # Save prediction results in the original seed array so that
         # they can be used in subsequent steps.
         mask.update_at(seed, (0, 0, 0), updated_seed)
@@ -780,8 +817,8 @@ def global_main(
     logging.info('Random seed: %r', seed)
     random.seed(seed)
 
-    eval_tracker, model, scaffold, secs, load_data_ops, summary_writer, merge_summaries_op = \
+    eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op = \
         build_train_graph(model_class, batch_size=FLAGS.batch_size, save_ckpt=False,
                   **json.loads(FLAGS.model_args))
-    return eval_tracker, model, scaffold, secs, load_data_ops, summary_writer, merge_summaries_op
+    return eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op
 

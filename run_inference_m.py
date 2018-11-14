@@ -49,7 +49,7 @@ def main(unused_argv):
   # Training
   import os
   batch_size = 10
-  max_steps = 10*250/batch_size#250
+  max_steps = 500#10*250/batch_size #250
   hdf_dir = os.path.split(request.image.hdf5)[0]
   load_ckpt_path = request.model_checkpoint_path
   save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup'
@@ -57,7 +57,7 @@ def main(unused_argv):
       with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
           # SET UP TRAIN MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP TRAIN MODEL')
-          eval_tracker, model, scaffold, secs, load_data_ops, summary_writer, merge_summaries_op = train_mm.global_main(
+          eval_tracker, model, scaffold, saver, secs, load_data_ops, summary_writer, merge_summaries_op = train_mm.global_main(
                           train_coords= os.path.join(hdf_dir, 'tf_record_file'),
                           data_volumes='jk:' + os.path.join(hdf_dir, 'grayscale_maps.h5') + ':raw',
                           label_volumes='jk:' + os.path.join(hdf_dir, 'groundtruth.h5') + ':stack',
@@ -70,7 +70,6 @@ def main(unused_argv):
                           optimizer='adam',
                           load_from_ckpt=load_ckpt_path,
                           batch_size=batch_size)
-          saver = model.saver
 
           # SET UP INFERENCE MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP INFERENCE MODEL')
@@ -88,8 +87,11 @@ def main(unused_argv):
           sess = train_mm.train_ffn(
               eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
 
+          # saver.save(sess, "/tmp/model.ckpt")
+
           # START INFERENCE
           print('>>>>>>>>>>>>>>>>>>>>>>START INFERENCE')
+          # saver.restore(sess, "/tmp/model.ckpt")
           runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
                      (bbox.size.z, bbox.size.y, bbox.size.x))
 

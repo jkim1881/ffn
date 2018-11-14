@@ -10,7 +10,7 @@ segmentation_output_dir: "/media/data_cifs/connectomics/ffn_inferred/wide_fov/fe
 inference_options { 
   init_activation: 0.95 
   pad_value: 0.05 
-  move_threshold: 0.9 
+  move_threshold: 0.75 
   min_boundary_dist { x: 1 y: 1 z: 1} 
   segment_threshold: 0.6 
   min_segment_size: 1000 

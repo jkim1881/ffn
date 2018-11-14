@@ -38,7 +38,7 @@ class hGRU(object):
             gate_bn=True,
             aux=None,
             train=True):
-
+####################################### FIX BATCHNORM ####################################
 
         # Sort through and assign the auxilliary variables
         default_vars = self.defaults()
