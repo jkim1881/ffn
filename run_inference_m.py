@@ -48,7 +48,7 @@ def main(unused_argv):
 
   # Training
   import os
-  batch_size = 10
+  batch_size = 16
   max_steps = 200#10*250/batch_size #250
   hdf_dir = os.path.split(request.image.hdf5)[0]
   load_ckpt_path = request.model_checkpoint_path
@@ -67,7 +67,7 @@ def main(unused_argv):
                           image_mean=request.image_mean,
                           image_stddev=request.image_stddev,
                           max_steps=max_steps,
-                          optimizer='adam',
+                          optimizer='sgd',
                           load_from_ckpt=load_ckpt_path,
                           batch_size=batch_size)
 

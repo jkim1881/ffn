@@ -623,7 +623,7 @@ class Canvas(object):
 
         # Try segmentation.
         seg_start = time.time()
-        num_iters = self.segment_at(pos, dynamic_image=DynamicImage()) # TODO : dynimage on
+        num_iters = self.segment_at(pos) # TODO : dynimage on
         t_seg = time.time() - seg_start
 
         # Check if segmentation was successful.
@@ -652,6 +652,11 @@ class Canvas(object):
 
         # We only allow creation of new segments in areas that are currently
         # empty.
+	if np.any(np.isnan(self.seed[sel])):
+	    print('NAN detected...............?? replacing with zero')
+	    import ipdb
+	    ipdb.set_trace()
+	    self.seed[sel] = 0
         mask = self.seed[sel] >= self.options.segment_threshold
         raw_segmented_voxels = np.sum(mask)
 

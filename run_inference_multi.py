@@ -60,31 +60,31 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/jk/PycharmProjects/ffn/'
+    script_root = '/home/drew/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
     output_root = '/media/data_cifs/connectomics/ffn_inferred'
 
-    # fov_type = 'traditional_fov'
-    # fov_size = [33, 33, 33]
-    # deltas = [8, 8, 8]
+    fov_type = 'traditional_fov'
+    fov_size = [33, 33, 33]
+    deltas = [8, 8, 8]
     # fov_type = 'flat_fov'
     # fov_size = [41, 41, 21]
     # deltas = [10, 10, 5]
-    fov_type = 'wide_fov'
-    fov_size = [57, 57, 13]
-    deltas = [8, 8, 3]
+    # fov_type = 'wide_fov'
+    # fov_size = [57, 57, 13]
+    # deltas = [8, 8, 3]
 
-    net_name = 'feedback_hgru_v5_3l_notemp_ol'#'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'conv
-    train_dataset_name = 'allbutberson'
+    net_name = 'convstack_3d'#'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'conv
+    train_dataset_name = 'provided'
 
-    min_ckpt = 0
-    max_ckpt = 240000 # 120000
+    min_ckpt = 27465030
+    max_ckpt = 27465040 # 120000
     ckpt_steps = 10000  ## <500 for
 
-    test_dataset_name = 'fullberson'#'neuroproof'
-    test_dataset_shape = [192, 192, 192]#[520, 520, 520] # [384, 192, 384] [192,192,192]
+    test_dataset_name = 'neuroproof' #'fullberson'#'neuroproof'
+    test_dataset_shape = [520,520,520] # [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
     test_dataset_type = 'train'  # 'train'
 
     image_mean = 154 #128
