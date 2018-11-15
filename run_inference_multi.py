@@ -42,6 +42,8 @@ def find_all_ckpts(ckpt_root, fov_type, net_cond_name):
         if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
             items.append(int(item.split('.')[1].split('-')[1]))
     items.sort()
+    # import ipdb
+    # ipdb.set_trace()
     return items
 
 
@@ -60,7 +62,7 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 
 if __name__ == '__main__':
 
-    script_root = '/home/jk/PycharmProjects/ffn/'
+    script_root = '/home/drew/ffn/'
     request_txt_root = os.path.join(script_root, 'configs')
     hdf_root = '/media/data_cifs/connectomics/datasets/third_party/'
     ckpt_root = '/media/data_cifs/connectomics/ffn_ckpts'
@@ -76,15 +78,15 @@ if __name__ == '__main__':
     # fov_size = [57, 57, 13]
     # deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d'#'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'conv
-    train_dataset_name = 'provided'
+    net_name = 'convstack_3d' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp'#'feedback_hgru_v5_3l_notemp' # 'conv
+    train_dataset_name = 'provided_berson'
 
-    min_ckpt = 27465030
-    max_ckpt = 27465040 # 120000
+    min_ckpt = 27565030
+    max_ckpt = 27565040 # 120000
     ckpt_steps = 10000  ## <500 for
 
-    test_dataset_name = 'neuroproof' #'fullberson'#'neuroproof'
-    test_dataset_shape = [520,520,520] # [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
+    test_dataset_name = 'fullberson' #'fullberson'#'neuroproof'
+    test_dataset_shape = [384,384,384] #[384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
     test_dataset_type = 'train'  # 'train'
 
     image_mean = 154 #128
@@ -130,6 +132,10 @@ if __name__ == '__main__':
         for ckpt in ckpt_list:
             if ckpt > max_ckpt:
                 to_remove.append(ckpt)
+    for ckpt in to_remove:
+	if ckpt in ckpt_list:
+	    ckpt_list.remove(ckpt)
+    to_remove = []
     if ckpt_steps<500:
         interval = len(ckpt_list)/ckpt_steps
         for i, ckpt in enumerate(ckpt_list):
@@ -137,10 +143,12 @@ if __name__ == '__main__':
                 to_remove.append(ckpt)
     else:
         interval = ckpt_steps
-        accumulator = -1
+        accumulator = ckpt_list[0]
         for i, ckpt in enumerate(ckpt_list):
-            if ckpt / interval >= accumulator:
-                accumulator += 1
+	    if i ==0:
+		continue
+            if (ckpt-accumulator) >= interval:
+                accumulator = ckpt
             else:
                 to_remove.append(ckpt)
     for ckpt in to_remove:
