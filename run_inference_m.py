@@ -52,7 +52,8 @@ def main(unused_argv):
   max_steps = 300#10*250/batch_size #250
   hdf_dir = os.path.split(request.image.hdf5)[0]
   load_ckpt_path = request.model_checkpoint_path
-  save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup_'+ os.path.split(os.path.split(hdf_dir)[0])[0]
+  save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup_'+ os.path.split(os.path.split(hdf_dir)[0])[1]
+  # import ipdb;ipdb.set_trace()
   with tf.Graph().as_default():
       with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
           # SET UP TRAIN MODEL

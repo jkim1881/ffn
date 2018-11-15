@@ -78,15 +78,15 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
+    net_name = 'convstack_3d_shallow' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
     train_dataset_name = 'allbutberson'
 
     min_ckpt = 0
     max_ckpt = 240000 # 240000 #120000
     ckpt_steps = 30000 #30000 # 15000
 
-    test_dataset_name = 'berson8' # 'isbi20138' 'fullberson'#'neuroproof'
-    test_dataset_shape = [96,192,192] #[100, 256, 256]  [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
+    test_dataset_name = 'isbi20138' #'berson8' # 'isbi20138' 'fullberson'#'neuroproof'
+    test_dataset_shape = [100,256,256] #[96,192,192] #[100, 256, 256]  [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
     test_dataset_type = 'train'  # 'train'
 
     image_mean = 154 #128
