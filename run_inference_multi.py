@@ -27,7 +27,7 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.write('inference_options { \n')
     file.write('  init_activation: 0.95 \n')
     file.write('  pad_value: 0.05 \n')
-    file.write('  move_threshold: 0.8 \n') #0.9 \n')
+    file.write('  move_threshold: 0.87 \n') #0.9 \n')
     file.write('  min_boundary_dist { x: 1 y: 1 z: 1} \n')
     file.write('  segment_threshold: 0.6 \n') #0.6 \n')
     file.write('  min_segment_size: 1000 \n')
@@ -78,15 +78,15 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'convstack_3d_shallow' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
-    train_dataset_name = 'allbutberson'
+    net_name = 'feedback_hgru_v5_3l_notemp_ol'#'convstack_3d_shallow' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
+    train_dataset_name = 'allbutberson89'
 
-    min_ckpt = 0
-    max_ckpt = 240000 # 240000 #120000
-    ckpt_steps = 30000 #30000 # 15000
+    min_ckpt = 152650
+    max_ckpt = 152660 # 240000 #120000
+    ckpt_steps = 15000 #30000 # 15000
 
-    test_dataset_name = 'isbi20138' #'berson8' # 'isbi20138' 'fullberson'#'neuroproof'
-    test_dataset_shape = [100,256,256] #[96,192,192] #[100, 256, 256]  [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
+    test_dataset_name = 'fullberson' #'isbi20138' #'fullberson'#'neuroproof'
+    test_dataset_shape = [384,384,384] #[100, 256, 256] # [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
     test_dataset_type = 'train'  # 'train'
 
     image_mean = 154 #128
