@@ -15,8 +15,8 @@ out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
 # BERSON 384 384 384
 fullpath = '/media/data_cifs/connectomics/datasets/berson.npz'
 data = np.load(fullpath)
-membrane = np.expand_dimes(1 - data['label'], axis=3)
-volume = np.expand_dimes(data['volume'], axis=3)
+membrane = np.expand_dims(1 - data['label'], axis=3)
+volume = np.expand_dims(data['volume'], axis=3)
 volume_n_membrane = np.concatenate([volume, membrane], axis=3)
 
 print(name + ' vol: ' + str(volume.shape))
