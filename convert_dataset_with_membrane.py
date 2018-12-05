@@ -19,7 +19,7 @@ membrane = np.expand_dims(1 - data['label'], axis=3)
 volume = np.expand_dims(data['volume'], axis=3)
 volume_n_membrane = np.concatenate([volume, membrane], axis=3)
 
-print(name + ' vol: ' + str(volume.shape))
+print(' vol: ' + str(volume.shape))
 
 write_dir = os.path.join(out_root,name,'train')
 if not os.path.isdir(write_dir):
