@@ -13,6 +13,7 @@ in_root = '/media/data_cifs/andreas/connectomics'
 out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
 
 # BERSON 384 384 384
+name = 'berson'
 fullpath = '/media/data_cifs/connectomics/datasets/berson.npz'
 data = np.load(fullpath)
 membrane = np.expand_dims(1 - data['label'], axis=3)
