@@ -55,7 +55,7 @@ if __name__ == '__main__':
         groundtruth_fullpath = os.path.join(hdf_root, vol, dataset_type, 'groundtruth.h5')
         data_string += str(i) + ':' + volume_fullpath + ':raw'
         label_string += str(i) + ':' + groundtruth_fullpath + ':stack'
-        if i < 4:
+        if i < len(dataset_name_list)-1:
             data_string += ','
             label_string += ','
 
