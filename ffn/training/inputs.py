@@ -177,6 +177,8 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
             _load_from_numpylike, [coordinates, volume_names], [dtype],
             name=scope)[0]
     loaded.set_shape([1] + list(shape[::-1]) + [num_channels])
+    import ipdb
+    ipdb.set_trace()
   return loaded
 
 
