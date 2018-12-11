@@ -163,8 +163,6 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     return data
   with tf.name_scope(name, 'LoadFromNumpyLike',
                      [coordinates, volume_names]) as scope:
-    import ipdb
-    ipdb.set_trace()
     # For historical reasons these have extra flat dims.
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
