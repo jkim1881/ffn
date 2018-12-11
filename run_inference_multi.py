@@ -85,7 +85,7 @@ if __name__ == '__main__':
     max_ckpt = 152660 # 240000 #120000
     ckpt_steps = 15000 #30000 # 15000
 
-    test_dataset_name = 'fullberson' #'isbi20138' #'fullberson'#'neuroproof'
+    test_dataset_name = '' #'isbi20138' #'fullberson'#'neuroproof'
     test_dataset_shape = [384,384,384] #[100, 256, 256] # [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
     test_dataset_type = 'train'  # 'train'
 
