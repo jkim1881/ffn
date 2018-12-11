@@ -24,19 +24,24 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
+def _predict_object_mask(input_patches, input_seed, membrane=None, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
-  in_k = 14
+  in_k = 18
   ff_k = [18, 18, 18]
   ff_kpool_multiplier = 2
 
-
-  x = tf.contrib.layers.conv3d(tf.concat([input_patches], axis=4),
+  if membrane is not None:
+      image_k = in_k=1
+  else:
+      image_k = in_k
+  x = tf.contrib.layers.conv3d(input_patches,
                                  scope='conv0_a',
-                                 num_outputs=in_k,
-                                 kernel_size=(1, 7, 7),
+                                 num_outputs=image_k,
+                                 kernel_size=(1, 12, 12),
                                  padding='SAME')
+  if membrane is not None:
+      x = tf.concat([x, membrane], axis=4)
 
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
@@ -57,7 +62,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
-                                        bn_reuse=True, ## TRUE TRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUETRUE
+                                        bn_reuse=True,
                                         gate_bn=True,
                                         aux=None,
                                         train=is_training)
@@ -74,29 +79,29 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       'gamma': is_training
   }
   net = tf.nn.relu(net)
-  # net = tf.contrib.layers.batch_norm(
-  #     inputs=net,
-  #     scale=True,
-  #     center=False,
-  #     fused=True,
-  #     renorm=False,
-  #     param_initializers=finalbn_param_initializer,
-  #     updates_collections=None,
-  #     is_training=finalbn_param_trainable)
+  net = tf.contrib.layers.batch_norm(
+      inputs=net,
+      scale=True,
+      center=False,
+      fused=True,
+      renorm=False,
+      param_initializers=finalbn_param_initializer,
+      updates_collections=None,
+      is_training=finalbn_param_trainable)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom1',
                                     num_outputs=in_k,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
-  # logits = tf.contrib.layers.batch_norm(
-  #     inputs=logits,
-  #     scale=True,
-  #     center=False,
-  #     fused=True,
-  #     renorm=False,
-  #     param_initializers=finalbn_param_initializer,
-  #     updates_collections=None,
-  #     is_training=finalbn_param_trainable)
+  logits = tf.contrib.layers.batch_norm(
+      inputs=logits,
+      scale=True,
+      center=False,
+      fused=True,
+      renorm=False,
+      param_initializers=finalbn_param_initializer,
+      updates_collections=None,
+      is_training=finalbn_param_trainable)
   logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',

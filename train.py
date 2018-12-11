@@ -153,7 +153,7 @@ FLAGS = flags.FLAGS
 class EvalTracker(object):
   """Tracks eval results over multiple training steps."""
 
-  def __init__(self, eval_shape):
+  def __init__(self, eval_shape, with_membrane=False):
     self.eval_labels = tf.placeholder(
         tf.float32, [1] + eval_shape + [1], name='eval_labels')
     self.eval_preds = tf.placeholder(
@@ -165,6 +165,7 @@ class EvalTracker(object):
     self.eval_threshold = logit(0.9)
     self.sess = None
     self._eval_shape = eval_shape
+    self.with_membrane = with_membrane # jk: extra arg
 
   def reset(self):
     """Resets status of the tracker."""
@@ -398,9 +399,14 @@ def define_data_input(model, queue_batch=None):
   loss_weights = tf.constant(np.ones(label_shape, dtype=np.float32))
 
   # Load image data.
-  patch = inputs.load_from_numpylike(
-      coord, volname, image_size, image_volume_map)
-  data_shape = [1] + image_size[::-1] + [1]
+  if self.with_membrane:
+      patch = inputs.load_from_numpylike(
+          coord, volname, image_size + [2], image_volume_map) # image_size = list([z y x])
+      data_shape = [1] + image_size[::-1] + [2]
+  else:
+      patch = inputs.load_from_numpylike(
+          coord, volname, image_size, image_volume_map) # image_size = list([z y x])
+      data_shape = [1] + image_size[::-1] + [1]
   patch = tf.reshape(patch, shape=data_shape)
 
   if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
@@ -627,7 +633,7 @@ def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
       model = model_cls(**model_kwargs)
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
-      eval_tracker = EvalTracker(eval_shape_zyx)
+      eval_tracker = EvalTracker(eval_shape_zyx, with_membrane=True) #jk: extra argument
       load_data_ops = define_data_input(model, queue_batch=1)
       prepare_ffn(model)
       merge_summaries_op = tf.summary.merge_all()

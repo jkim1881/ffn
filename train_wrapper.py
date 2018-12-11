@@ -9,14 +9,15 @@ if __name__ == '__main__':
 
     batch_size = int(sys.argv[1])
 
-    script_root = '/home/jk/PycharmProjects/ffn'# '/home/drew/ffn'
+    script_root = '/home/drew/ffn'
     net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    dataset_name_list = ['neuroproof',
-                         'isbi2013',
-                         'cremi_a',
-                         'cremi_b',
-                         'cremi_c']
+    # dataset_name_list = ['neuroproof',
+    #                      'isbi2013',
+    #                      'cremi_a',
+    #                      'cremi_b',
+    #                      'cremi_c']
+    dataset_name_list = ['berson_w_memb']
     dataset_type = 'train' #'val' #'train'
 
     # fov_type = 'traditional_fov'
@@ -37,12 +38,12 @@ if __name__ == '__main__':
     #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
 
     num_model_repeats = 1
-    max_steps = 128*100000/batch_size
+    max_steps = 16*400000/batch_size
     optimizer = 'adam' #'adam' #'sgd'
     image_mean = 128
     image_stddev = 33
 
-    dataset_name = 'allbutberson'
+    dataset_name = 'berson_w_memb'
     print('>>>>>>>>>>>>>>>>>>>>> Dataset = ' + dataset_name)
     cond_name = net_name + '_' + dataset_name + '_r0' #+ str(irep)
     coords_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'tf_record_file')
