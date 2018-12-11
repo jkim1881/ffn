@@ -389,8 +389,6 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
 
   # Fetch a single coordinate and volume name from a queue reading the
   # coordinate files or from saved hard/important examples
-  import ipdb
-  ipdb.set_trace()
   coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
 
   # Load object labels (segmentation).
