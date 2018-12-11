@@ -158,7 +158,7 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     # Add flat batch dim and return.
     data = np.expand_dims(data, 0)
     return data
-
+  ipdb.set_trace()
   with tf.name_scope(name, 'LoadFromNumpyLike',
                      [coordinates, volume_names]) as scope:
     # For historical reasons these have extra flat dims.
