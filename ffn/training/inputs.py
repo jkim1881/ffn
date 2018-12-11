@@ -97,7 +97,7 @@ def load_patch_coordinates(coordinates_file_pattern,
 
 
 def load_from_numpylike(coordinates, volume_names, shape, volume_map,
-                        name=None):
+                        name=None, with_membrane=False):
   """TensorFlow Python op that loads data from Numpy-like volumes.
 
   The volume object must support Numpy-like indexing, as well as shape, ndim,
@@ -147,7 +147,8 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     if volume.ndim == 4:
       slc = np.index_exp[:] + slc
     data = volume[slc]
-
+    import ipdb
+    ipdb.set_trace()
     # If 4d, move channels to back.  Otherwise, just add flat channels dim.
     if data.ndim == 4:
       data = np.rollaxis(data, 0, start=4)

@@ -401,16 +401,9 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
   loss_weights = tf.constant(np.ones(label_shape, dtype=np.float32))
 
   # Load image data.
-  if with_membrane: #input image has two channels (grayscale and membrane)
-      patch = inputs.load_from_numpylike(
-          coord, volname, image_size + [2], image_volume_map) # image_size = list([z y x])
-      data_shape = [1] + image_size[::-1] + [2]
-  else:
-      patch = inputs.load_from_numpylike(
-          coord, volname, image_size, image_volume_map) # image_size = list([z y x])
-      data_shape = [1] + image_size[::-1] + [1]
-  import ipdb
-  ipdb.set_trace()
+  patch = inputs.load_from_numpylike(
+      coord, volname, image_size, image_volume_map, with_membrane) # image_size = list([x y z]) #TODO (jk): new argument with_membrane
+  data_shape = [1] + image_size[::-1] + [2]
   patch = tf.reshape(patch, shape=data_shape)
 
   if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
