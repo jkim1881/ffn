@@ -12,15 +12,15 @@ if __name__ == '__main__':
     script_root = '/home/drew/ffn'
     net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    # volumes_name_list = ['neuroproof',
-    #                      'isbi2013',
-    #                      'cremi_a',
-    #                      'cremi_b',
-    #                      'cremi_c']
-    volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'berson_w_memb' #'allbutberson'
+    volumes_name_list = ['neuroproof',
+                         'isbi2013',
+                         'cremi_a',
+                         'cremi_b',
+                         'cremi_c']
+    # volumes_name_list = ['berson_w_memb']
+    tfrecords_name = 'allbutberson' #'berson_w_memb'
     dataset_type = 'train' #'val' #'train'
-    with_membrane = True
+    with_membrane = False
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]

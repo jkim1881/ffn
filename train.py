@@ -394,7 +394,6 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
   # Load object labels (segmentation).
   labels = inputs.load_from_numpylike(
       coord, volname, label_size, label_volume_map)
-
   label_shape = [1] + label_size[::-1] + [1]
   labels = tf.reshape(labels, label_shape)
 
