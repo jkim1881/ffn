@@ -124,7 +124,9 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
   def _num_channels(volume):
     if volume.ndim == 3:
       return 1
-    return volume.shape[0]
+    else:
+      # return volume.shape[0] # TODO(jk): assume that channels are in the last dim instead of first
+      return volume.shape[-1]
 
   # Validate that all volumes are compatible.
   volumes = iter(volume_map.values())
