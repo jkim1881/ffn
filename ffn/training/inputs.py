@@ -144,17 +144,20 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     # Get data, including all channels if volume is 4d.
     starts = np.array(coord) - start_offset
     slc = bounding_box.BoundingBox(start=starts, size=shape).to_slice()
-    if volume.ndim == 4:
-      slc = np.index_exp[:] + slc
-    data = volume[slc]
-    import ipdb
-    ipdb.set_trace()
+    # if volume.ndim == 4:
+    #   slc = np.index_exp[:] + slc
+    # data = volume[slc]
     # If 4d, move channels to back.  Otherwise, just add flat channels dim.
-    if data.ndim == 4:
-      data = np.rollaxis(data, 0, start=4)
-    else:
+    # if data.ndim == 4:
+    #   data = np.rollaxis(data, 0, start=4)
+    # else:
+    #   data = np.expand_dims(data, 4)
+    # TODO(jk): assume that channels are in the last dim instead of first
+    if volume.ndim == 4:
+      slc = slc + np.index_exp[:]
+    data = volume[slc]
+    if not data.ndim == 4:
       data = np.expand_dims(data, 4)
-
     # Add flat batch dim and return.
     data = np.expand_dims(data, 0)
     return data
@@ -164,8 +167,6 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
     # TODO: (jk) forcing dtype to be uint32
-    import ipdb
-    ipdb.set_trace()
     if dtype==np.uint32:
         loaded = tf.py_func(
             _load_from_numpylike, [coordinates, volume_names], [tf.int32],

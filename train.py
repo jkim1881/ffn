@@ -405,7 +405,8 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
       coord, volname, image_size, image_volume_map, with_membrane) # image_size = list([x y z]) #TODO (jk): new argument with_membrane
   data_shape = [1] + image_size[::-1] + [2]
   patch = tf.reshape(patch, shape=data_shape)
-
+  import ipdb
+  ipdb.set_trace()
   if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
       not FLAGS.image_offset_scale_map):
     raise ValueError('--image_mean, --image_stddev or --image_offset_scale_map '
