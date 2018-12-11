@@ -162,12 +162,12 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     data = np.expand_dims(data, 0)
     return data
   with tf.name_scope(name, 'LoadFromNumpyLike',[coordinates, volume_names]) as scope:
-    import ipdb
-    ipdb.set_trace()
     # For historical reasons these have extra flat dims.
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
     # TODO: (jk) forcing dtype to be uint32
+    import ipdb
+    ipdb.set_trace()
     if dtype==np.uint32:
         loaded = tf.py_func(
             _load_from_numpylike, [coordinates, volume_names], [tf.int32],
