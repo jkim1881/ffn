@@ -24,23 +24,24 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(input_patches, input_seed, membrane=None, depth=9, is_training=True):
+def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
   in_k = 18
   ff_k = [18, 18, 18]
   ff_kpool_multiplier = 2
 
-  if membrane is not None:
-      image_k = in_k=1
+  if input_patches.get_shape().as_list()[-1] == 2:
+      image = input_patches[:,:,:,:,0]
+      membrane = input_patches[:,:,:,:,1]
   else:
-      image_k = in_k
-  x = tf.contrib.layers.conv3d(input_patches,
+      image = input_patches
+  x = tf.contrib.layers.conv3d(image,
                                  scope='conv0_a',
                                  num_outputs=image_k,
                                  kernel_size=(1, 12, 12),
                                  padding='SAME')
-  if membrane is not None:
+  if input_patches.get_shape().as_list()[-1] == 2:
       x = tf.concat([x, membrane], axis=4)
 
   from .prc import feedback_hgru_v5_3l_nu
@@ -156,7 +157,8 @@ class ConvStack3DFFNModel(model.FFNModel):
           name='patches')
 
     with tf.variable_scope('seed_update', reuse=self.reuse):
-      logit_update = _predict_object_mask(self.input_patches, self.input_seed, self.depth, is_training=self.is_training)
+      logit_update = _predict_object_mask(self.input_patches, self.input_seed,
+                                          depth=self.depth, is_training=self.is_training)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 
