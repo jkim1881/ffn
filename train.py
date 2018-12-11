@@ -406,6 +406,8 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
       patch = inputs.load_from_numpylike(
           coord, volname, image_size, image_volume_map) # image_size = list([z y x])
       data_shape = [1] + image_size[::-1] + [1]
+  import ipdb
+  ipdb.set_trace()
   patch = tf.reshape(patch, shape=data_shape)
 
   if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
