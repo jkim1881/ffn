@@ -12,14 +12,15 @@ if __name__ == '__main__':
     script_root = '/home/drew/ffn'
     net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    dataset_name_list = ['neuroproof',
-                         'isbi2013',
-                         'cremi_a',
-                         'cremi_b',
-                         'cremi_c']
-    # dataset_name_list = ['berson_w_memb']
+    # volumes_name_list = ['neuroproof',
+    #                      'isbi2013',
+    #                      'cremi_a',
+    #                      'cremi_b',
+    #                      'cremi_c']
+    volumes_name_list = ['berson_w_memb']
+    tfrecords_name = 'berson_w_memb' #'allbutberson'
     dataset_type = 'train' #'val' #'train'
-    with_membrane = False
+    with_membrane = True
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
@@ -44,19 +45,18 @@ if __name__ == '__main__':
     image_mean = 128
     image_stddev = 33
 
-    dataset_name = 'berson_w_memb'
-    print('>>>>>>>>>>>>>>>>>>>>> Dataset = ' + dataset_name)
-    cond_name = net_name + '_' + dataset_name + '_r0' #+ str(irep)
-    coords_fullpath = os.path.join(hdf_root, dataset_name, dataset_type, 'tf_record_file')
+    print('>>>>>>>>>>>>>>>>>>>>> Dataset = ' + tfrecords_name)
+    cond_name = net_name + '_' + tfrecords_name + '_r0' #+ str(irep)
+    coords_fullpath = os.path.join(hdf_root, tfrecords_name, dataset_type, 'tf_record_file')
 
     data_string = ' --data_volumes '
     label_string = ' --label_volumes '
-    for i, vol in enumerate(dataset_name_list):
+    for i, vol in enumerate(volumes_name_list):
         volume_fullpath = os.path.join(hdf_root, vol, dataset_type, 'grayscale_maps.h5')
         groundtruth_fullpath = os.path.join(hdf_root, vol, dataset_type, 'groundtruth.h5')
         data_string += str(i) + ':' + volume_fullpath + ':raw'
         label_string += str(i) + ':' + groundtruth_fullpath + ':stack'
-        if i < len(dataset_name_list)-1:
+        if i < len(volumes_name_list)-1:
             data_string += ','
             label_string += ','
     command = 'python ' + os.path.join(script_root, 'train.py') + \
