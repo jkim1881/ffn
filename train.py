@@ -146,6 +146,9 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'List of integers equal to a subset of [0, 1, 2] specifying '
                   'which of the [z, y, x] axes, respectively, may be reflected '
                   'in order to augment the training data.')
+#TODO: jk: including with_membrane
+flags.DEFINE_boolean('with_membrane', False,
+                     'Whether the dataset volume includes membrane prediction as an extra channel')
 
 FLAGS = flags.FLAGS
 
@@ -635,7 +638,7 @@ def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
-      load_data_ops = define_data_input(model, with_membrane=True, queue_batch=1) #jk: extra argument
+      load_data_ops = define_data_input(model, with_membrane=FLAGS.with_membrane, queue_batch=1) #jk: extra argument
       prepare_ffn(model)
       merge_summaries_op = tf.summary.merge_all()
 

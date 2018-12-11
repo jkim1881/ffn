@@ -17,8 +17,9 @@ if __name__ == '__main__':
     #                      'cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
-    dataset_name_list = ['berson_w_memb']
+    dataset_name_list = ['berson']#['berson_w_memb']
     dataset_type = 'train' #'val' #'train'
+    with_membrane = False
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
@@ -71,7 +72,8 @@ if __name__ == '__main__':
               ' --max_steps=' + str(max_steps) + \
               ' --optimizer ' + optimizer + \
               ' --load_from_ckpt ' + load_from_ckpt + \
-              ' --batch_size=' + str(batch_size)
+              ' --batch_size=' + str(batch_size) + \
+              ' --with_membrane=' + str(with_membrane)
 
 
     ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
