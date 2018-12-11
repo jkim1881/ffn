@@ -403,7 +403,10 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
   # Load image data.
   patch = inputs.load_from_numpylike(
       coord, volname, image_size, image_volume_map, with_membrane) # image_size = list([x y z]) #TODO (jk): new argument with_membrane
-  data_shape = [1] + image_size[::-1] + [2]
+  if with_membrane:
+    data_shape = [1] + image_size[::-1] + [2]
+  else:
+    data_shape = [1] + image_size[::-1] + [1]
   patch = tf.reshape(patch, shape=data_shape)
   import ipdb
   ipdb.set_trace()
