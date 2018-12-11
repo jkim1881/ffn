@@ -162,9 +162,8 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
     data = np.expand_dims(data, 0)
     return data
 
-  import ipdb
-  ipdb.set_trace()
-  with tf.name_scope(name, 'LoadFromNumpyLike',[coordinates, volume_names]) as scope:
+  # with tf.name_scope(name, 'LoadFromNumpyLike',[coordinates, volume_names]) as scope: #TODO(jk): doesn't work
+  with tf.name_scope('LoadFromNumpyLike_jk') as scope:
     # For historical reasons these have extra flat dims.
     coordinates = tf.squeeze(coordinates, axis=0)
     volume_names = tf.squeeze(volume_names, axis=0)
@@ -178,7 +177,7 @@ def load_from_numpylike(coordinates, volume_names, shape, volume_map,
             _load_from_numpylike, [coordinates, volume_names], [dtype],
             name=scope)[0]
     loaded.set_shape([1] + list(shape[::-1]) + [num_channels])
-    return loaded
+  return loaded
 
 
 def get_offset_scale(volname,
