@@ -366,6 +366,8 @@ def define_data_input(model, queue_batch=None):
   label_volume_map = {}
   for vol in FLAGS.label_volumes.split(','):
     print(vol)
+    import ipdb
+    ipdb.set_trace()
     volname, path, dataset = vol.split(':')
     label_volume_map[volname] = h5py.File(path, 'r')[dataset]
 
