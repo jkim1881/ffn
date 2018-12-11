@@ -59,8 +59,6 @@ if __name__ == '__main__':
         if i < len(dataset_name_list)-1:
             data_string += ','
             label_string += ','
-    import ipdb
-    ipdb.set_trace()
     command = 'python ' + os.path.join(script_root, 'train.py') + \
               ' --train_coords ' + coords_fullpath + \
               data_string + \
