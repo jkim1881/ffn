@@ -3,13 +3,13 @@ import os
 import subprocess
 import sys
 import numpy as np
-
+import train_functional
 
 if __name__ == '__main__':
 
     batch_size = int(sys.argv[1])
 
-    script_root = '/home/drew/ffn'
+    script_root = '/home/jk/PycharmProjects/ffn' #'/home/drew/ffn'
     net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     # volumes_name_list = ['neuroproof',
@@ -63,29 +63,52 @@ if __name__ == '__main__':
         if i < len(volumes_name_list)-1:
             data_string += ','
             label_string += ','
-    command = 'python ' + os.path.join(script_root, 'train.py') + \
-              ' --train_coords ' + coords_fullpath + \
-              data_string + \
-              label_string + \
-              ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
-              ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
-              ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
-              ' --image_mean ' + str(image_mean) + \
-              ' --image_stddev ' + str(image_stddev) + \
-              ' --max_steps=' + str(max_steps) + \
-              ' --optimizer ' + optimizer + \
-              ' --load_from_ckpt ' + load_from_ckpt + \
-              ' --batch_size=' + str(batch_size) + \
-              ' --with_membrane=' + str(with_membrane)
 
 
-    ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
-    subprocess.call(command, shell=True)
+    # command = 'python ' + os.path.join(script_root, 'train.py') + \
+    #           ' --train_coords ' + coords_fullpath + \
+    #           data_string + \
+    #           label_string + \
+    #           ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
+    #           ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
+    #           ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
+    #           ' --image_mean ' + str(image_mean) + \
+    #           ' --image_stddev ' + str(image_stddev) + \
+    #           ' --max_steps=' + str(max_steps) + \
+    #           ' --optimizer ' + optimizer + \
+    #           ' --load_from_ckpt ' + load_from_ckpt + \
+    #           ' --batch_size=' + str(batch_size) + \
+    #           ' --with_membrane=' + str(with_membrane)
+    # ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
+    # subprocess.call(command, shell=True)
 
+    import tensorflow as tf
+    with tf.Graph().as_default():
+        with tf.device(tf.train.replica_device_setter(0, merge_devices=True)):
+        # with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
+            # SET UP TRAIN MODEL
+            print('>>>>>>>>>>>>>>>>>>>>>>SET UP TRAIN MODEL')
+            eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = train_functional.global_main(
+                train_coords=coords_fullpath,
+                data_volumes=data_string,
+                label_volumes=label_string,
+                train_dir=os.path.join(ckpt_root, cond_name),
+                model_name=net_name_obj+'.ConvStack3DFFNModel',
+                model_args='{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}',
+                image_mean=image_mean,
+                image_stddev=image_stddev,
+                max_steps=max_steps,
+                optimizer=optimizer,
+                load_from_ckpt=load_from_ckpt,
+                batch_size=batch_size,
+                with_membrane=with_membrane)
 
+            # START TRAINING
+            print('>>>>>>>>>>>>>>>>>>>>>>START TRAINING')
+            sess = train_functional.train_ffn(
+                eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
 
-
-### DATA PREPATATION
+    ### DATA PREPATATION
 
 
   # python compute_partitions.py \

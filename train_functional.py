@@ -60,8 +60,6 @@ from ffn.training import optimizer
 
 # pylint: enable=unused-import
 
-FLAGS = flags.FLAGS
-
 # Options related to training data.
 flags.DEFINE_string('train_coords', None,
                     'Glob for the TFRecord of training coordinates.')
@@ -147,6 +145,9 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'List of integers equal to a subset of [0, 1, 2] specifying '
                   'which of the [z, y, x] axes, respectively, may be reflected '
                   'in order to augment the training data.')
+#TODO: jk: including with_membrane
+flags.DEFINE_boolean('with_membrane', False,
+                     'Whether the dataset volume includes membrane prediction as an extra channel')
 
 FLAGS = flags.FLAGS
 
@@ -392,7 +393,7 @@ def _get_permutable_axes():
     return [int(x) + 1 for x in FLAGS.permutable_axes]
 
 
-def define_data_input(model, queue_batch=None):
+def define_data_input(model, with_membrane=False, queue_batch=None):
     """Adds TF ops to load input data."""
 
     label_volume_map = {}
@@ -433,7 +434,10 @@ def define_data_input(model, queue_batch=None):
     # Load image data.
     patch = inputs.load_from_numpylike(
         coord, volname, image_size, image_volume_map)
-    data_shape = [1] + image_size[::-1] + [1]
+    if with_membrane:
+        data_shape = [1] + image_size[::-1] + [2]
+    else:
+        data_shape = [1] + image_size[::-1] + [1]
     patch = tf.reshape(patch, shape=data_shape)
 
     if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
@@ -659,7 +663,7 @@ def build_train_graph(model_cls, save_ckpt=True, **model_kwargs):
     eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
     eval_tracker = EvalTracker(eval_shape_zyx)
-    load_data_ops = define_data_input(model, queue_batch=1)
+    load_data_ops = define_data_input(model, with_membrane=FLAGS.with_membrane, queue_batch=1)
     prepare_ffn(model)
     merge_summaries_op = tf.summary.merge_all()
 
@@ -796,8 +800,11 @@ def global_main(
         max_steps,
         optimizer,
         load_from_ckpt,
-        batch_size):
+        batch_size,
+        with_membrane=False):
     """Convert args to globals then run main."""
+    import ipdb
+    ipdb.set_trace()
     FLAGS.train_coords = train_coords
     FLAGS.train_dir = train_dir
     FLAGS.data_volumes = data_volumes
@@ -810,6 +817,7 @@ def global_main(
     FLAGS.optimizer = optimizer
     FLAGS.load_from_ckpt = load_from_ckpt
     FLAGS.batch_size = batch_size
+    FLAGS.with_membrane=with_membrane
 
     model_class = import_symbol(FLAGS.model_name)
     seed = int(time.time() + FLAGS.task * 3600 * 24)
@@ -817,7 +825,7 @@ def global_main(
     random.seed(seed)
 
     eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = \
-        build_train_graph(model_class, batch_size=FLAGS.batch_size, save_ckpt=False,
+        build_train_graph(model_class, batch_size=FLAGS.batch_size, save_ckpt=False, with_membrane=FLAGS.with_membrane,
                   **json.loads(FLAGS.model_args))
     return eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op
 

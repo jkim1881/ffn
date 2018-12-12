@@ -73,7 +73,7 @@ class FFNModel(object):
           self.shifts.append((dx, dy, dz))
 
     # Mask identifying valid examples within the batch. Only valid examples
-    # contribute to the loss and see object mask updates.
+    # contribute to the loss and see object mask updates
     self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag)
 
     if not len(tag):
