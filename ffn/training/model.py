@@ -55,11 +55,12 @@ class FFNModel(object):
   # TF op to call to perform loss optimization on the model.
   train_op = None
 
-  def __init__(self, deltas, batch_size=None, tag=''):
+  def __init__(self, deltas, batch_size=None, with_membrane=False, tag=''):
     assert self.dim is not None
 
     self.deltas = deltas
     self.batch_size = batch_size
+    self.with_membrane=with_membrane
 
     # Initialize the shift collection. This is used during training with the
     # fixed step size policy.
@@ -121,8 +122,12 @@ class FFNModel(object):
     """
     self.input_seed.set_shape([self.batch_size] +
                               list(self.input_seed_size[::-1]) + [1])
-    self.input_patches.set_shape([self.batch_size] +
-                                 list(self.input_image_size[::-1]) + [1])
+    if self.with_membrane:
+      self.input_patches.set_shape([self.batch_size] +
+                                   list(self.input_image_size[::-1]) + [2])
+    else:
+      self.input_patches.set_shape([self.batch_size] +
+                                   list(self.input_image_size[::-1]) + [1])
 
   def set_up_sigmoid_pixelwise_loss(self, logits, return_logits=False):
     """Sets up the loss function of the model."""
