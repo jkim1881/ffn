@@ -38,7 +38,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   else:
       image = input_patches
       image_k = in_k
-      
+
   x = tf.contrib.layers.conv3d(image,
                                  scope='conv0_a',
                                  num_outputs=image_k,
@@ -46,7 +46,8 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                  padding='SAME')
   if input_patches.get_shape().as_list()[-1] == 2:
       x = tf.concat([x, membrane], axis=4)
-
+  import ipdb
+  ipdb.set_trace()
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
