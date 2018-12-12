@@ -18,9 +18,9 @@ if __name__ == '__main__':
                          'cremi_b',
                          'cremi_c']
     # volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'allbutberson' #'berson_w_memb'
+    tfrecords_name = 'berson_w_memb'
     dataset_type = 'train' #'val' #'train'
-    with_membrane = False
+    with_membrane = True
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
