@@ -45,6 +45,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                  kernel_size=(1, 12, 12),
                                  padding='SAME')
   if input_patches.get_shape().as_list()[-1] == 2:
+      print('FFN-hgru-v5: using membrane as input')
       x = tf.concat([x, membrane], axis=4)
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
