@@ -27,7 +27,7 @@ from .. import model
 def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
-  in_k = 18
+  in_k = 16
   ff_k = [18, 18, 18]
   ff_kpool_multiplier = 2
 
