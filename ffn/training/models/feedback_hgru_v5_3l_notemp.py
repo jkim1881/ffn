@@ -32,12 +32,13 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   ff_kpool_multiplier = 2
 
   if input_patches.get_shape().as_list()[-1] == 2:
-      image = input_patches[:,:,:,:,0]
-      membrane = input_patches[:,:,:,:,1]
+      image = tf.expand_dims(input_patches[:,:,:,:,0], axis=4)
+      membrane = tf.expand_dims(input_patches[:,:,:,:,1], axis=4)
       image_k = in_k-1
   else:
       image = input_patches
       image_k = in_k
+      
   x = tf.contrib.layers.conv3d(image,
                                  scope='conv0_a',
                                  num_outputs=image_k,
