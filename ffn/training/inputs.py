@@ -97,7 +97,7 @@ def load_patch_coordinates(coordinates_file_pattern,
 
 
 def load_from_numpylike(coordinates, volume_names, shape, volume_map,
-                        name=None, with_membrane=False):
+                        name=None):
   """TensorFlow Python op that loads data from Numpy-like volumes.
 
   The volume object must support Numpy-like indexing, as well as shape, ndim,

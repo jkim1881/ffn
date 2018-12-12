@@ -401,7 +401,7 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
 
   # Load image data.
   patch = inputs.load_from_numpylike(
-      coord, volname, image_size, image_volume_map, with_membrane) # image_size = list([x y z]) #TODO (jk): new argument with_membrane
+      coord, volname, image_size, image_volume_map) # image_size = list([x y z])
   if with_membrane:
     data_shape = [1] + image_size[::-1] + [2]
   else:
@@ -628,7 +628,7 @@ def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
     with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
-      model = model_cls(**model_kwargs)
+      model = model_cls(with_membrane=FLAGS.with_membrane, **model_kwargs)
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
