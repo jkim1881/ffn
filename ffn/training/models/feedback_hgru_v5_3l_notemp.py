@@ -46,8 +46,6 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                  padding='SAME')
   if input_patches.get_shape().as_list()[-1] == 2:
       x = tf.concat([x, membrane], axis=4)
-  import ipdb
-  ipdb.set_trace()
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
@@ -146,7 +144,7 @@ class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
   def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, reuse=False, tag=''):
-    super(ConvStack3DFFNModel, self).__init__(deltas, with_membrane, batch_size, tag)
+    super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, tag)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
     self.is_training = is_training
