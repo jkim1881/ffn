@@ -703,8 +703,7 @@ def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merg
 
     policy_map = {
         'fixed': partial(fixed_offsets, fov_shifts=fov_shifts),
-        'max_pred_moves': max_pred_offsets
-    }
+        'max_pred_moves': max_pred_offsets}
     batch_it = get_batch(lambda: sess.run(load_data_ops),
                          eval_tracker, model, TA.batch_size,
                          policy_map[TA.fov_policy], TA)
