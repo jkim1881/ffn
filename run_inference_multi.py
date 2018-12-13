@@ -58,19 +58,28 @@ def main(unused_argv):
       with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
           # SET UP TRAIN MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP TRAIN MODEL')
-          eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = train_functional.global_main(
-                          train_coords= os.path.join(hdf_dir, 'tf_record_file'),
-                          data_volumes='jk:' + os.path.join(hdf_dir, 'grayscale_maps.h5') + ':raw',
-                          label_volumes='jk:' + os.path.join(hdf_dir, 'groundtruth.h5') + ':stack',
-                          train_dir=save_ckpt_path,
-                          model_name=request.model_name,
-                          model_args=request.model_args,
-                          image_mean=request.image_mean,
-                          image_stddev=request.image_stddev,
-                          max_steps=max_steps,
-                          optimizer='adam',
-                          load_from_ckpt=load_ckpt_path,
-                          batch_size=batch_size)
+
+          TA = train_functional.TrainArgs(train_coords= os.path.join(hdf_dir, 'tf_record_file'),
+                                          data_volumes='jk:' + os.path.join(hdf_dir, 'grayscale_maps.h5') + ':raw',
+                                          label_volumes='jk:' + os.path.join(hdf_dir, 'groundtruth.h5') + ':stack',
+                                          train_dir=save_ckpt_path,
+                                          model_name=request.model_name,
+                                          model_args=request.model_args,
+                                          image_mean=request.image_mean,
+                                          image_stddev=request.image_stddev,
+                                          max_steps=max_steps,
+                                          optimizer='adam',
+                                          load_from_ckpt=load_ckpt_path,
+                                          batch_size=batch_size)
+          global TA
+          model_class = import_symbol(TA.model_name)
+          seed = int(time.time() + TA.task * 3600 * 24)
+          logging.info('Random seed: %r', seed)
+          random.seed(seed)
+          eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = \
+                      build_train_graph(model_class, TA,
+                                        save_ckpt=False, with_membrane=TA.with_membrane, **json.loads(TA.model_args))
+
 
           # SET UP INFERENCE MODEL
           print('>>>>>>>>>>>>>>>>>>>>>>SET UP INFERENCE MODEL')
@@ -87,7 +96,7 @@ def main(unused_argv):
           # START TRAINING
           print('>>>>>>>>>>>>>>>>>>>>>>START TOPUP TRAINING')
           sess = train_functional.train_ffn(
-              eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
+              TA, eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
 
           # saver.save(sess, "/tmp/model.ckpt")
 

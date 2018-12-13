@@ -46,7 +46,7 @@ from scipy.special import logit
 import tensorflow as tf
 
 from absl import app
-from absl import flags
+# from absl import flags
 from tensorflow import gfile
 
 from ffn.inference import movement
@@ -61,95 +61,94 @@ from ffn.training import optimizer
 # pylint: enable=unused-import
 
 # Options related to training data.
-flags.DEFINE_string('train_coords', None,
-                    'Glob for the TFRecord of training coordinates.')
-flags.DEFINE_string('data_volumes', None,
-                    'Comma-separated list of <volume_name>:<volume_path>:'
-                    '<dataset>, where volume_name need to match the '
-                    '"label_volume_name" field in the input example, '
-                    'volume_path points to HDF5 volumes containing uint8 '
-                    'image data, and `dataset` is the name of the dataset '
-                    'from which data will be read.')
-flags.DEFINE_string('label_volumes', None,
-                    'Comma-separated list of <volume_name>:<volume_path>:'
-                    '<dataset>, where volume_name need to match the '
-                    '"label_volume_name" field in the input example, '
-                    'volume_path points to HDF5 volumes containing int64 '
-                    'label data, and `dataset` is the name of the dataset '
-                    'from which data will be read.')
-flags.DEFINE_string('model_name', None,
-                    'Name of the model to train. Format: '
-                    '[<packages>.]<module_name>.<model_class>, if packages is '
-                    'missing "ffn.training.models" is used as default.')
-flags.DEFINE_string('model_args', None,
-                    'JSON string with arguments to be passed to the model '
-                    'constructor.')
-# TODO (jk)
-flags.DEFINE_string('load_from_ckpt', None,
-                    'Path to the pretrained checkpoint.')
+# flags.DEFINE_string('train_coords', None,'Glob for the TFRecord of training coordinates.')
+# flags.DEFINE_string('data_volumes', None,
+#                     'Comma-separated list of <volume_name>:<volume_path>:'
+#                     '<dataset>, where volume_name need to match the '
+#                     '"label_volume_name" field in the input example, '
+#                     'volume_path points to HDF5 volumes containing uint8 '
+#                     'image data, and `dataset` is the name of the dataset '
+#                     'from which data will be read.')
+# flags.DEFINE_string('label_volumes', None,
+#                     'Comma-separated list of <volume_name>:<volume_path>:'
+#                     '<dataset>, where volume_name need to match the '
+#                     '"label_volume_name" field in the input example, '
+#                     'volume_path points to HDF5 volumes containing int64 '
+#                     'label data, and `dataset` is the name of the dataset '
+#                     'from which data will be read.')
+# flags.DEFINE_string('model_name', None,
+#                     'Name of the model to train. Format: '
+#                     '[<packages>.]<module_name>.<model_class>, if packages is '
+#                     'missing "ffn.training.models" is used as default.')
+# flags.DEFINE_string('model_args', None,
+#                     'JSON string with arguments to be passed to the model '
+#                     'constructor.')
+# # TODO (jk)
+# flags.DEFINE_string('load_from_ckpt', None,
+#                     'Path to the pretrained checkpoint.')
+#
+# # Training infra options.
+# flags.DEFINE_string('train_dir', '/tmp',
+#                     'Path where checkpoints and other data will be saved.')
+# flags.DEFINE_string('master', '', 'Network address of the master.')
+# flags.DEFINE_integer('batch_size', 4, 'Number of images in a batch.')
+# flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
+# flags.DEFINE_integer('ps_tasks', 0, 'Number of tasks in the ps job.')
+# flags.DEFINE_integer('max_steps', 10000, 'Number of steps to train for.')
+# flags.DEFINE_integer('replica_step_delay', 300,
+#                      'Require the model to reach step number '
+#                      '<replica_step_delay> * '
+#                      '<replica_id> before starting training on a given '
+#                      'replica.')
+# flags.DEFINE_integer('summary_rate_secs', 120,
+#                      'How often to save summaries (in seconds).')
+#
+# # FFN training options.
+# flags.DEFINE_float('seed_pad', 0.05,
+#                    'Value to use for the unknown area of the seed.')
+# flags.DEFINE_float('threshold', 0.9,
+#                    'Value to be reached or exceeded at the new center of the '
+#                    'field of view in order for the network to inspect it.')
+# flags.DEFINE_enum('fov_policy', 'fixed', ['fixed', 'max_pred_moves'],
+#                   'Policy to determine where to move the field of the '
+#                   'network. "fixed" tries predefined offsets specified by '
+#                   '"model.shifts". "max_pred_moves" moves to the voxel with '
+#                   'maximum mask activation within a plane perpendicular to '
+#                   'one of the 6 Cartesian directions, offset by +/- '
+#                   'model.deltas from the current FOV position.')
+# # TODO(mjanusz): Implement fov_moves > 1 for the 'fixed' policy.
+# flags.DEFINE_integer('fov_moves', 1,
+#                      'Number of FOV moves by "model.delta" voxels to execute '
+#                      'in every dimension. Currently only works with the '
+#                      '"max_pred_moves" policy.')
+# flags.DEFINE_boolean('shuffle_moves', True,
+#                      'Whether to randomize the order of the moves used by the '
+#                      'network with the "fixed" policy.')
+#
+# flags.DEFINE_float('image_mean', None,
+#                    'Mean image intensity to use for input normalization.')
+# flags.DEFINE_float('image_stddev', None,
+#                    'Image intensity standard deviation to use for input '
+#                    'normalization.')
+# flags.DEFINE_list('image_offset_scale_map', None,
+#                   'Optional per-volume specification of mean and stddev. '
+#                   'Every entry in the list is a colon-separated tuple of: '
+#                   'volume_label, offset, scale.')
+#
+# flags.DEFINE_list('permutable_axes', ['1', '2'],
+#                   'List of integers equal to a subset of [0, 1, 2] specifying '
+#                   'which of the [z, y, x] axes, respectively, may be permuted '
+#                   'in order to augment the training data.')
+#
+# flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
+#                   'List of integers equal to a subset of [0, 1, 2] specifying '
+#                   'which of the [z, y, x] axes, respectively, may be reflected '
+#                   'in order to augment the training data.')
+# #TODO: jk: including with_membrane
+# flags.DEFINE_boolean('with_membrane', False,
+#                      'Whether the dataset volume includes membrane prediction as an extra channel')
 
-# Training infra options.
-flags.DEFINE_string('train_dir', '/tmp',
-                    'Path where checkpoints and other data will be saved.')
-flags.DEFINE_string('master', '', 'Network address of the master.')
-flags.DEFINE_integer('batch_size', 4, 'Number of images in a batch.')
-flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
-flags.DEFINE_integer('ps_tasks', 0, 'Number of tasks in the ps job.')
-flags.DEFINE_integer('max_steps', 10000, 'Number of steps to train for.')
-flags.DEFINE_integer('replica_step_delay', 300,
-                     'Require the model to reach step number '
-                     '<replica_step_delay> * '
-                     '<replica_id> before starting training on a given '
-                     'replica.')
-flags.DEFINE_integer('summary_rate_secs', 120,
-                     'How often to save summaries (in seconds).')
-
-# FFN training options.
-flags.DEFINE_float('seed_pad', 0.05,
-                   'Value to use for the unknown area of the seed.')
-flags.DEFINE_float('threshold', 0.9,
-                   'Value to be reached or exceeded at the new center of the '
-                   'field of view in order for the network to inspect it.')
-flags.DEFINE_enum('fov_policy', 'fixed', ['fixed', 'max_pred_moves'],
-                  'Policy to determine where to move the field of the '
-                  'network. "fixed" tries predefined offsets specified by '
-                  '"model.shifts". "max_pred_moves" moves to the voxel with '
-                  'maximum mask activation within a plane perpendicular to '
-                  'one of the 6 Cartesian directions, offset by +/- '
-                  'model.deltas from the current FOV position.')
-# TODO(mjanusz): Implement fov_moves > 1 for the 'fixed' policy.
-flags.DEFINE_integer('fov_moves', 1,
-                     'Number of FOV moves by "model.delta" voxels to execute '
-                     'in every dimension. Currently only works with the '
-                     '"max_pred_moves" policy.')
-flags.DEFINE_boolean('shuffle_moves', True,
-                     'Whether to randomize the order of the moves used by the '
-                     'network with the "fixed" policy.')
-
-flags.DEFINE_float('image_mean', None,
-                   'Mean image intensity to use for input normalization.')
-flags.DEFINE_float('image_stddev', None,
-                   'Image intensity standard deviation to use for input '
-                   'normalization.')
-flags.DEFINE_list('image_offset_scale_map', None,
-                  'Optional per-volume specification of mean and stddev. '
-                  'Every entry in the list is a colon-separated tuple of: '
-                  'volume_label, offset, scale.')
-
-flags.DEFINE_list('permutable_axes', ['1', '2'],
-                  'List of integers equal to a subset of [0, 1, 2] specifying '
-                  'which of the [z, y, x] axes, respectively, may be permuted '
-                  'in order to augment the training data.')
-
-flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
-                  'List of integers equal to a subset of [0, 1, 2] specifying '
-                  'which of the [z, y, x] axes, respectively, may be reflected '
-                  'in order to augment the training data.')
-#TODO: jk: including with_membrane
-flags.DEFINE_boolean('with_membrane', False,
-                     'Whether the dataset volume includes membrane prediction as an extra channel')
-
-FLAGS = flags.FLAGS
+# FLAGS = flags.FLAGS
 
 
 class EvalTracker(object):
@@ -300,8 +299,8 @@ class EvalTracker(object):
                 summary.tag += '/%d' % i
 
         summaries = (
-            # TODO(jk): removed image summary.
-            # list(self.images_xy) + list(self.images_xz) + list(self.images_yz) + [
+            # TODO(jk): removed image summary
+            list(self.images_xy) + list(self.images_xz) + list(self.images_yz) +
             [
                 tf.Summary.Value(tag='masked_voxel_fraction',
                                  simple_value=(self.masked_voxels /
@@ -346,72 +345,72 @@ def run_training_step(sess, model, fetch_summary, feed_dict):
     return prediction, step, summ
 
 
-def fov_moves():
+def fov_moves(TA):
     # Add one more move to get a better fill of the evaluation area.
-    if FLAGS.fov_policy == 'max_pred_moves':
-        return FLAGS.fov_moves + 1
-    return FLAGS.fov_moves
+    if TA.fov_policy == 'max_pred_moves':
+        return TA.fov_moves + 1
+    return TA.fov_moves
 
 
-def train_labels_size(model):
+def train_labels_size(model, TA):
     return (np.array(model.pred_mask_size) +
-            np.array(model.deltas) * 2 * fov_moves())
+            np.array(model.deltas) * 2 * fov_moves(TA))
 
 
-def train_eval_size(model):
+def train_eval_size(model, TA):
     return (np.array(model.pred_mask_size) +
-            np.array(model.deltas) * 2 * FLAGS.fov_moves)
+            np.array(model.deltas) * 2 * fov_moves(TA))
 
 
-def train_image_size(model):
+def train_image_size(model, TA):
     return (np.array(model.input_image_size) +
-            np.array(model.deltas) * 2 * fov_moves())
+            np.array(model.deltas) * 2 * fov_moves(TA))
 
 
-def train_canvas_size(model):
+def train_canvas_size(model, TA):
     return (np.array(model.input_seed_size) +
-            np.array(model.deltas) * 2 * fov_moves())
+            np.array(model.deltas) * 2 * fov_moves(TA))
 
 
 def _get_offset_and_scale_map():
-    if not FLAGS.image_offset_scale_map:
+    if not TA.image_offset_scale_map:
         return {}
 
     ret = {}
-    for vol_def in FLAGS.image_offset_scale_map:
+    for vol_def in TA.image_offset_scale_map:
         vol_name, offset, scale = vol_def.split(':')
         ret[vol_name] = float(offset), float(scale)
 
     return ret
 
 
-def _get_reflectable_axes():
-    return [int(x) + 1 for x in FLAGS.reflectable_axes]
+def _get_reflectable_axes(TA):
+    return [int(x) + 1 for x in TA.reflectable_axes]
 
 
-def _get_permutable_axes():
-    return [int(x) + 1 for x in FLAGS.permutable_axes]
+def _get_permutable_axes(TA):
+    return [int(x) + 1 for x in TA.permutable_axes]
 
 
-def define_data_input(model, with_membrane=False, queue_batch=None):
+def define_data_input(model, TA, queue_batch=None):
     """Adds TF ops to load input data."""
 
     label_volume_map = {}
-    for vol in FLAGS.label_volumes.split(','):
+    for vol in TA.label_volumes.split(','):
         volname, path, dataset = vol.split(':')
         label_volume_map[volname] = h5py.File(path, 'r')[dataset]
 
     image_volume_map = {}
-    for vol in FLAGS.data_volumes.split(','):
+    for vol in TA.data_volumes.split(','):
         volname, path, dataset = vol.split(':')
         image_volume_map[volname] = h5py.File(path, 'r')[dataset]
 
     if queue_batch is None:
-        queue_batch = FLAGS.batch_size
+        queue_batch = TA.batch_size
 
     # Fetch sizes of images and labels
-    label_size = train_labels_size(model)
-    image_size = train_image_size(model)
+    label_size = train_labels_size(model, TA)
+    image_size = train_image_size(model, TA)
 
     label_radii = (label_size // 2).tolist()
     label_size = label_size.tolist()
@@ -420,12 +419,11 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
 
     # Fetch a single coordinate and volume name from a queue reading the
     # coordinate files or from saved hard/important examples
-    coord, volname = inputs.load_patch_coordinates(FLAGS.train_coords)
+    coord, volname = inputs.load_patch_coordinates(TA.train_coords)
 
     # Load object labels (segmentation).
     labels = inputs.load_from_numpylike(
         coord, volname, label_size, label_volume_map)
-
     label_shape = [1] + label_size[::-1] + [1]
     labels = tf.reshape(labels, label_shape)
 
@@ -434,14 +432,14 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
     # Load image data.
     patch = inputs.load_from_numpylike(
         coord, volname, image_size, image_volume_map)
-    if with_membrane:
+    if TA.with_membrane:
         data_shape = [1] + image_size[::-1] + [2]
     else:
         data_shape = [1] + image_size[::-1] + [1]
     patch = tf.reshape(patch, shape=data_shape)
 
-    if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
-            not FLAGS.image_offset_scale_map):
+    if ((TA.image_stddev is None or TA.image_mean is None) and
+            not TA.image_offset_scale_map):
         raise ValueError('--image_mean, --image_stddev or --image_offset_scale_map '
                          'need to be defined')
 
@@ -457,8 +455,8 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
 
     # Apply basic augmentations.
     transform_axes = augmentation.PermuteAndReflect(
-        rank=5, permutable_axes=_get_permutable_axes(),
-        reflectable_axes=_get_reflectable_axes())
+        rank=5, permutable_axes=_get_permutable_axes(TA),
+        reflectable_axes=_get_reflectable_axes(TA))
     labels = transform_axes(labels)
     patch = transform_axes(patch)
     loss_weights = transform_axes(loss_weights)
@@ -467,26 +465,26 @@ def define_data_input(model, with_membrane=False, queue_batch=None):
     # patch = inputs.offset_and_scale_patches(
     #     patch, volname[0],
     #     offset_scale_map=_get_offset_and_scale_map(),
-    #     default_offset=FLAGS.image_mean,
-    #     default_scale=FLAGS.image_stddev)
-    patch = (tf.cast(patch, tf.float32) - tf.constant(float(FLAGS.image_mean), dtype=tf.float32)) / tf.constant(float(FLAGS.image_stddev), dtype=tf.float32)
+    #     default_offset=TA.image_mean,
+    #     default_scale=TA.image_stddev)
+    patch = (tf.cast(patch, tf.float32) - tf.constant(float(TA.image_mean), dtype=tf.float32)) / tf.constant(float(TA.image_stddev), dtype=tf.float32)
 
     # Create a batch of examples. Note that any TF operation before this line
     # will be hidden behind a queue, so expensive/slow ops can take advantage
     # of multithreading.
     patches, labels, loss_weights = tf.train.shuffle_batch(
         [patch, labels, loss_weights], queue_batch,
-        num_threads=max(1, FLAGS.batch_size // 2),
-        capacity=32 * FLAGS.batch_size,
-        min_after_dequeue=4 * FLAGS.batch_size,
+        num_threads=max(1, TA.batch_size // 2),
+        capacity=32 * TA.batch_size,
+        min_after_dequeue=4 * TA.batch_size,
         enqueue_many=True)
 
     return patches, labels, loss_weights, coord, volname
 
 
-def prepare_ffn(model):
+def prepare_ffn(model, TA):
     """Creates the TF graph for an FFN."""
-    shape = [FLAGS.batch_size] + list(model.pred_mask_size[::-1]) + [1]
+    shape = [TA.batch_size] + list(model.pred_mask_size[::-1]) + [1]
 
     model.labels = tf.placeholder(tf.float32, shape, name='labels')
     model.loss_weights = tf.placeholder(tf.float32, shape, name='loss_weights')
@@ -501,12 +499,12 @@ def fixed_offsets(model, seed, fov_shifts=None):
                             seed.shape[1] // 2 + off[2],
                             seed.shape[2] // 2 + off[1],
                             seed.shape[3] // 2 + off[0],
-                            0] >= logit(FLAGS.threshold)
+                            0] >= logit(TA.threshold)
         else:
             is_valid_move = seed[:,
                             seed.shape[1] // 2 + off[1],
                             seed.shape[2] // 2 + off[0],
-                            0] >= logit(FLAGS.threshold)
+                            0] >= logit(TA.threshold)
 
         if not is_valid_move:
             continue
@@ -514,13 +512,13 @@ def fixed_offsets(model, seed, fov_shifts=None):
         yield off
 
 
-def max_pred_offsets(model, seed):
+def max_pred_offsets(model, TA, seed):
     """Generates offsets with the policy used for inference."""
     # Always start at the center.
     queue = deque([(0, 0, 0)])
     done = set()
 
-    train_image_radius = train_image_size(model) // 2
+    train_image_radius = train_image_size(model, TA) // 2
     input_image_radius = np.array(model.input_image_size) // 2
 
     while queue:
@@ -551,13 +549,13 @@ def max_pred_offsets(model, seed):
             movement.get_scored_move_offsets(
                 model.deltas[::-1],
                 curr_seed[0, ..., 0],
-                threshold=logit(FLAGS.threshold)), reverse=True)
+                threshold=logit(TA.threshold)), reverse=True)
         queue.extend((x[2] + offset[0],
                       x[1] + offset[1],
                       x[0] + offset[2]) for _, x in todos)
 
 
-def get_example(load_example, eval_tracker, model, get_offsets):
+def get_example(load_example, eval_tracker, model, get_offsets, TA):
     """Generates individual training examples.
 
     Args:
@@ -574,12 +572,12 @@ def get_example(load_example, eval_tracker, model, get_offsets):
         image array, shape [1, z, y, x, 1]
         label array, shape [1, z, y, x, 1]
     """
-    seed_shape = train_canvas_size(model).tolist()[::-1]
+    seed_shape = train_canvas_size(model, TA).tolist()[::-1]
 
     while True:
         full_patches, full_labels, loss_weights, coord, volname = load_example()
         # Always start with a clean seed.
-        seed = logit(mask.make_seed(seed_shape, 1, pad=FLAGS.seed_pad))
+        seed = logit(mask.make_seed(seed_shape, 1, pad=TA.seed_pad))
 
         for off in get_offsets(model, seed):
             predicted = mask.crop_and_pad(seed, off, model.input_seed_size[::-1])
@@ -596,7 +594,7 @@ def get_example(load_example, eval_tracker, model, get_offsets):
             full_labels, seed, loss_weights, full_patches, coord, volname, full_patches)
 
 
-def get_batch(load_example, eval_tracker, model, batch_size, get_offsets):
+def get_batch(load_example, eval_tracker, model, batch_size, get_offsets, TA):
     """Generates batches of training examples.
 
     Args:
@@ -631,7 +629,7 @@ def get_batch(load_example, eval_tracker, model, batch_size, get_offsets):
     # will automatically advance to a different training example once the allowed
     # moves for the current location are exhausted.
     for seeds, patches, labels, weights in _batch(six.moves.zip(
-            *[get_example(load_example, eval_tracker, model, get_offsets) for _
+            *[get_example(load_example, eval_tracker, model, get_offsets, TA) for _
               in range(batch_size)])):
 
         batched_seeds = np.concatenate(seeds)
@@ -645,30 +643,30 @@ def get_batch(load_example, eval_tracker, model, batch_size, get_offsets):
         for i in range(batch_size):
             seeds[i][:] = batched_seeds[i, ...]
 
-
-def save_flags():
-    gfile.MakeDirs(FLAGS.train_dir)
-    with gfile.Open(os.path.join(FLAGS.train_dir,
+def save_flags(TA):
+    gfile.MakeDirs(TA.train_dir)
+    with gfile.Open(os.path.join(TA.train_dir,
                                  'flags.%d' % time.time()), 'w') as f:
-        for mod, flag_list in FLAGS.flags_by_module_dict().items():
+        for mod, flag_list in TA.flags_by_module_dict().items():
             if (mod.startswith('google3.research.neuromancer.tensorflow') or
                     mod.startswith('/')):
                 for flag in flag_list:
                     f.write('%s\n' % flag.serialize())
 
-def build_train_graph(model_cls, save_ckpt=True, **model_kwargs):
+def build_train_graph(model_cls, TA, save_ckpt=True, **model_kwargs):
     # The constructor might define TF ops/placeholders, so it is important
     # that the FFN is instantiated within the current context.
-    model = model_cls(**model_kwargs)
-    eval_shape_zyx = train_eval_size(model).tolist()[::-1]
+    model = model_cls(TA=TA, with_membrane=TA.with_membrane, batch_size=TA.batch_size, **model_kwargs)
+    eval_shape_zyx = train_eval_size(model, TA).tolist()[::-1]
 
     eval_tracker = EvalTracker(eval_shape_zyx)
-    load_data_ops = define_data_input(model, with_membrane=FLAGS.with_membrane, queue_batch=1)
-    prepare_ffn(model)
+    load_data_ops = define_data_input(model, TA, queue_batch=1)
+    prepare_ffn(model, TA)
     merge_summaries_op = tf.summary.merge_all()
 
-    if FLAGS.task == 0:
-        save_flags()
+    # TODO(jk) flag writer disabled because functional
+    # if TA.task == 0:
+    #     save_flags(TA)
 
     summary_writer = None
 
@@ -676,28 +674,31 @@ def build_train_graph(model_cls, save_ckpt=True, **model_kwargs):
     if save_ckpt is False:
         secs = 999999
     else:
-        secs = 200
+        secs = 1000
     return eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op
 
 
-def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op):
+def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op):
 
     eval_tracker.sess = sess
 
     # TODO (jk): load from ckpt
-    if FLAGS.load_from_ckpt != 'None':
+    if TA.load_from_ckpt != 'None':
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        model.saver.restore(eval_tracker.sess, TA.load_from_ckpt)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
+    import ipdb
+    ipdb.set_trace()
     step = int(sess.run(model.global_step))
-    if FLAGS.load_from_ckpt != 'None':
+
+    if TA.load_from_ckpt != 'None':
         # logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
-        FLAGS.max_steps += step
+        TA.max_steps += step
         logging.info('>>>>>>>>>>>>>>>>>>>>> Rsetting steps from ' + str(step))
 
     fov_shifts = list(model.shifts)  # x, y, z
-    if FLAGS.shuffle_moves:
+    if TA.shuffle_moves:
         random.shuffle(fov_shifts)
 
     policy_map = {
@@ -705,16 +706,16 @@ def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_su
         'max_pred_moves': max_pred_offsets
     }
     batch_it = get_batch(lambda: sess.run(load_data_ops),
-                         eval_tracker, model, FLAGS.batch_size,
-                         policy_map[FLAGS.fov_policy])
+                         eval_tracker, model, TA.batch_size,
+                         policy_map[TA.fov_policy], TA)
 
     t_last = time.time()
 
     # TODO (jk): text log of learning curve. refresh file.
-    learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "w")
+    learning_curve_txt = open(os.path.join(TA.train_dir, 'lc.txt'), "w")
     learning_curve_txt.close()
 
-    while step < FLAGS.max_steps: #sess.should_stop() and step < FLAGS.max_steps:
+    while step < TA.max_steps: #sess.should_stop() and step < TA.max_steps:
         if (step % 10 == 0) & (step > 0):
             # TODO (jk): text log of learning curve. refresh file.
             logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
@@ -735,8 +736,7 @@ def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_su
             sess, model, summ_op,
             feed_dict={
                 model.loss_weights: weights,
-                model.labels: labels,
-                model.offset_label: 'off',
+                model.labels: labels, #model.offset_label: 'off',
                 model.input_patches: patches,
                 model.input_seed: seed,
             })
@@ -756,7 +756,7 @@ def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_su
         if summ is not None:
 
             # TODO (jk): text log of learning curve
-            learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
+            learning_curve_txt = open(os.path.join(TA.train_dir, 'lc.txt'), "a")
             precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
             recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
             accuracy = (eval_tracker.tp + eval_tracker.tn) / (
@@ -788,44 +788,50 @@ def train_ffn(eval_tracker, model, sess, load_data_ops, summary_writer, merge_su
 
     return sess
 
-def global_main(
-        train_coords,
-        train_dir,
-        data_volumes,
-        label_volumes,
-        model_name,
-        model_args,
-        image_mean,
-        image_stddev,
-        max_steps,
-        optimizer,
-        load_from_ckpt,
-        batch_size,
-        with_membrane=False):
-    """Convert args to globals then run main."""
-    import ipdb
-    ipdb.set_trace()
-    FLAGS.train_coords = train_coords
-    FLAGS.train_dir = train_dir
-    FLAGS.data_volumes = data_volumes
-    FLAGS.label_volumes = label_volumes
-    FLAGS.model_name = model_name
-    FLAGS.model_args = model_args
-    FLAGS.image_mean = image_mean
-    FLAGS.image_stddev = image_stddev
-    FLAGS.max_steps = max_steps
-    FLAGS.optimizer = optimizer
-    FLAGS.load_from_ckpt = load_from_ckpt
-    FLAGS.batch_size = batch_size
-    FLAGS.with_membrane=with_membrane
-
-    model_class = import_symbol(FLAGS.model_name)
-    seed = int(time.time() + FLAGS.task * 3600 * 24)
-    logging.info('Random seed: %r', seed)
-    random.seed(seed)
-
-    eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = \
-        build_train_graph(model_class, batch_size=FLAGS.batch_size, save_ckpt=False, with_membrane=FLAGS.with_membrane,
-                  **json.loads(FLAGS.model_args))
-    return eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op
-
+class TrainArgs():
+    def __init__(self,
+                 train_coords,
+                 train_dir,
+                 data_volumes,
+                 label_volumes,
+                 model_name,
+                 model_args,
+                 image_mean,
+                 image_stddev,
+                 max_steps,
+                 optimizer,
+                 load_from_ckpt,
+                 batch_size,
+                 with_membrane=False):
+        self.train_coords = train_coords
+        self.train_dir = train_dir
+        self.data_volumes = data_volumes
+        self.label_volumes = label_volumes
+        self.model_name = model_name
+        self.model_args = model_args
+        self.image_mean = image_mean
+        self.image_stddev = image_stddev
+        self.max_steps = max_steps
+        self.optimizer = optimizer
+        self.load_from_ckpt = load_from_ckpt
+        self.batch_size = batch_size
+        self.with_membrane = with_membrane
+        # defaults
+        self.master=''
+        self.task=0
+        self.seed_pad=0.05
+        self.threshold=0.09
+        self.fov_policy='fixed' #'max_pred_moves'
+        self.fov_moves=1 # Number of FOV moves by "model.delta" voxels to execute in every dimension. Currently only works with the max_pred_moves" policy.
+        self.shuffle_moves=True #Whether to randomize the order of the moves used by the network with the "fixed" policy.
+        self.image_offset_scale_map=None
+        self.permutable_axes=['1', '2']
+        self.reflectable_axes=['0', '1', '2']
+        self.learning_rate=0.001 # 'Initial learning rate.'
+        self.momentun=0.9 # 'Momentum.'
+        self.learning_rate_decay_factor= 0.94
+        self.num_epochs_per_decay = 2.0
+        self.rmsprop_decay=0.9
+        self.adam_beta1=0.9
+        self.adam_beta2=0.999
+        self.epsilon=1e-8

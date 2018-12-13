@@ -10,7 +10,7 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1])
 
     script_root = '/home/jk/PycharmProjects/ffn' #'/home/drew/ffn'
-    net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'convstack_3d' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     # volumes_name_list = ['neuroproof',
     #                      'isbi2013',
@@ -49,8 +49,8 @@ if __name__ == '__main__':
     cond_name = net_name + '_' + tfrecords_name + '_r0' #+ str(irep)
     coords_fullpath = os.path.join(hdf_root, tfrecords_name, dataset_type, 'tf_record_file')
 
-    data_string = ' --data_volumes '
-    label_string = ' --label_volumes '
+    data_string = ''
+    label_string = ''
     for i, vol in enumerate(volumes_name_list):
         volume_fullpath = os.path.join(hdf_root, vol, dataset_type, 'grayscale_maps.h5')
         groundtruth_fullpath = os.path.join(hdf_root, vol, dataset_type, 'groundtruth.h5')
@@ -88,25 +88,48 @@ if __name__ == '__main__':
         # with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
             # SET UP TRAIN MODEL
             print('>>>>>>>>>>>>>>>>>>>>>>SET UP TRAIN MODEL')
-            eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = train_functional.global_main(
-                train_coords=coords_fullpath,
-                data_volumes=data_string,
-                label_volumes=label_string,
-                train_dir=os.path.join(ckpt_root, cond_name),
-                model_name=net_name_obj+'.ConvStack3DFFNModel',
-                model_args='{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}',
-                image_mean=image_mean,
-                image_stddev=image_stddev,
-                max_steps=max_steps,
-                optimizer=optimizer,
-                load_from_ckpt=load_from_ckpt,
-                batch_size=batch_size,
-                with_membrane=with_membrane)
+            import logging
+            from ffn.training.import_util import import_symbol
+            import time
+            import random
+            import json
+            TA = train_functional.TrainArgs(train_coords=coords_fullpath,
+                                            data_volumes=data_string,
+                                            label_volumes=label_string,
+                                            train_dir=os.path.join(ckpt_root, cond_name),
+                                            model_name=net_name_obj+'.ConvStack3DFFNModel',
+                                            model_args='{"depth": 12, "fov_size": ' + str(fov_size) + ', "deltas": ' + str(deltas) + '}',
+                                            image_mean=image_mean,
+                                            image_stddev=image_stddev,
+                                            max_steps=max_steps,
+                                            optimizer=optimizer,
+                                            load_from_ckpt=load_from_ckpt,
+                                            batch_size=batch_size,
+                                            with_membrane=with_membrane)
+            model_class = import_symbol(TA.model_name)
+            seed = int(time.time() + TA.task * 3600 * 24)
+            logging.info('Random seed: %r', seed)
+            random.seed(seed)
+            eval_tracker, model, secs, load_data_ops, summary_writer, merge_summaries_op = \
+                train_functional.build_train_graph(model_class, TA, save_ckpt=False,
+                                                   **json.loads(TA.model_args))
+
+            # START SESSION
+            saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
+            scaffold = tf.train.Scaffold(saver=saver)
+            sess = tf.train.MonitoredTrainingSession(
+                master=TA.master,
+                is_chief=(TA.task == 0),
+                save_summaries_steps=30,
+                save_checkpoint_secs=secs,  # 10000/FLAGS.batch_size, #save_checkpoint_steps=10000/FLAGS.batch_size,
+                config=tf.ConfigProto(log_device_placement=False, allow_soft_placement=True),
+                checkpoint_dir=TA.train_dir,
+                scaffold=scaffold)
 
             # START TRAINING
             print('>>>>>>>>>>>>>>>>>>>>>>START TRAINING')
             sess = train_functional.train_ffn(
-                eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
+                TA, eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op)
 
     ### DATA PREPATATION
 

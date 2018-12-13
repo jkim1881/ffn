@@ -21,7 +21,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from tensorflow.python.util import deprecation
-from . import optimizer
+from . import optimizer_functional
 
 
 class FFNModel(object):
@@ -74,7 +74,7 @@ class FFNModel(object):
 
     # Mask identifying valid examples within the batch. Only valid examples
     # contribute to the loss and see object mask updates
-    self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag)
+    # self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag) #TODO(jk) removed because causes unknown error
 
     if not len(tag):
       self.global_step = tf.Variable(0, name='global_step%s' % tag, trainable=False)
@@ -143,13 +143,17 @@ class FFNModel(object):
     if return_logits:
       return logits
 
-  def set_up_optimizer(self, loss=None, max_gradient_entry_mag=0.7):
+  def set_up_optimizer(self, TA=None, loss=None, max_gradient_entry_mag=0.7):
     """Sets up the training op for the model."""
     if loss is None:
       loss = self.loss
     tf.summary.scalar('optimizer_loss', self.loss)
 
-    opt = optimizer.optimizer_from_flags()
+    if TA is None:
+        from . import optimizer
+        opt = optimizer.optimizer_from_flags()
+    else:
+        opt = optimizer_functional.optimizer_from_flags(TA) #TODO(jk)
     grads_and_vars = opt.compute_gradients(loss)
 
     for g, v in grads_and_vars:
@@ -188,8 +192,11 @@ class FFNModel(object):
     self._images.append(image)
 
   def add_summaries(self, max_images=4):
+    # tf.contrib.deprecated.image_summary(
+    #     'state/' + self.offset_label, tf.concat(self._images, 2),
+    #     max_images=max_images)
     tf.contrib.deprecated.image_summary(
-        'state/' + self.offset_label, tf.concat(self._images, 2),
+        'state', tf.concat(self._images, 2),
         max_images=max_images)
 
   def update_seed(self, seed, update):

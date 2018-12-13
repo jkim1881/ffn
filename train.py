@@ -661,8 +661,6 @@ def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
         model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-      import ipdb
-      ipdb.set_trace()
       step = int(sess.run(model.global_step))
       if FLAGS.load_from_ckpt != 'None':
         #logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
@@ -717,8 +715,6 @@ def train_ffn(model_cls, save_ckpt=True, **model_kwargs):
 
         seed, patches, labels, weights = next(batch_it)
         # TODO (jk): added an item to set offset_label off according to old version
-        import ipdb
-        ipdb.set_trace()
         updated_seed, step, summ = run_training_step(
             sess, model, summ_op,
             feed_dict={
