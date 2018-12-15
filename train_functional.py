@@ -491,7 +491,7 @@ def prepare_ffn(model, TA):
     model.define_tf_graph()
 
 
-def fixed_offsets(model, seed, fov_shifts=None):
+def fixed_offsets(TA, model, seed, fov_shifts=None):
     """Generates offsets based on a fixed list."""
     for off in itertools.chain([(0, 0, 0)], fov_shifts):
         if model.dim == 3:
@@ -512,7 +512,7 @@ def fixed_offsets(model, seed, fov_shifts=None):
         yield off
 
 
-def max_pred_offsets(model, TA, seed):
+def max_pred_offsets(TA, model, seed):
     """Generates offsets with the policy used for inference."""
     # Always start at the center.
     queue = deque([(0, 0, 0)])
@@ -579,7 +579,7 @@ def get_example(load_example, eval_tracker, model, get_offsets, TA):
         # Always start with a clean seed.
         seed = logit(mask.make_seed(seed_shape, 1, pad=TA.seed_pad))
 
-        for off in get_offsets(model, seed):
+        for off in get_offsets(TA, model, seed):
             predicted = mask.crop_and_pad(seed, off, model.input_seed_size[::-1])
             patches = mask.crop_and_pad(full_patches, off, model.input_image_size[::-1])
             labels = mask.crop_and_pad(full_labels, off, model.pred_mask_size[::-1])
@@ -679,7 +679,6 @@ def build_train_graph(model_cls, TA, save_ckpt=True, **model_kwargs):
 
 
 def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merge_summaries_op):
-
     eval_tracker.sess = sess
 
     # TODO (jk): load from ckpt
@@ -688,10 +687,7 @@ def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merg
         model.saver.restore(eval_tracker.sess, TA.load_from_ckpt)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
-    import ipdb
-    ipdb.set_trace()
     step = int(sess.run(model.global_step))
-
     if TA.load_from_ckpt != 'None':
         # logging.info('>>>>>>>>>>>>>>>>>>>>> Extending steps by '+str(step))
         TA.max_steps += step
@@ -713,8 +709,8 @@ def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merg
     # TODO (jk): text log of learning curve. refresh file.
     learning_curve_txt = open(os.path.join(TA.train_dir, 'lc.txt'), "w")
     learning_curve_txt.close()
-
     while step < TA.max_steps: #sess.should_stop() and step < TA.max_steps:
+        print('step= '+str(step))
         if (step % 10 == 0) & (step > 0):
             # TODO (jk): text log of learning curve. refresh file.
             logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
@@ -735,7 +731,8 @@ def train_ffn(TA, eval_tracker, model, sess, load_data_ops, summary_writer, merg
             sess, model, summ_op,
             feed_dict={
                 model.loss_weights: weights,
-                model.labels: labels, #model.offset_label: 'off',
+                model.labels: labels,
+                model.offset_label: 'off',
                 model.input_patches: patches,
                 model.input_seed: seed,
             })

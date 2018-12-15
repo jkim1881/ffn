@@ -74,7 +74,7 @@ class FFNModel(object):
 
     # Mask identifying valid examples within the batch. Only valid examples
     # contribute to the loss and see object mask updates
-    # self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag) #TODO(jk) removed because causes unknown error
+    self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag) #TODO(jk) removed because causes unknown error
 
     if not len(tag):
       self.global_step = tf.Variable(0, name='global_step%s' % tag, trainable=False)

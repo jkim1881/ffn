@@ -21,6 +21,21 @@ lom should be (fov_size // 2) + deltas
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson_w_memb/train/tf_record_file \
      --margin 9,36,36
 
+>>>>>>>>>>>>> wide_fov (allbutfib)
+
+  python build_coordinates.py \
+     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
+     --margin 9,36,36
+
+--------
+
+  python build_coordinates.py \
+     --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
+     --margin 9,36,36
+
+
 >>>>>>>>>>>>> flat_fov
 
   python compute_partitions.py \

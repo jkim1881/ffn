@@ -678,16 +678,11 @@ def train_ffn(model_cls, **model_kwargs):
       learning_curve_txt.close()
 
       while step < FLAGS.max_steps:
-        if (step % 10 == 0) & (step>0):
-          if True: #(eval_tracker.tp + eval_tracker.fp) == 0 | (eval_tracker.tp + eval_tracker.fn) == 0:
-            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) + ' (zero div) ' +
-                             ',   tp: ' + str(eval_tracker.tp) +
-                             ',   fp: ' + str(eval_tracker.fp) +
-                             ',   fn: ' + str(eval_tracker.fn))
-          else:
-            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
-                       ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)) +
-                       ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)))
+        if (step % 10 == 0) & (step > 0):
+          # TODO (jk): text log of learning curve. refresh file.
+          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+                   ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
+                   ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)))
 
         # Run summaries periodically.
         t_curr = time.time()
@@ -722,39 +717,41 @@ def train_ffn(model_cls, **model_kwargs):
         # they can be used in subsequent steps.
         mask.update_at(seed, (0, 0, 0), updated_seed)
 
-        if summ is not None:
-          summaries.append(tf.Summary.FromString(summ))
-
         # Record summaries.
-        if FLAGS.task == 0 and summ_op is not None:
-          # Compute a loss over the whole training patch (i.e. more than a
-          # single-step field of view of the network). This quantifies the
-          # quality of the final object mask.
-          logging.info('Saving summaries.')
-          summ = tf.Summary()
-          summ.value.extend(eval_tracker.get_summaries())
+        if summ is not None:
 
           # TODO (jk): text log of learning curve
           learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'), "a")
-          precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp)
-          recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn)
-          accuracy = (eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn)
+          precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
+          recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
+          accuracy = (eval_tracker.tp + eval_tracker.tn) / (
+          eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
           learning_curve_txt.write('step_' + str(step) +
-                                   '_precision_' + str(precision) +
-                                   '_recall_' + str(recall) +
-                                   '_accuracy_' + str(accuracy))
+                                 '_precision_' + str(precision) +
+                                 '_recall_' + str(recall) +
+                                 '_accuracy_' + str(accuracy))
           learning_curve_txt.write("\n")
           learning_curve_txt.close()
+
+
+          logging.info('Saving summaries.')
+          summ = tf.Summary.FromString(summ)
+
+          # Compute a loss over the whole training patch (i.e. more than a
+          # single-step field of view of the network). This quantifies the
+          # quality of the final object mask.
+          summ.value.extend(eval_tracker.get_summaries())
           eval_tracker.reset()
 
-          for s in summaries:
-            summ.value.extend(s.value)
-          sv.summary_computed(sess, summ, step)
+          assert summary_writer is not None
+          summary_writer.add_summary(summ, step)
 
           if np.min([precision, recall]) > 0.9:
               logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
               break
 
+      if summary_writer is not None:
+        summary_writer.flush()
 
 def main(argv=()):
   del argv  # Unused.
