@@ -28,13 +28,6 @@ lom should be (fov_size // 2) + deltas
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
      --margin 9,36,36
 
---------
-
-  python build_coordinates.py \
-     --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
-     --margin 9,36,36
-
 
 >>>>>>>>>>>>> flat_fov
 
