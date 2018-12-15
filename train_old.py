@@ -743,15 +743,10 @@ def train_ffn(model_cls, **model_kwargs):
           summ.value.extend(eval_tracker.get_summaries())
           eval_tracker.reset()
 
-          if summary_writer is not None:
-            summary_writer.add_summary(summ, step)
-
           if np.min([precision, recall]) > 0.9:
               logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
               break
 
-      if summary_writer is not None:
-        summary_writer.flush()
 
 def main(argv=()):
   del argv  # Unused.
