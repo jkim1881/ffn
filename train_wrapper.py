@@ -81,8 +81,8 @@ if __name__ == '__main__':
               ' --max_steps=' + str(max_steps) + \
               ' --optimizer ' + optimizer + \
               ' --load_from_ckpt ' + load_from_ckpt + \
-              ' --batch_size=' + str(batch_size) #+ \
-              #' --with_membrane=' + str(with_membrane)
+              ' --batch_size=' + str(batch_size) + \
+              ' --with_membrane=' + str(with_membrane)
     ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
     subprocess.call(command, shell=True)
 

@@ -27,8 +27,8 @@ from .. import model
 def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
-  in_k = 16
-  ff_k = [16, 16, 16]
+  in_k = 14
+  ff_k = [18, 18, 18]
   ff_kpool_multiplier = 2
 
   if input_patches.get_shape().as_list()[-1] == 2:
@@ -51,7 +51,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
-                                        timesteps=6, #6, #8,
+                                        timesteps=8, #6, #8,
                                         h_repeat=1,
                                         hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],
                                         hgru_k=[in_k, ff_k[0], ff_k[1]],

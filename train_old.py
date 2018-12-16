@@ -85,6 +85,8 @@ flags.DEFINE_string('model_name', None,
 flags.DEFINE_string('model_args', None,
                     'JSON string with arguments to be passed to the model '
                     'constructor.')
+flags.DEFINE_boolean('with_membrane', False,
+                     'JKJKJK')
 
 # Training infra options.
 flags.DEFINE_string('train_dir', '/tmp',
@@ -392,7 +394,10 @@ def define_data_input(model, queue_batch=None):
   # Load image data.
   patch = inputs.load_from_numpylike(
       coord, volname, image_size, image_volume_map)
-  data_shape = [1] + image_size[::-1] + [1]
+  if FLAGS.with_membrane:
+      data_shape = [1] + image_size[::-1] + [2]
+  else:
+      data_shape = [1] + image_size[::-1] + [1]
   patch = tf.reshape(patch, shape=data_shape)
 
   if ((FLAGS.image_stddev is None or FLAGS.image_mean is None) and
@@ -615,7 +620,7 @@ def train_ffn(model_cls, **model_kwargs):
     with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
-      model = model_cls(**model_kwargs)
+      model = model_cls(with_membrane=FLAGS.with_membrane, **model_kwargs)
 
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
