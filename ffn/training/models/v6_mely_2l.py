@@ -28,7 +28,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
   """Computes single-object mask prediction."""
 
   in_k = 14
-  ff_k = [18, 18, 18]
+  ff_k = [16, 16, 18]
   ff_kpool_multiplier = 2
 
   if input_patches.get_shape().as_list()[-1] == 2:
@@ -49,7 +49,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       x = tf.concat([x, membrane], axis=4)
   from .prc.v6_mely_2l import hGRU
   hgru_net = hGRU(var_scope='recurrent',
-                             timesteps=8, #6, #8,
+                             timesteps=6, #6, #8,
                              in_k=in_k,
                              hgru_fsiz=[[1, 7, 7], [3, 5, 5]], #, [3, 3, 3]],
                              hgru_fanout=1,
