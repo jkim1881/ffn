@@ -49,21 +49,21 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       x = tf.concat([x, membrane], axis=4)
   from .prc.v6_mely_2l import hGRU
   hgru_net = hGRU(var_scope='recurrent',
-                             timesteps=6, #6, #8,
-                             in_k=in_k,
-                             hgru_fsiz=[[1, 7, 7], [3, 5, 5]], #, [3, 3, 3]],
-                             hgru_fanout=1,
-                             hgru_h2_k=[in_k, ff_k[0]], #, ff_k[1]],
-                             ff_conv_fsiz=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
-                             ff_conv_k=ff_k,
-                             ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
-                             ff_kpool_multiplier=ff_kpool_multiplier,
-                             ff_pool_fsiz=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
-                             ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
-                             fb_conv_fsiz=[[1, 8, 8], [2, 6, 6], [1, 6, 6]],
-                             fb_conv_k=ff_k,
-                             train=is_training,
-                             dtype=tf.float32)
+                 timesteps=6, #6, #8,
+                 in_k=in_k,
+                 hgru_fsiz=[[1, 7, 7], [3, 5, 5]], #, [3, 3, 3]],
+                 hgru_fanout=1,
+                 hgru_h2_k=[in_k, ff_k[0]], #, ff_k[1]],
+                 ff_conv_fsiz=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
+                 ff_conv_k=ff_k,
+                 ff_conv_strides=[[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1]],
+                 ff_kpool_multiplier=ff_kpool_multiplier,
+                 ff_pool_fsiz=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
+                 ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
+                 fb_conv_fsiz=[[1, 8, 8], [2, 6, 6], [1, 6, 6]],
+                 fb_conv_k=ff_k,
+                 train=is_training,
+                 dtype=tf.float32)
 
   net = hgru_net.build(x, input_seed)
   finalbn_param_initializer = {
