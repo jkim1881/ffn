@@ -234,29 +234,30 @@ class hGRU(object):
                              deconv_size=ff_replicated.get_shape().as_list(),
                              symmetric_weights=symmetric_weights,
                              padding=None)
-        h1_raw = ff_replicated - combine_coeffs[0]*downstream*h1 - combine_coeffs[1]*downstream
+
         if self.bn_reuse:
             with tf.variable_scope(
                     '%s/bn' % (var_scope),
                     reuse=tf.AUTO_REUSE) as scope:
-                h1_raw = tf.contrib.layers.batch_norm(
-                    inputs=h1_raw,
+                downstream = tf.contrib.layers.batch_norm(
+                    inputs=downstream,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     reuse=tf.AUTO_REUSE,
                     scope=scope,
                     is_training=self.train)
         else:
-            h1_raw = tf.contrib.layers.batch_norm(
-                inputs=h1_raw,
+            downstream = tf.contrib.layers.batch_norm(
+                inputs=downstream,
                 scale=True,
-                center=True,
+                center=False,
                 fused=True,
                 renorm=False,
                 param_initializers=self.bn_param_initializer,
                 is_training=self.train)
+        h1_raw = ff_replicated - tf.nn.relu(combine_coeffs[0] * downstream * h1 + combine_coeffs[1] * downstream)
         return tf.nn.relu(h1_raw)
 
     def f2(self, h1, weights, var_scope, symmetric_weights=False):
@@ -273,7 +274,7 @@ class hGRU(object):
                 h2_raw = tf.contrib.layers.batch_norm(
                     inputs=h2_raw,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     reuse=tf.AUTO_REUSE,
@@ -283,7 +284,7 @@ class hGRU(object):
             h2_raw = tf.contrib.layers.batch_norm(
                 inputs=h2_raw,
                 scale=True,
-                center=True,
+                center=False,
                 fused=True,
                 renorm=False,
                 param_initializers=self.bn_param_initializer,
