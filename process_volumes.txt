@@ -2,11 +2,27 @@ TODO:
 
 lom should be (fov_size // 2) + deltas
 
->>>>>>>>>>>>> wide_fov (berson_w_memb)
+>>>>>>>>>>>>> wide_fov (berson2x_w_memb)
  fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
     -> lom = [36, 36, 9] (originally 42 42 9)
 
+  python compute_partitions.py \
+    --input_volume /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_memb/train/groundtruth.h5:stack \
+    --output_volume /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_memb/train/af.h5:af \
+    --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
+    --lom_radius 36,36,9 \
+    --min_size 3000
+
+----
+
+  python build_coordinates.py \
+     --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_memb/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_memb/train/tf_record_file \
+     --margin 9,36,36
+
+
+>>>>>>>>>>>>> wide_fov (berson_w_memb)
   python compute_partitions.py \
     --input_volume /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson_w_memb/train/groundtruth.h5:stack \
     --output_volume /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson_w_memb/train/af.h5:af \
@@ -26,6 +42,13 @@ lom should be (fov_size // 2) + deltas
   python build_coordinates.py \
      --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
+     --margin 9,36,36
+
+>>>>>>>>>>>>> wide_fov (cremi_abc)
+
+  python build_coordinates.py \
+     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_abc/train/tf_record_file \
      --margin 9,36,36
 
 
