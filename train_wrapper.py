@@ -9,21 +9,22 @@ if __name__ == '__main__':
 
     batch_size = int(sys.argv[1])
 
-    script_root = '/home/jk/PycharmProjects/ffn' #'/home/drew/ffn'
-    net_name_obj = 'v6_mely_2l' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    script_root = '/home/drew/ffn' #'/home/drew/ffn'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    volumes_name_list = ['neuroproof',
-                         'isbi2013',
-                         'cremi_a',
-                         'cremi_b',
-                         'cremi_c']
-    # volumes_name_list = ['isbi2013',
+    # volumes_name_list = ['isbi2013']
+    # volumes_name_list = ['neuroproof',
+    #                      'isbi2013',
     #                      'cremi_a',
     #                      'cremi_b',
-    #                      'cremi_c',
-    #                      'berson']
+    #                      'cremi_c']
+    volumes_name_list = ['isbi2013',
+                          'cremi_a',
+                          'cremi_b',
+                          'cremi_c',
+                          'berson']
     # volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'allbutberson'
+    tfrecords_name = 'allbutfib' #'isbi2013' #'allbutberson'
     dataset_type = 'train' #'val' #'train'
     with_membrane = False
 
