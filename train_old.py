@@ -232,7 +232,7 @@ class EvalTracker(object):
     self.loss += loss
     self.total_voxels += labels.size
     self.masked_voxels += np.sum(weights == 0.0)
-
+    #import ipdb;ipdb.set_trace()
     pred_mask = predicted >= self.eval_threshold
     true_mask = labels > 0.5
     pred_bg = np.logical_not(pred_mask)
@@ -252,13 +252,13 @@ class EvalTracker(object):
   def get_summaries(self):
     """Gathers tensorflow summaries into single list."""
 
-    precision = self.tp / (self.tp + self.fp)
-    recall = self.tp / (self.tp + self.fn)
+    precision = self.tp / (self.tp + self.fp + 0.000001)
+    recall = self.tp / (self.tp + self.fn + 0.000001)
 
     for images in self.images_xy, self.images_xz, self.images_yz:
       for i, summary in enumerate(images):
         summary.tag += '/%d' % i
-
+    # import ipdb;ipdb.set_trace()
     summaries = (
         # list(self.images_xy) + list(self.images_xz) + list(self.images_yz) +
             [
@@ -271,16 +271,16 @@ class EvalTracker(object):
                              simple_value=self.num_patches),
             tf.Summary.Value(tag='eval/accuracy',
                              simple_value=(self.tp + self.tn) / (
-                                 self.tp + self.tn + self.fp + self.fn)),
+                                 self.tp + self.tn + self.fp + self.fn + 0.000001)),
             tf.Summary.Value(tag='eval/precision',
                              simple_value=precision),
             tf.Summary.Value(tag='eval/recall',
                              simple_value=recall),
             tf.Summary.Value(tag='eval/specificity',
-                             simple_value=self.tn / (self.tn + self.fp)),
+                             simple_value=self.tn / (self.tn + self.fp + 0.000001)),
             tf.Summary.Value(tag='eval/f1',
                              simple_value=(2.0 * precision * recall /
-                                           (precision + recall)))
+                                           (precision + recall + 0.000001)))
         ])
 
     return summaries
@@ -656,6 +656,8 @@ def train_ffn(model_cls, **model_kwargs):
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
 
       step = int(sess.run(model.global_step))
+      step_since_session_start = 0
+
       if FLAGS.task > 0:
         # To avoid early instabilities when using multiple replicas, we use
         # a launch schedule where new replicas are brought online gradually.
@@ -687,7 +689,7 @@ def train_ffn(model_cls, **model_kwargs):
       learning_curve_txt.close()
 
       while step < FLAGS.max_steps:
-        if (step % 10 == 0) & (step > 0):
+        if (step % 10 == 0) & (step_since_session_start > 0):
           # TODO (jk): text log of learning curve. refresh file.
           logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
                    ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
@@ -704,7 +706,7 @@ def train_ffn(model_cls, **model_kwargs):
         #   summ_op = None
 
         # TODO (jk): ITERATION-BASED SUMMARY
-        if (step % 100 == 0) & (step>0):
+        if (step % 100 == 0) & (step_since_session_start>0):
           summ_op = merge_summaries_op
         else:
           summ_op = None
@@ -721,6 +723,7 @@ def train_ffn(model_cls, **model_kwargs):
                 model.input_patches: patches,
                 model.input_seed: seed,
             })
+	step_since_session_start += 1
 
         # Save prediction results in the original seed array so that
         # they can be used in subsequent steps.
