@@ -147,6 +147,8 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'List of integers equal to a subset of [0, 1, 2] specifying '
                   'which of the [z, y, x] axes, respectively, may be reflected '
                   'in order to augment the training data.')
+flags.DEFINE_boolean('validation_mode', False,
+                     'If true, learning rate is set to zero with SGD. Accuracy stats are accumulated over 1K samples')
 
 FLAGS = flags.FLAGS
 
@@ -687,12 +689,23 @@ def train_ffn(model_cls, **model_kwargs):
       learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
       learning_curve_txt.close()
 
-      while step < FLAGS.max_steps:
-        if (step % 10 == 0) & (step_since_session_start > 0):
-          # TODO (jk): text log of learning curve. refresh file.
-          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+      if not FLAGS.validation_mode:
+          max_steps = FLAGS.max_steps
+      else:
+          max_steps = step_since_session_start + 1000/FLAGS.batch_size
+      while step < max_steps:
+        if not FLAGS.validation_mode:
+          if (step % 10 == 0) & (step_since_session_start > 0):
+            # TODO (jk): text log of learning curve. refresh file.
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
                    ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
                    ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)))
+        else:
+          if (step_since_session_start % (500/FLAGS.batch_size) == 0):
+            # TODO (jk): text log of learning curve. refresh file.
+            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+                             ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 1)) +
+                             ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 1)))
 
         # Run summaries periodically.
         t_curr = time.time()
@@ -757,7 +770,7 @@ def train_ffn(model_cls, **model_kwargs):
           assert summary_writer is not None
           summary_writer.add_summary(summ, step)
 
-          if np.min([precision, recall]) > 0.9:
+          if np.min([precision, recall]) > 0.97:
               logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
               break
 
