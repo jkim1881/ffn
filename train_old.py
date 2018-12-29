@@ -758,7 +758,7 @@ def train_ffn(model_cls, **model_kwargs):
           assert summary_writer is not None
           summary_writer.add_summary(summ, step)
 
-          if np.min([precision, recall]) > 0.9:
+          if np.min([precision, recall]) > 0.97:
               logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')
               break
 
