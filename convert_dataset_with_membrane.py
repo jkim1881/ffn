@@ -35,8 +35,10 @@ volpath = '/media/data_cifs/connectomics/datasets/berson2x.npy'
 labelpath = '/media/data_cifs/connectomics/datasets/berson2x_labels.npy'
 volume = np.load(volpath)
 volume = np.transpose(volume, (2, 0, 1)) ## FROM (sp, sp, depth) to (depth, sp, sp)
+print(volume.shape)
 labels = np.load(labelpath)
 labels = np.transpose(labels, (2, 0, 1))
+print(labels.shape)
 labels, _, _ = skimage.segmentation.relabel_sequential(labels, offset=1)
 
 # get membrane
