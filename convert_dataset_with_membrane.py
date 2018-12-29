@@ -37,7 +37,7 @@ volume = np.load(volpath)
 volume = np.transpose(volume, (2, 0, 1)) ## FROM (sp, sp, depth) to (depth, sp, sp)
 print(volume.shape)
 labels = np.load(labelpath)
-labels = np.transpose(labels, (2, 0, 1))
+labels = np.transpose(labels, (0, 2, 1))
 print(labels.shape)
 labels, _, _ = skimage.segmentation.relabel_sequential(labels, offset=1)
 
