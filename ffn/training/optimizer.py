@@ -43,7 +43,7 @@ flags.DEFINE_float('epsilon', 1e-8, 'Epsilon term for RMSProp and Adam.')
 def optimizer_from_flags():
   lr = FLAGS.learning_rate
   if FLAGS.validation_mode:
-    return tf.train.GradientDescentOptimizer(learning_rate=0.00000)
+    return tf.no_op()
   if FLAGS.optimizer == 'momentum':
     return tf.train.MomentumOptimizer(lr, FLAGS.momentum)
   elif FLAGS.optimizer == 'sgd':
