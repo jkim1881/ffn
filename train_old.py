@@ -149,6 +149,8 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'in order to augment the training data.')
 flags.DEFINE_boolean('validation_mode', False,
                      'If true, learning rate is set to zero with SGD. Accuracy stats are accumulated over 1K samples')
+flags.DEFINE_boolean('adabn', False,
+                     'adabn')
 
 FLAGS = flags.FLAGS
 
@@ -623,7 +625,14 @@ def train_ffn(model_cls, **model_kwargs):
     with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
-      model = model_cls(with_membrane=FLAGS.with_membrane, **model_kwargs)
+
+      if not FLAGS.validation_mode:
+        model = model_cls(with_membrane=FLAGS.with_membrane, **model_kwargs)
+      else:
+        if FLAGS.adabn:
+          model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, adabn=True, **model_kwargs)
+        else:
+          model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, **model_kwargs)
 
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
@@ -637,13 +646,21 @@ def train_ffn(model_cls, **model_kwargs):
         save_flags()
 
       # Start supervisor.
+      if not FLAGS.validation_mode:
+        save_model_secs = 1800
+        summary_rate_secs = FLAGS.summary_rate_secs
+        train_dir = FLAGS.train_dir
+      else:
+        save_model_secs = 999999
+        summary_rate_secs = 999999
+        train_dir = FLAGS.train_dir + 'v'
       sv = tf.train.Supervisor(
-          logdir=FLAGS.train_dir,
+          logdir=train_dir,
           is_chief=(FLAGS.task == 0),
           saver=model.saver,
           summary_op=None,
-          save_summaries_secs=FLAGS.summary_rate_secs,
-          save_model_secs=1800,
+          save_summaries_secs=summary_rate_secs,
+          save_model_secs=save_model_secs,
           recovery_wait_secs=5)
       sess = sv.prepare_or_wait_for_session(
           FLAGS.master,
@@ -685,27 +702,27 @@ def train_ffn(model_cls, **model_kwargs):
 
       t_last = time.time()
 
-      # TODO (jk): text log of learning curve. refresh file.
-      learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
-      learning_curve_txt.close()
+      if not FLAGS.validation_mode:
+        # TODO (jk): text log of learning curve. refresh file.
+        learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
+        learning_curve_txt.close()
 
       if not FLAGS.validation_mode:
           max_steps = FLAGS.max_steps
       else:
-          max_steps = step_since_session_start + 1000/FLAGS.batch_size
+          max_steps = step + 5000/FLAGS.batch_size
+
+      if FLAGS.adabn:
+          ####################### BASIC ADABN
+          sess.run(model.ada_initializer)
+
       while step < max_steps:
-        if not FLAGS.validation_mode:
-          if (step % 10 == 0) & (step_since_session_start > 0):
-            # TODO (jk): text log of learning curve. refresh file.
-            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
-                   ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
-                   ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)))
-        else:
-          if (step_since_session_start % (500/FLAGS.batch_size) == 0):
-            # TODO (jk): text log of learning curve. refresh file.
-            logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
-                             ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 1)) +
-                             ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 1)))
+        if (step % 10 == 0) & (step_since_session_start > 0):
+          # TODO (jk): text log of learning curve. refresh file.
+          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
+               ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
+               ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)) +
+               ',   #patches: ' + str(eval_tracker.num_patches))
 
         # Run summaries periodically.
         t_curr = time.time()
@@ -726,6 +743,9 @@ def train_ffn(model_cls, **model_kwargs):
         seed, patches, labels, weights = next(batch_it)
 
         summaries = []
+        if FLAGS.adabn:
+          ####################### REMOVE THIS TO TURN OFF INSTANCE NORMALIZATION
+          sess.run(model.ada_initializer)
         updated_seed, step, summ, accuracy = run_training_step(
             sess, model, summ_op, None,
             feed_dict={
@@ -750,25 +770,24 @@ def train_ffn(model_cls, **model_kwargs):
           recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
           accuracy = (eval_tracker.tp + eval_tracker.tn) / (
           eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
-          learning_curve_txt.write('step_' + str(step) +
+          if not FLAGS.validation_mode:
+            learning_curve_txt.write('step_' + str(step) +
                                  '_precision_' + str(precision) +
                                  '_recall_' + str(recall) +
                                  '_accuracy_' + str(accuracy))
-          learning_curve_txt.write("\n")
-          learning_curve_txt.close()
+            learning_curve_txt.write("\n")
+            learning_curve_txt.close()
+            logging.info('Saving summaries.')
+            summ = tf.Summary.FromString(summ)
 
+            # Compute a loss over the whole training patch (i.e. more than a
+            # single-step field of view of the network). This quantifies the
+            # quality of the final object mask.
+            summ.value.extend(eval_tracker.get_summaries())
+            eval_tracker.reset()
 
-          logging.info('Saving summaries.')
-          summ = tf.Summary.FromString(summ)
-
-          # Compute a loss over the whole training patch (i.e. more than a
-          # single-step field of view of the network). This quantifies the
-          # quality of the final object mask.
-          summ.value.extend(eval_tracker.get_summaries())
-          eval_tracker.reset()
-
-          assert summary_writer is not None
-          summary_writer.add_summary(summ, step)
+            assert summary_writer is not None
+            summary_writer.add_summary(summ, step)
 
           if np.min([precision, recall]) > 0.97:
               logging.info('>>>>>>>>>>>>>>>>>>>>> Target performance (both prec and recall >0.9) reached.')

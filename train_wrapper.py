@@ -10,20 +10,16 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1])
 
     script_root = '/home/jk/PycharmProjects/ffn' #'/home/drew/ffn'
-    net_name_obj = 'v6_mely_2l' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp' #'feedback_hgru_v5_3l_linfb' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    volumes_name_list = ['neuroproof',
-                         'isbi2013',
-                         'cremi_a',
-                         'cremi_b',
-                         'cremi_c']
+    volumes_name_list = ['isbi2013']
     # volumes_name_list = ['isbi2013',
     #                      'cremi_a',
     #                      'cremi_b',
     #                      'cremi_c',
     #                      'berson']
     # volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'allbutberson'
+    tfrecords_name = 'isbi2013'
     dataset_type = 'train' #'val' #'train'
     with_membrane = False
 
@@ -40,9 +36,10 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
+    validation_mode = True
+    adabn = False
     load_from_ckpt = 'None'
-    #load_from_ckpt = os.path.join(script_root, 'models/fib25/model.ckpt-27465036') # THIS FEATURE DOESNT WORK
-    #load_from_ckpt = os.path.join(ckpt_root, 'ffn_berson_r0/model.ckpt-0')
+    #load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431' # feedback_hgru_v5_3l_notemp_isbi2013_r0/model.ckpt-430701'
 
     max_steps = 16*600000/batch_size
     optimizer = 'adam' #'adam' #'sgd'
@@ -82,7 +79,10 @@ if __name__ == '__main__':
               ' --optimizer ' + optimizer + \
               ' --load_from_ckpt ' + load_from_ckpt + \
               ' --batch_size=' + str(batch_size) + \
-              ' --with_membrane=' + str(with_membrane)
+              ' --with_membrane=' + str(with_membrane) + \
+              ' --validation_mode=' + str(validation_mode) + \
+              ' --adabn=' + str(adabn)
+
     ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
     subprocess.call(command, shell=True)
 

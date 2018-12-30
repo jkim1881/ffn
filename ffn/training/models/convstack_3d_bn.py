@@ -25,10 +25,20 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(net, depth=9, is_training=True):
+def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
   """Computes single-object mask prediction."""
 
   conv = tf.contrib.layers.conv3d
+
+  if not is_training:
+    if adabn:
+      train_bn = True
+    else:
+      train_bn = False
+  else:
+    train_bn = True
+  print('>>>>>>>>>>>>>BN-TRAIN: ' + str(train_bn))
+
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
                                       kernel_size=(3, 3, 3),
                                       padding='SAME'):
@@ -44,7 +54,7 @@ def _predict_object_mask(net, depth=9, is_training=True):
                                             },
                         updates_collections=None,
                         scope='in',
-                        is_training=is_training)
+                        is_training=train_bn)
     net = conv(net, scope='conv0_a')
     net = conv(net, scope='conv0_b', activation_fn=None)
 
@@ -62,7 +72,7 @@ def _predict_object_mask(net, depth=9, is_training=True):
                                         },
                     updates_collections=None,
                     scope='res_%da'% i,
-                    is_training=is_training)
+                    is_training=train_bn)
         in_net = net
         net = tf.nn.relu(net)
         net = conv(net, scope='conv%d_a' % i)
@@ -81,7 +91,7 @@ def _predict_object_mask(net, depth=9, is_training=True):
                                         },
                     updates_collections=None,
                     scope='out',
-                    is_training=is_training)
+                    is_training=train_bn)
   net = tf.nn.relu(net)
   logits = conv(net, 1, (1, 1, 1), activation_fn=None, scope='conv_lom')
 
@@ -98,13 +108,14 @@ def _predict_object_mask(net, depth=9, is_training=True):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9,is_training=True, reuse=False, tag='', TA=None):
+  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, adabn=False, reuse=False, tag='', TA=None):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, tag=tag)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
     self.reuse = reuse
     self.TA = TA
     self.is_training=is_training
+    self.adabn=adabn
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -117,7 +128,7 @@ class ConvStack3DFFNModel(model.FFNModel):
     net = tf.concat([self.input_patches, self.input_seed], 4)
 
     with tf.variable_scope('seed_update', reuse=self.reuse):
-      logit_update = _predict_object_mask(net, self.depth, is_training=self.is_training)
+      logit_update = _predict_object_mask(net, self.depth, is_training=self.is_training, adabn=self.adabn)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 
@@ -136,3 +147,21 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.add_summaries()
 
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
+    if (not self.is_training) & (self.adabn):
+      # ADABN: Add only non-bn vars to saver
+      var_list = tf.global_variables()
+      moving_ops_names = ['moving_mean:', 'moving_variance:']
+      # var_list = [
+      #       x for x in var_list
+      #       if x.name.split('/')[-1].split(':')[0] + ':'
+      #       not in moving_ops_names]
+      # self.saver = tf.train.Saver(
+      #       var_list=var_list,
+      #       keep_checkpoint_every_n_hours=100)
+      # ADABN: Define bn-var initializer to reset moments every iteration
+      moment_list = [
+          x for x in tf.global_variables()
+          if x.name.split('/')[-1].split(':')[0] + ':'
+          in moving_ops_names]
+      self.ada_initializer = tf.variables_initializer(
+          var_list=moment_list)

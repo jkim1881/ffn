@@ -24,12 +24,21 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
-def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
+def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, adabn=False):
   """Computes single-object mask prediction."""
 
   in_k = 14
   ff_k = [18, 18, 18]
   ff_kpool_multiplier = 2
+
+  if not is_training:
+    if adabn:
+      train_bn = True
+    else:
+      train_bn = False
+  else:
+    train_bn = True
+  print('>>>>>>>>>>>>>BN-TRAIN: '+str(train_bn))
 
   if input_patches.get_shape().as_list()[-1] == 2:
       image = tf.expand_dims(input_patches[:,:,:,:,0], axis=4)
@@ -69,18 +78,13 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
                                         bn_reuse=True,
                                         gate_bn=True,
                                         aux=None,
-                                        train=is_training)
+                                        train=train_bn)
 
       net = hgru_net.build(x, input_seed)
   finalbn_param_initializer = {
       'moving_mean': tf.constant_initializer(0., dtype=tf.float32),
       'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
       'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
-  }
-  finalbn_param_trainable = {
-      'moving_mean': False,
-      'moving_variance': False,
-      'gamma': is_training
   }
   net = tf.nn.relu(net)
   net = tf.contrib.layers.batch_norm(
@@ -91,7 +95,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       renorm=False,
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
-      is_training=finalbn_param_trainable)
+      is_training=train_bn)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom1',
                                     num_outputs=in_k,
@@ -105,7 +109,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
       renorm=False,
       param_initializers=finalbn_param_initializer,
       updates_collections=None,
-      is_training=finalbn_param_trainable)
+      is_training=train_bn)
   logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
@@ -144,13 +148,14 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, reuse=False, tag='', TA=None):
+  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, adabn=False, reuse=False, tag='', TA=None):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, tag)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
-    self.is_training = is_training
     self.reuse=reuse
     self.TA=TA
+    self.is_training=is_training
+    self.adabn=adabn
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -162,7 +167,7 @@ class ConvStack3DFFNModel(model.FFNModel):
 
     with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
-                                          depth=self.depth, is_training=self.is_training)
+                                          depth=self.depth, is_training=self.is_training, adabn=self.adabn)
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 
@@ -181,4 +186,22 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.add_summaries()
 
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
+    if (not self.is_training) & (self.adabn):
+      # ADABN: Add only non-bn vars to saver
+      var_list = tf.global_variables()
+      moving_ops_names = ['moving_mean:', 'moving_variance:']
+      # var_list = [
+      #       x for x in var_list
+      #       if x.name.split('/')[-1].split(':')[0] + ':'
+      #       not in moving_ops_names]
+      # self.saver = tf.train.Saver(
+      #       var_list=var_list,
+      #       keep_checkpoint_every_n_hours=100)
+      # ADABN: Define bn-var initializer to reset moments every iteration
+      moment_list = [
+          x for x in tf.global_variables()
+          if x.name.split('/')[-1].split(':')[0] + ':'
+          in moving_ops_names]
+      self.ada_initializer = tf.variables_initializer(
+          var_list=moment_list)
 

@@ -39,8 +39,6 @@ flags.DEFINE_float('adam_beta1', 0.9, 'Gradient decay term for Adam.')
 flags.DEFINE_float('adam_beta2', 0.999, 'Gradient^2 decay term for Adam.')
 flags.DEFINE_float('epsilon', 1e-8, 'Epsilon term for RMSProp and Adam.')
 
-flags.DEFINE_boolean('validation_mode', False,
-                     'If true, learning rate is set to zero with SGD. Accuracy stats are accumulated over 1K samples')
 
 def optimizer_from_flags():
   lr = FLAGS.learning_rate
