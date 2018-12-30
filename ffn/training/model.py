@@ -55,12 +55,13 @@ class FFNModel(object):
   # TF op to call to perform loss optimization on the model.
   train_op = None
 
-  def __init__(self, deltas, batch_size=None, with_membrane=False, tag=''):
+  def __init__(self, deltas, batch_size=None, with_membrane=False, validation_mode=False, tag=''):
     assert self.dim is not None
 
     self.deltas = deltas
     self.batch_size = batch_size
     self.with_membrane=with_membrane
+    self.validation_mode=validation_mode
 
     # Initialize the shift collection. This is used during training with the
     # fixed step size policy.
@@ -149,41 +150,44 @@ class FFNModel(object):
       loss = self.loss
     tf.summary.scalar('optimizer_loss', self.loss)
 
-    if TA is None:
-        from . import optimizer
-        opt = optimizer.optimizer_from_flags()
+    if not self.validation_mode:
+      if TA is None:
+          from . import optimizer
+          opt = optimizer.optimizer_from_flags()
+      else:
+          opt = optimizer_functional.optimizer_from_flags(TA) #TODO(jk)
+      grads_and_vars = opt.compute_gradients(loss)
+
+      for g, v in grads_and_vars:
+        if g is None:
+          tf.logging.error('Gradient is None: %s', v.op.name)
+
+      if max_gradient_entry_mag > 0.0:
+        grads_and_vars = [(tf.clip_by_value(g,
+                                            -max_gradient_entry_mag,
+                                            +max_gradient_entry_mag), v)
+                          for g, v, in grads_and_vars]
+
+      # TODO(b/34707785): Hopefully remove need for these deprecated calls.  Let
+      # one warning through so that we have some (low) possibility of noticing if
+      # the message changes.
+      # TODO(jk): removed summary gradients for speed
+      # trainables = tf.trainable_variables()
+      # if trainables:
+      #   var = trainables[0]
+      #   tf.contrib.deprecated.histogram_summary(var.op.name, var)
+      # with deprecation.silence():
+      #   for var in trainables[1:]:
+      #     tf.contrib.deprecated.histogram_summary(var.op.name, var)
+      #   for grad, var in grads_and_vars:
+      #     tf.contrib.deprecated.histogram_summary(
+      #         'gradients/' + var.op.name, grad)
+
+      self.train_op = opt.apply_gradients(grads_and_vars,
+                                          global_step=self.global_step,
+                                          name='train')
     else:
-        opt = optimizer_functional.optimizer_from_flags(TA) #TODO(jk)
-    grads_and_vars = opt.compute_gradients(loss)
-
-    for g, v in grads_and_vars:
-      if g is None:
-        tf.logging.error('Gradient is None: %s', v.op.name)
-
-    if max_gradient_entry_mag > 0.0:
-      grads_and_vars = [(tf.clip_by_value(g,
-                                          -max_gradient_entry_mag,
-                                          +max_gradient_entry_mag), v)
-                        for g, v, in grads_and_vars]
-
-    # TODO(b/34707785): Hopefully remove need for these deprecated calls.  Let
-    # one warning through so that we have some (low) possibility of noticing if
-    # the message changes.
-    # TODO(jk): removed summary gradients for speed
-    # trainables = tf.trainable_variables()
-    # if trainables:
-    #   var = trainables[0]
-    #   tf.contrib.deprecated.histogram_summary(var.op.name, var)
-    # with deprecation.silence():
-    #   for var in trainables[1:]:
-    #     tf.contrib.deprecated.histogram_summary(var.op.name, var)
-    #   for grad, var in grads_and_vars:
-    #     tf.contrib.deprecated.histogram_summary(
-    #         'gradients/' + var.op.name, grad)
-
-    self.train_op = opt.apply_gradients(grads_and_vars,
-                                        global_step=self.global_step,
-                                        name='train')
+      self.train_op = tf.no_op()
 
   def show_center_slice(self, image, sigmoid=True):
     image = image[:, image.get_shape().dims[1] // 2, :, :, :]

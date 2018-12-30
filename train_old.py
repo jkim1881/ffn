@@ -650,11 +650,7 @@ def train_ffn(model_cls, **model_kwargs):
         save_model_secs = 1800
         summary_rate_secs = FLAGS.summary_rate_secs
         train_dir = FLAGS.train_dir
-      else:
-        save_model_secs = 999999
-        summary_rate_secs = 999999
-        train_dir = FLAGS.train_dir + 'v'
-      sv = tf.train.Supervisor(
+        sv = tf.train.Supervisor(
           logdir=train_dir,
           is_chief=(FLAGS.task == 0),
           saver=model.saver,
@@ -662,10 +658,26 @@ def train_ffn(model_cls, **model_kwargs):
           save_summaries_secs=summary_rate_secs,
           save_model_secs=save_model_secs,
           recovery_wait_secs=5)
-      sess = sv.prepare_or_wait_for_session(
-          FLAGS.master,
-          config=tf.ConfigProto(
-              log_device_placement=False, allow_soft_placement=True))
+        sess = sv.prepare_or_wait_for_session(
+              FLAGS.master,
+              config=tf.ConfigProto(
+                  log_device_placement=False, allow_soft_placement=True))
+      else:
+        train_dir = FLAGS.train_dir + 'v'
+        summary_rate_secs = 999999
+        save_model_secs = 999999
+        sv = tf.train.Supervisor(
+          logdir=train_dir,
+          is_chief=(FLAGS.task == 0),
+          saver=None,
+          summary_op=None,
+          save_summaries_secs=summary_rate_secs,
+          save_model_secs=save_model_secs,
+          recovery_wait_secs=5)
+        sess = sv.prepare_or_wait_for_session(
+              FLAGS.master,
+              config=tf.ConfigProto(
+                  log_device_placement=False, allow_soft_placement=True))
       eval_tracker.sess = sess
 
       # TODO (jk): load from ckpt
@@ -673,9 +685,9 @@ def train_ffn(model_cls, **model_kwargs):
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
         model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-
       step = int(sess.run(model.global_step))
       step_since_session_start = 0
+
       if FLAGS.task > 0:
         # To avoid early instabilities when using multiple replicas, we use
         # a launch schedule where new replicas are brought online gradually.
@@ -706,11 +718,9 @@ def train_ffn(model_cls, **model_kwargs):
         # TODO (jk): text log of learning curve. refresh file.
         learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
         learning_curve_txt.close()
-
-      if not FLAGS.validation_mode:
-          max_steps = FLAGS.max_steps
+        max_steps = FLAGS.max_steps
       else:
-          max_steps = step + 5000/FLAGS.batch_size
+        max_steps = step + 5000/FLAGS.batch_size
 
       if FLAGS.adabn:
           ####################### BASIC ADABN
@@ -755,6 +765,8 @@ def train_ffn(model_cls, **model_kwargs):
                 model.input_patches: patches,
                 model.input_seed: seed,
             })
+        if FLAGS.validation_mode:
+          step += 1
         step_since_session_start += 1
 
         # Save prediction results in the original seed array so that

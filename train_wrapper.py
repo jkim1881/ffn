@@ -39,7 +39,7 @@ if __name__ == '__main__':
     validation_mode = True
     adabn = False
     load_from_ckpt = 'None'
-    #load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431' # feedback_hgru_v5_3l_notemp_isbi2013_r0/model.ckpt-430701'
+    load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431' # feedback_hgru_v5_3l_notemp_isbi2013_r0/model.ckpt-430701'
 
     max_steps = 16*600000/batch_size
     optimizer = 'adam' #'adam' #'sgd'
