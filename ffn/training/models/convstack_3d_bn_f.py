@@ -35,6 +35,8 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
         bn_decay = 0.95
     else:
         bn_decay = 1.0
+  else:
+    bn_decay=0.95
   train_bn = True
 
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
