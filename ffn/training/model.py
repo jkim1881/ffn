@@ -163,6 +163,7 @@ class FFNModel(object):
           tf.logging.error('Gradient is None: %s', v.op.name)
 
       if max_gradient_entry_mag > 0.0:
+        print('Clip gradient: ON')
         grads_and_vars = [(tf.clip_by_value(g,
                                             -max_gradient_entry_mag,
                                             +max_gradient_entry_mag), v)
