@@ -73,7 +73,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                                         fb_k=ff_k,
                                         padding='SAME',
                                         batch_norm=True,
-                                        bn_reuse=True,
+                                        bn_reuse=False,
                                         gate_bn=True,
                                         aux=None,
                                         train=train_bn,
@@ -89,7 +89,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
   net = tf.contrib.layers.batch_norm(
       inputs=net,
       scale=True,
-      center=False,
+      center=True,
       fused=True,
       renorm=False,
       decay=bn_decay,

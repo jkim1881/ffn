@@ -187,7 +187,7 @@ class FFNModel(object):
                                           global_step=self.global_step,
                                           name='train')
     else:
-      self.train_op = tf.no_op()
+      self.train_op = tf.assign_add(self.global_step, 1)
 
   def show_center_slice(self, image, sigmoid=True):
     image = image[:, image.get_shape().dims[1] // 2, :, :, :]

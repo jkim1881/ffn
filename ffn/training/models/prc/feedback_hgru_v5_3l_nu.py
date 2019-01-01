@@ -37,7 +37,8 @@ class hGRU(object):
             bn_reuse=True,
             gate_bn=True,
             aux=None,
-            train=True):
+            train=True,
+            bn_decay=0.999):
 
         # Sort through and assign the auxilliary variables
         default_vars = self.defaults()
@@ -45,7 +46,7 @@ class hGRU(object):
             for k, v in aux.iteritems():
                 default_vars[k] = v
         self.update_params(default_vars)
-
+        self.bn_decay=bn_decay
 
         """Global initializations and settings."""
         self.in_k = num_in_feats
@@ -86,15 +87,16 @@ class hGRU(object):
             'gamma': tf.constant_initializer(0.1, dtype=self.dtype)
         }
         self.param_trainable = {
-            'moving_mean': False,
-            'moving_variance': False,
-            'gamma': True
+            'moving_mean': self.train,
+            'moving_variance': self.train,
+            'gamma': self.train
         }
-        self.param_collections = {
-            'moving_mean': None,  # [tf.GraphKeys.UPDATE_OPS],
-            'moving_variance': None,  # [tf.GraphKeys.UPDATE_OPS],
-            'gamma': None
-        }
+        # self.param_collections = {
+        #     'moving_mean': None,  # [tf.GraphKeys.UPDATE_OPS],
+        #     'moving_variance': None,  # [tf.GraphKeys.UPDATE_OPS],
+        #     'gamma': None
+        # }
+        # DISABLED (12/30)
         print('>>>>>>>>>>>>>>>>>>>>>>IS_TRAINING: ' + str(self.train))
     def defaults(self):
         """A dictionary containing defaults for auxilliary variables.
@@ -222,7 +224,6 @@ class hGRU(object):
                                     name=v,
                                     dtype=self.dtype,
                                     shape=[ch],
-                                    collections=self.param_collections[v],
                                     initializer=self.param_initializer[v])
                 lower_feats = higher_feats
 
@@ -262,7 +263,6 @@ class hGRU(object):
                             name=v,
                             dtype=self.dtype,
                             shape=[lower_feats],
-                            collections=self.param_collections[v],
                             initializer=self.param_initializer[v])
             lower_feats = higher_feats
 
@@ -595,7 +595,6 @@ class hGRU(object):
                                     name=v,
                                     dtype=self.dtype,
                                     shape=[self.hgru_k[idx]],
-                                    collections=self.param_collections[v],
                                     initializer=self.param_initializer[v])
 
     def resize_x_to_y(
@@ -693,8 +692,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -705,8 +704,8 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         g1a = self.gate_nl(g1a_intermediate)
         h2_gated = h2*g1a
@@ -728,8 +727,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -740,8 +739,8 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         g1b = self.gate_nl(g1b_intermediate)
         x_gated = x*g1b
@@ -781,8 +780,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         reuse=self.scope_reuse,
                         scope=scope,
                         is_training=self.train)
@@ -793,8 +792,8 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         g2 = self.gate_nl(g2_intermediate)
         # Horizontal activities
@@ -845,8 +844,8 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     reuse=self.scope_reuse,
                     scope=scope,
                     is_training=self.train)
@@ -857,8 +856,8 @@ class hGRU(object):
                 center=False,
                 fused=True,
                 renorm=False,
+                decay=self.bn_decay,
                 param_initializers=self.param_initializer,
-                updates_collections=None,
                 is_training=self.train)
         h1 = self.input_integration(
             x=x_gated,
@@ -882,8 +881,8 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     reuse=self.scope_reuse,
                     scope=scope,
                     is_training=self.train)
@@ -894,8 +893,8 @@ class hGRU(object):
                 center=False,
                 fused=True,
                 renorm=False,
+                decay=self.bn_decay,
                 param_initializers=self.param_initializer,
-                updates_collections=None,
                 is_training=self.train)
         h2 = self.output_integration(
             h1=h1,
@@ -945,8 +944,8 @@ class hGRU(object):
                         center=True,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -957,8 +956,8 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         else:
             ff0 = l0_h2
@@ -987,8 +986,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -999,9 +998,11 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff0 = ff0
         ff0 = self.ff_nl(ff0) + 1
         ff0 = tf.nn.conv3d(
             input=ff0,
@@ -1019,8 +1020,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1031,9 +1032,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff0 = ff0
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff0[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1084,8 +1087,8 @@ class hGRU(object):
                         center=True,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1096,8 +1099,8 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         else:
             ff1 = l1_h2
@@ -1126,8 +1129,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1138,9 +1141,11 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff1 = ff1
         ff1 = self.ff_nl(ff1) + 1
         ff1 = tf.nn.conv3d(
             input=ff1,
@@ -1159,8 +1164,8 @@ class hGRU(object):
                         fused=True,
                         renorm=False,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
+                        decay=self.bn_decay,
                         reuse=self.scope_reuse,
                         is_training=self.train)
             else:
@@ -1170,9 +1175,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff1 = ff1
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff1[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1223,8 +1230,8 @@ class hGRU(object):
                         fused=True,
                         renorm=False,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
+                        decay=self.bn_decay,
                         reuse=self.scope_reuse,
                         is_training=self.train)
             else:
@@ -1234,11 +1241,11 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
         else:
-            ff2 = l1_h2
+            ff2 = l2_h2
 
 
         # FEEDFORWARD 2
@@ -1264,8 +1271,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1276,9 +1283,11 @@ class hGRU(object):
                     center=True,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff2 = ff2
         ff2 = tf.nn.conv3d(
             input=ff2,
             filter=weights,
@@ -1295,8 +1304,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1307,9 +1316,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            ff2 = ff2
         if self.ff_kpool_multiplier > 1:
             low_k = 0
             running_max = ff2[:,:,:,:,low_k:low_k+self.ff_conv_k[idx]]
@@ -1350,8 +1361,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1362,9 +1373,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            fb2 = fb2
         fb2 = tf.nn.bias_add(
             fb2,
             bias)
@@ -1392,8 +1405,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1404,9 +1417,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            fb1 = fb1
         fb1 = tf.nn.bias_add(
             fb1,
             bias)
@@ -1434,8 +1449,8 @@ class hGRU(object):
                         center=False,
                         fused=True,
                         renorm=False,
+                        decay=self.bn_decay,
                         param_initializers=self.param_initializer,
-                        updates_collections=None,
                         scope=scope,
                         reuse=self.scope_reuse,
                         is_training=self.train)
@@ -1446,9 +1461,11 @@ class hGRU(object):
                     center=False,
                     fused=True,
                     renorm=False,
+                    decay=self.bn_decay,
                     param_initializers=self.param_initializer,
-                    updates_collections=None,
                     is_training=self.train)
+        else:
+            fb0 = fb0
         fb0 = tf.nn.bias_add(
             fb0,
             bias)
@@ -1504,25 +1521,28 @@ class hGRU(object):
         l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
         l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
 
-        # While loop
-        elems = [
-            i0,
-            x,
-            l0_h2,
-            l0_fb,
-            l1_h2,
-            l1_fb,
-            l2_h2,
-            l2_fb]
+        # # While loop
+        # elems = [
+        #     i0,
+        #     x,
+        #     l0_h2,
+        #     l0_fb,
+        #     l1_h2,
+        #     l1_fb,
+        #     l2_h2,
+        #     l2_fb]
+        #
+        # returned = tf.while_loop(
+        #     self.condition,
+        #     self.full,
+        #     loop_vars=elems,
+        #     back_prop=True,
+        #     swap_memory=False)
+        #
+        # # Prepare output
+        # i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
 
-        returned = tf.while_loop(
-            self.condition,
-            self.full,
-            loop_vars=elems,
-            back_prop=True,
-            swap_memory=False)
-
-        # Prepare output
-        i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
+        for t in range(self.timesteps):
+            i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = self.full(i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb)
 
         return l0_h2

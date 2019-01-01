@@ -632,7 +632,7 @@ def train_ffn(model_cls, **model_kwargs):
         if FLAGS.adabn:
           model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, adabn=True, **model_kwargs)
         else:
-          model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, **model_kwargs)
+          model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, adabn=False, **model_kwargs)
 
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
@@ -720,18 +720,23 @@ def train_ffn(model_cls, **model_kwargs):
         learning_curve_txt.close()
         max_steps = FLAGS.max_steps
       else:
-        max_steps = step + 5000/FLAGS.batch_size
+        max_steps = step + 50000/FLAGS.batch_size
 
-      if FLAGS.adabn:
-          ####################### BASIC ADABN
-          sess.run(model.ada_initializer)
+      # if FLAGS.adabn:
+      #     ####################### BASIC ADABN
+      #     sess.run(model.ada_initializer)
 
+      mean1o = 0.
+      mean2o = 0.
+      var1o = 1.
+      var2o = 1.
       while step < max_steps:
-        if (step % 10 == 0) & (step_since_session_start > 0):
+        if (step % 20 == 0) & (step_since_session_start > 0):
           # TODO (jk): text log of learning curve. refresh file.
-          logging.info('>>>>>>>>>>>>>>>>>>>>> step: ' + str(step) +
-               ',   prec: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +1)) +
-               ',   recll: ' + str(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +1)) +
+          logging.info('Step: ' + str(step) +
+               ',   prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +0.000001))) +
+               ',   recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +0.000001))) +
+               ',   acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
                ',   #patches: ' + str(eval_tracker.num_patches))
 
         # Run summaries periodically.
@@ -750,12 +755,36 @@ def train_ffn(model_cls, **model_kwargs):
         else:
           summ_op = None
 
-        seed, patches, labels, weights = next(batch_it)
+        if FLAGS.validation_mode & ((step_since_session_start % 500) ==0) & (step_since_session_start > 0):
+            print('REFRESHING EVAL TRACKER...')
+            eval_tracker.reset()
 
-        summaries = []
-        if FLAGS.adabn:
-          ####################### REMOVE THIS TO TURN OFF INSTANCE NORMALIZATION
-          sess.run(model.ada_initializer)
+        if (step_since_session_start % 5) == 0:
+            mean1 = sess.run(model.moment_list[0].name)
+            mean2 = sess.run(model.moment_list[-2].name)
+            var1 = sess.run(model.moment_list[1].name)
+            var2 = sess.run(model.moment_list[-1].name)
+            diff = np.sum(np.square(mean1-mean1o)) + np.sum(np.square(mean2-mean2o)) + np.sum(np.square(var1-var1o)) + np.sum(np.square(var2-var2o))
+            mean1o = mean1
+            mean2o = mean2
+            var1o = var1
+            var2o = var2
+            print('moment displacement = ' + str(diff))
+
+        # if FLAGS.adabn:
+        #   ####################### REMOVE THIS TO TURN OFF INSTANCE NORMALIZATION
+        #   sess.run(model.ada_initializer)
+
+
+        # if ((step_since_session_start % 50) == 0) & (step_since_session_start > 0):
+        #   sess.run(model.ada_initializer)
+        #   sess.run(model.fgru_ada_initializer)
+        #   sess.run(model.ext_ada_initializer)
+        #   eval_tracker.reset()
+        #   print('REFRESHING MOMENTS, eval tracker...')
+
+
+        seed, patches, labels, weights = next(batch_it)
         updated_seed, step, summ, accuracy = run_training_step(
             sess, model, summ_op, None,
             feed_dict={
