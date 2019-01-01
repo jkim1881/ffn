@@ -149,7 +149,7 @@ class FFNModel(object):
     if loss is None:
       loss = self.loss
     tf.summary.scalar('optimizer_loss', self.loss)
-
+    
     if not self.validation_mode:
       if TA is None:
           from . import optimizer

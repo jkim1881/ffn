@@ -151,7 +151,8 @@ class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
   def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, adabn=False, reuse=False, tag='', TA=None):
-    super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=~(is_training), tag=tag)
+    super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=not(is_training), tag=tag)
+
     self.set_uniform_io_size(fov_size)
     self.depth = depth
     self.reuse=reuse
