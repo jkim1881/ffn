@@ -58,7 +58,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
       x = tf.concat([x, membrane], axis=4)
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
-      hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
+      hgru_net = feedback_hgru_v5_3l_nu_f.hGRU(layer_name='hgru_net',
                                         num_in_feats=in_k,
                                         timesteps=8, #6, #8,
                                         h_repeat=1,
