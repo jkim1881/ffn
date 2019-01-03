@@ -1521,28 +1521,36 @@ class hGRU(object):
         l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
         l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
         #
-        # While loop
-        elems = [
-            i0,
-            x,
-            l0_h2,
-            l0_fb,
-            l1_h2,
-            l1_fb,
-            l2_h2,
-            l2_fb]
-
-        returned = tf.while_loop(
-            self.condition,
-            self.full,
-            loop_vars=elems,
-            back_prop=True,
-            swap_memory=False)
-
-        # Prepare output
-        i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
+        # # While loop
+        # elems = [
+        #     i0,
+        #     x,
+        #     l0_h2,
+        #     l0_fb,
+        #     l1_h2,
+        #     l1_fb,
+        #     l2_h2,
+        #     l2_fb]
         #
-        # for t in range(self.timesteps):
-        #     i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = self.full(i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb)
+        # returned = tf.while_loop(
+        #     self.condition,
+        #     self.full,
+        #     loop_vars=elems,
+        #     back_prop=True,
+        #     swap_memory=False)
+        #
+        # # Prepare output
+        # i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
+
+        for t in range(self.timesteps):
+            i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = self.full(i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb)
+
+        # run l0 one last time
+        _, l0_h2 = self.hgru_ops(
+            i0=i0,
+            x=x,
+            h2=l0_h2,
+            fb=l0_fb,
+            var_scope = 'hgru_0')
 
         return l0_h2
