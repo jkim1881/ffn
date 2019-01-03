@@ -45,11 +45,11 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
-    validation_mode = False
+    validation_mode = True
     adabn = True
     load_from_ckpt = 'None'
     # ISBI2013
-    load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431'
+    load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-615071'
     # load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/feedback_hgru_v5_3l_notemp_isbi2013_r0/model.ckpt-427216'
     # allbutfib
     # load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_allbutfib_r0/model.ckpt-596887'
