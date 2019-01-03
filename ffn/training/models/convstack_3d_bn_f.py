@@ -42,19 +42,6 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
                                       kernel_size=(3, 3, 3),
                                       padding='SAME'):
-    net = tf.contrib.layers.batch_norm(
-                        inputs=net,
-                        scale=True,
-                        center=True,
-                        fused=True,
-                        renorm=False,
-                        decay=bn_decay,
-                        param_initializers={'moving_mean': tf.constant_initializer(0.),
-                                            'moving_variance': tf.constant_initializer(1.),
-                                            'gamma': tf.constant_initializer(0.1)
-                                            },
-                        scope='in',
-                        is_training=train_bn)
     net = conv(net, scope='conv0_a')
     net = conv(net, scope='conv0_b', activation_fn=None)
 
@@ -67,6 +54,7 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
                     fused=True,
                     renorm=False,
                     decay=bn_decay,
+                    updates_collections=None,
                     param_initializers={'moving_mean': tf.constant_initializer(0.),
                                         'moving_variance': tf.constant_initializer(1.),
                                         'gamma': tf.constant_initializer(0.1)
@@ -86,6 +74,7 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
                     fused=True,
                     renorm=False,
                     decay=bn_decay,
+                    updates_collections=None,
                     param_initializers={'moving_mean': tf.constant_initializer(0.),
                                         'moving_variance': tf.constant_initializer(1.),
                                         'gamma': tf.constant_initializer(0.1)

@@ -734,8 +734,8 @@ def train_ffn(model_cls, **model_kwargs):
         if (step % 20 == 0) & (step_since_session_start > 0):
           # TODO (jk): text log of learning curve. refresh file.
           logging.info('Step: ' + str(step) +
-               ',   prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp +0.000001))) +
-               ',   recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn +0.000001))) +
+               ',   prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
+               ',   recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
                ',   acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
                ',   #patches: ' + str(eval_tracker.num_patches))
 
@@ -770,6 +770,8 @@ def train_ffn(model_cls, **model_kwargs):
             var1o = var1
             var2o = var2
             print('moment displacement = ' + str(diff))
+            # print(mean1)
+            # print(var1)
 
         # if FLAGS.adabn:
         #   ####################### REMOVE THIS TO TURN OFF INSTANCE NORMALIZATION
@@ -778,8 +780,8 @@ def train_ffn(model_cls, **model_kwargs):
 
         # if ((step_since_session_start % 50) == 0) & (step_since_session_start > 0):
         #   sess.run(model.ada_initializer)
-        #   sess.run(model.fgru_ada_initializer)
-        #   sess.run(model.ext_ada_initializer)
+        #   # sess.run(model.fgru_ada_initializer)
+        #   # sess.run(model.ext_ada_initializer)
         #   eval_tracker.reset()
         #   print('REFRESHING MOMENTS, eval tracker...')
 

@@ -31,12 +31,14 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
   conv = tf.contrib.layers.conv3d
 
   if not is_training:
-    if adabn:
-        bn_decay = 0.95
-    else:
+    if not adabn:
         bn_decay = 1.0
+  else:
+    bn_decay = 0.99
   train_bn = True
 
+  print(bn_decay)
+  print(train_bn)
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
                                       kernel_size=(3, 3, 3),
                                       padding='SAME'):
@@ -47,6 +49,7 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
                         fused=True,
                         renorm=False,
                         decay=bn_decay,
+                        updates_collections=None,
                         param_initializers={'moving_mean': tf.constant_initializer(0.),
                                             'moving_variance': tf.constant_initializer(1.),
                                             'gamma': tf.constant_initializer(0.1)
@@ -65,6 +68,7 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
                     fused=True,
                     renorm=False,
                     decay=bn_decay,
+                    updates_collections=None,
                     param_initializers={'moving_mean': tf.constant_initializer(0.),
                                         'moving_variance': tf.constant_initializer(1.),
                                         'gamma': tf.constant_initializer(0.1)
@@ -84,6 +88,7 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
                     fused=True,
                     renorm=False,
                     decay=bn_decay,
+                    updates_collections=None,
                     param_initializers={'moving_mean': tf.constant_initializer(0.),
                                         'moving_variance': tf.constant_initializer(1.),
                                         'gamma': tf.constant_initializer(0.1)

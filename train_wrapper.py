@@ -10,10 +10,10 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1])
 
     script_root = '/home/jk/PycharmProjects/ffn' #'/home/drew/ffn'
-    net_name_obj = 'feedback_hgru_v5_3l_notemp_f' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'convstack_3d_bn' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    # volumes_name_list = ['isbi2013']
-    volumes_name_list = ['neuroproof']
+    volumes_name_list = ['isbi2013']
+    # volumes_name_list = ['neuroproof']
     # volumes_name_list = ['isbi2013',
     #                      'cremi_a',
     #                      'cremi_b',
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     #                      'cremi_b',
     #                      'cremi_c']
     # volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'neuroproof'
+    tfrecords_name = 'isbi2013'
     dataset_type = 'train' #'val' #'train'
     with_membrane = False
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     adabn = True
     load_from_ckpt = 'None'
     # ISBI2013
-    # load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431'
+    load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_isbi2013_r0/model.ckpt-598431'
     # load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/feedback_hgru_v5_3l_notemp_isbi2013_r0/model.ckpt-427216'
     # allbutfib
     # load_from_ckpt = '/media/data_cifs/connectomics/ffn_ckpts/wide_fov/convstack_3d_bn_allbutfib_r0/model.ckpt-596887'

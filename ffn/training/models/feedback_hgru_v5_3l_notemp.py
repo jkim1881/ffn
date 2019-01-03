@@ -37,6 +37,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
     else:
         bn_decay = 1.0
   train_bn = True
+  # bn_decay = 1.0
 
   if input_patches.get_shape().as_list()[-1] == 2:
       image = tf.expand_dims(input_patches[:,:,:,:,0], axis=4)
@@ -57,27 +58,27 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
   from .prc import feedback_hgru_v5_3l_nu
   with tf.variable_scope('recurrent'):
       hgru_net = feedback_hgru_v5_3l_nu.hGRU(layer_name='hgru_net',
-                                        num_in_feats=in_k,
-                                        timesteps=8, #6, #8,
-                                        h_repeat=1,
-                                        hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],
-                                        hgru_k=[in_k, ff_k[0], ff_k[1]],
-                                        hgru_symmetric_weights=True,
-                                        ff_conv_dhw=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
-                                        ff_conv_k=ff_k,
-                                        ff_kpool_multiplier=ff_kpool_multiplier,
-                                        ff_pool_dhw=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
-                                        ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
-                                        fb_mode='transpose',
-                                        fb_dhw=[[1, 8, 8], [2, 6, 6], [1, 6, 6]],
-                                        fb_k=ff_k,
-                                        padding='SAME',
-                                        batch_norm=True,
-                                        bn_reuse=True,
-                                        gate_bn=True,
-                                        aux=None,
-                                        train=train_bn,
-                                        bn_decay=bn_decay)
+                                            num_in_feats=in_k,
+                                            timesteps=8, #6, #8,
+                                            h_repeat=1,
+                                            hgru_dhw=[[1, 7, 7], [3, 5, 5], [3, 3, 3]],
+                                            hgru_k=[in_k, ff_k[0], ff_k[1]],
+                                            hgru_symmetric_weights=True,
+                                            ff_conv_dhw=[[1, 7, 7], [1, 5, 5], [1, 5, 5]],
+                                            ff_conv_k=ff_k,
+                                            ff_kpool_multiplier=ff_kpool_multiplier,
+                                            ff_pool_dhw=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
+                                            ff_pool_strides=[[1, 2, 2], [2, 2, 2], [1, 2, 2]],
+                                            fb_mode='transpose',
+                                            fb_dhw=[[1, 8, 8], [2, 6, 6], [1, 6, 6]],
+                                            fb_k=ff_k,
+                                            padding='SAME',
+                                            batch_norm=True,
+                                            bn_reuse=True,
+                                            gate_bn=True,
+                                            aux=None,
+                                            train=train_bn,
+                                            bn_decay=bn_decay)
 
       net = hgru_net.build(x, input_seed)
   finalbn_param_initializer = {
@@ -93,6 +94,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
       fused=True,
       renorm=False,
       decay=bn_decay,
+      updates_collections=None,
       param_initializers=finalbn_param_initializer,
       is_training=train_bn)
   logits = tf.contrib.layers.conv3d(net,
@@ -107,6 +109,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
       fused=True,
       renorm=False,
       decay=bn_decay,
+      updates_collections=None,
       param_initializers=finalbn_param_initializer,
       is_training=train_bn)
   logits = tf.nn.relu(logits)
