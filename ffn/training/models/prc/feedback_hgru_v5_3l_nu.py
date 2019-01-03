@@ -1513,36 +1513,36 @@ class hGRU(object):
             l1_shape = tf.identity(x_shape)
             l2_shape = tf.identity(x_shape)
 
-        # Initialize hidden layer activities
-        l0_h2 = tf.ones(l0_shape, dtype=self.dtype)*seed*2 - 1
-        l0_fb = tf.zeros(l0_shape, dtype=self.dtype)
-        l1_h2 = tf.zeros(l1_shape, dtype=self.dtype)
-        l1_fb = tf.zeros(l1_shape, dtype=self.dtype)
-        l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
-        l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
+        # # Initialize hidden layer activities
+        # l0_h2 = tf.ones(l0_shape, dtype=self.dtype)*seed*2 - 1
+        # l0_fb = tf.zeros(l0_shape, dtype=self.dtype)
+        # l1_h2 = tf.zeros(l1_shape, dtype=self.dtype)
+        # l1_fb = tf.zeros(l1_shape, dtype=self.dtype)
+        # l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
+        # l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
+        #
+        # # While loop
+        # elems = [
+        #     i0,
+        #     x,
+        #     l0_h2,
+        #     l0_fb,
+        #     l1_h2,
+        #     l1_fb,
+        #     l2_h2,
+        #     l2_fb]
+        #
+        # returned = tf.while_loop(
+        #     self.condition,
+        #     self.full,
+        #     loop_vars=elems,
+        #     back_prop=True,
+        #     swap_memory=False)
+        #
+        # # Prepare output
+        # i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
 
-        # While loop
-        elems = [
-            i0,
-            x,
-            l0_h2,
-            l0_fb,
-            l1_h2,
-            l1_fb,
-            l2_h2,
-            l2_fb]
-
-        returned = tf.while_loop(
-            self.condition,
-            self.full,
-            loop_vars=elems,
-            back_prop=True,
-            swap_memory=False)
-
-        # Prepare output
-        i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
-
-        # for t in range(self.timesteps):
-        #     i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = self.full(i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb)
+        for t in range(self.timesteps):
+            i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = self.full(i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb)
 
         return l0_h2
