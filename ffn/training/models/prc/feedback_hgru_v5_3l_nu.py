@@ -1513,13 +1513,13 @@ class hGRU(object):
             l1_shape = tf.identity(x_shape)
             l2_shape = tf.identity(x_shape)
 
-        # # Initialize hidden layer activities
-        # l0_h2 = tf.ones(l0_shape, dtype=self.dtype)*seed*2 - 1
-        # l0_fb = tf.zeros(l0_shape, dtype=self.dtype)
-        # l1_h2 = tf.zeros(l1_shape, dtype=self.dtype)
-        # l1_fb = tf.zeros(l1_shape, dtype=self.dtype)
-        # l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
-        # l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
+        # Initialize hidden layer activities
+        l0_h2 = tf.ones(l0_shape, dtype=self.dtype)*seed*2 - 1
+        l0_fb = tf.zeros(l0_shape, dtype=self.dtype)
+        l1_h2 = tf.zeros(l1_shape, dtype=self.dtype)
+        l1_fb = tf.zeros(l1_shape, dtype=self.dtype)
+        l2_h2 = tf.zeros(l2_shape, dtype=self.dtype)
+        l2_fb = tf.zeros(l2_shape, dtype=self.dtype)
         #
         # # While loop
         # elems = [
