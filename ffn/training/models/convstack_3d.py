@@ -94,5 +94,5 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.show_center_slice(logit_seed)
       self.show_center_slice(self.labels, sigmoid=False)
       self.add_summaries()
-
+    self.moment_list = None
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
