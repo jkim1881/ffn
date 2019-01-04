@@ -759,7 +759,7 @@ def train_ffn(model_cls, **model_kwargs):
             print('REFRESHING EVAL TRACKER...')
             eval_tracker.reset()
 
-        if (step_since_session_start % 5) == 0:
+        if ((step_since_session_start % 5) == 0) & (model.moment_list is not None):
             mean1 = sess.run(model.moment_list[0].name)
             mean2 = sess.run(model.moment_list[-2].name)
             var1 = sess.run(model.moment_list[1].name)
