@@ -1319,3 +1319,4 @@ class hGRU(object):
         i0, x, l0_h2, l0_fb, l1_h2, l1_fb, l2_h2, l2_fb = returned
 
         return l0_h2
+

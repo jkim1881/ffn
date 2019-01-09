@@ -75,7 +75,9 @@ class FFNModel(object):
     # contribute to the loss and see object mask updates.
     self.offset_label = tf.placeholder(tf.string, name='offset_label%s' % tag)
 
-    if not len(tag):
+    if tag is None:
+      self.global_step = tf.Variable(0, name='global_step', trainable=False)
+    elif not len(tag):  #  or tag is None:
       self.global_step = tf.Variable(0, name='global_step%s' % tag, trainable=False)
 
     # The seed is always a placeholder which is fed externally from the

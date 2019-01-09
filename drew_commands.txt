@@ -1,3 +1,10 @@
 python run_inference_ding.py --inference_request="$(cat configs/wide_fov/ding.pbtxt)" --bounding_box="start { x:0 y:0 z:0 } size { x:300 y:300 z:300 }"
 
 
+
+python run_inference.py --inference_request="$(cat configs/wide_fov/ding.pbtxt)" --bounding_box="start { x:0 y:0 z:0 } size { x:768 y:768 z:768 }"
+
+
+
+python run_inference.py --inference_request="$(cat configs/wide_fov/ding_raw.pbtxt)" --bounding_box="start { x:30 y:30 z:30 } size { x:128 y:128 z:128 }"
+

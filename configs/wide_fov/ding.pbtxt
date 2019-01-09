@@ -1,11 +1,11 @@
-image { 
+image: { 
   hdf5: "/home/dlinsley/110629_k0725/groundtruth.h5:raw"
 }
 image_mean: 154
 image_stddev: 33
 seed_policy: "PolicyPeaks" 
-model_checkpoint_path: "/gpfs/data/tserre/data/ffn_ckpts/model.ckpt-468336" 
-model_name: "feedback_hgru_v5_3l_notemp_ol.ConvStack3DFFNModel" 
+model_checkpoint_path: "/gpfs/data/tserre/data/ffn_ckpts/model.ckpt-255052" 
+model_name: "convstack_3d.ConvStack3DFFNModel" 
 model_args: "{\"depth\": 12, \"fov_size\": [57, 57, 13], \"deltas\": [8, 8, 3]}" 
 segmentation_output_dir: "/gpfs/data/tserre/data/ding_segmentations" 
 inference_options { 
@@ -16,3 +16,4 @@ inference_options {
   segment_threshold: 0.6 
   min_segment_size: 1000 
 } 
+

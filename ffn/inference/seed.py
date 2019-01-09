@@ -45,6 +45,8 @@ class BaseSeedPolicy(object):
           more complex policies can access the raw image data, etc.
       **kwargs: other keyword arguments
     """
+    if 'force_coords' in kwargs.keys():
+      self.force_coords = kwargs['force_coords']
     del kwargs
     # TODO(mjanusz): Remove circular reference between Canvas and seed policies.
     self.canvas = weakref.proxy(canvas)
@@ -289,3 +291,10 @@ class PolicyInvertOrigins(BaseSeedPolicy):
     points.sort(reverse=True)
     self.coords = np.array([origin_info.start_zyx for _, origin_info
                             in points])
+
+class PolicySinglePoint(BaseSeedPolicy):
+
+  def _init_coords(self):
+
+    self.coords = np.array(self.force_coords)
+

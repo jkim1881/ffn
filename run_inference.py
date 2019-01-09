@@ -38,6 +38,10 @@ flags.DEFINE_string('bounding_box', None,
 def main(unused_argv):
   request = inference_flags.request_from_flags()
 
+  hdf_dir = os.path.split(request.image.hdf5)[0]
+  load_ckpt_path = request.model_checkpoint_path
+  save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup_'+ os.path.split(os.path.split(hdf_dir)[0])[1]
+
   if not gfile.Exists(request.segmentation_output_dir):
     gfile.MakeDirs(request.segmentation_output_dir)
 
@@ -45,7 +49,7 @@ def main(unused_argv):
   text_format.Parse(FLAGS.bounding_box, bbox)
 
   runner = inference.Runner()
-  runner.start(request)
+  runner.start(request, tag='_inference')
   runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
              (bbox.size.z, bbox.size.y, bbox.size.x))
 
@@ -56,3 +60,4 @@ def main(unused_argv):
 
 if __name__ == '__main__':
   app.run(main)
+

@@ -942,7 +942,7 @@ class hGRU(object):
                     ff0 = tf.contrib.layers.batch_norm(
                         inputs=l0_h2,
                         scale=True,
-                        center=True,
+                        center=False,
                         fused=True,
                         renorm=False,
                         param_initializers=self.param_initializer,
@@ -954,7 +954,7 @@ class hGRU(object):
                 ff0 = tf.contrib.layers.batch_norm(
                     inputs=l0_h2,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -996,7 +996,7 @@ class hGRU(object):
                 ff0 = tf.contrib.layers.batch_norm(
                     inputs=ff0,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1081,7 +1081,7 @@ class hGRU(object):
                     ff1 = tf.contrib.layers.batch_norm(
                         inputs=l1_h2,
                         scale=True,
-                        center=True,
+                        center=False,
                         fused=True,
                         renorm=False,
                         param_initializers=self.param_initializer,
@@ -1093,7 +1093,7 @@ class hGRU(object):
                 ff1 = tf.contrib.layers.batch_norm(
                     inputs=l1_h2,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1135,7 +1135,7 @@ class hGRU(object):
                 ff1 = tf.contrib.layers.batch_norm(
                     inputs=ff1,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1219,7 +1219,7 @@ class hGRU(object):
                     ff2 = tf.contrib.layers.batch_norm(
                         inputs=l2_h2,
                         scale=True,
-                        center=True,
+                        center=False,
                         fused=True,
                         renorm=False,
                         param_initializers=self.param_initializer,
@@ -1231,7 +1231,7 @@ class hGRU(object):
                 ff2 = tf.contrib.layers.batch_norm(
                     inputs=l2_h2,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1273,7 +1273,7 @@ class hGRU(object):
                 ff2 = tf.contrib.layers.batch_norm(
                     inputs=ff2,
                     scale=True,
-                    center=True,
+                    center=False,
                     fused=True,
                     renorm=False,
                     param_initializers=self.param_initializer,
@@ -1412,7 +1412,6 @@ class hGRU(object):
             bias)
         fb1 = self.ff_nl(fb1) + 1
         l1_fb = fb1
-
 
         # FEEDBACK 0
         idx=0

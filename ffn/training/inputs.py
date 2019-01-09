@@ -41,7 +41,6 @@ def create_filename_queue(coordinates_file_pattern, shuffle=True):
     Tensorflow queue with coordinate filenames
   """
   m = re.search(r'@(\d{1,})', coordinates_file_pattern)
-  import ipdb;ipdb.set_trace()
   if m:
     num_shards = int(m.group(1))
     coord_file_list = [

@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Runs FFN inference within a dense bounding box.
-
 Inference is performed within a single process.
 """
 
@@ -24,12 +23,10 @@ from google.protobuf import text_format
 from absl import app
 from absl import flags
 from tensorflow import gfile
-import tensorflow as tf
+
 from ffn.utils import bounding_box_pb2
 from ffn.inference import inference
 from ffn.inference import inference_flags
-import train_mm
-
 
 FLAGS = flags.FLAGS
 
@@ -40,51 +37,23 @@ flags.DEFINE_string('bounding_box', None,
 
 def main(unused_argv):
   request = inference_flags.request_from_flags()
+
   if not gfile.Exists(request.segmentation_output_dir):
     gfile.MakeDirs(request.segmentation_output_dir)
 
   bbox = bounding_box_pb2.BoundingBox()
   text_format.Parse(FLAGS.bounding_box, bbox)
 
-  # Training
-  import os
-  batch_size = 16
-  max_steps = 3000#10*250/batch_size #250
-  hdf_dir = os.path.split(request.image.hdf5)[0]
-  load_ckpt_path = request.model_checkpoint_path
-  save_ckpt_path = os.path.split(load_ckpt_path)[0]+'_topup_'+ os.path.split(os.path.split(hdf_dir)[0])[1]
-  # import ipdb;ipdb.set_trace()
-  with tf.Graph().as_default():
-      with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
-          # SET UP TRAIN MODEL
-          print('>>>>>>>>>>>>>>>>>>>>>>COUNTED %s VARIABLES PRE-INFERENCE' % len(tf.trainable_variables()))
-          runner = inference.Runner()
-          runner.start(
-              request,
-              batch_size=1,
-              topup={'train_dir': FLAGS.train_dir},
-              reuse=tf.AUTO_REUSE,
-              tag='_inference') #TAKES SESSION
-          print('>>>>>>>>>>>>>>>>>>>>>>COUNTED %s VARIABLES POST-INFERENCE' % len(tf.trainable_variables()))
+  runner = inference.Runner()
+  runner.start(request)
+  runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
+             (bbox.size.z, bbox.size.y, bbox.size.x))
 
-          # START TRAINING
-          print('>>>>>>>>>>>>>>>>>>>>>>START TOPUP TRAINING')
-          sess = train_mm.train_ffn(
-              eval_tracker, model, runner.session, load_data_ops, summary_writer, merge_summaries_op)
+  counter_path = os.path.join(request.segmentation_output_dir, 'counters.txt')
+  if not gfile.Exists(counter_path):
+    runner.counters.dump(counter_path)
 
-          # saver.save(sess, "/tmp/model.ckpt")
-
-          # START INFERENCE
-          print('>>>>>>>>>>>>>>>>>>>>>>START INFERENCE')
-          # saver.restore(sess, "/tmp/model.ckpt")
-          runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
-                     (bbox.size.z, bbox.size.y, bbox.size.x))
-
-          counter_path = os.path.join(request.segmentation_output_dir, 'counters.txt')
-          if not gfile.Exists(counter_path):
-            runner.counters.dump(counter_path)
-
-          sess.close()
 
 if __name__ == '__main__':
   app.run(main)
+

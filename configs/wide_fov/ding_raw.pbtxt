@@ -1,0 +1,21 @@
+image: { 
+  # hdf5: "/home/dlinsley/110629_k0725/groundtruth.h5:raw"
+  hdf5: "/local1/dlinsley/connectomics/mag1/x0025/y0041/z0007/110629_k0725_mag1_x0025_y0041_z0007.raw"
+}
+image_mean: 154
+image_stddev: 33
+seed_policy: "PolicyPeaks" 
+seed_policy_args: "{\"force_coords\": [[20, 20, 20]]}"
+model_checkpoint_path: "/gpfs/data/tserre/data/ffn_ckpts/model.ckpt-255052" 
+model_name: "convstack_3d.ConvStack3DFFNModel" 
+model_args: "{\"depth\": 12, \"fov_size\": [57, 57, 13], \"deltas\": [8, 8, 3]}" 
+segmentation_output_dir: "/gpfs/data/tserre/data/ding_segmentations" 
+inference_options { 
+  init_activation: 0.95 
+  pad_value: 0.05 
+  move_threshold: 0.5 
+  min_boundary_dist { x: 1 y: 1 z: 1} 
+  segment_threshold: 0.3 
+  min_segment_size: 100 
+} 
+

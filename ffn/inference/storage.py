@@ -56,10 +56,15 @@ def decorated_volume(settings, **kwargs):
     raise NotImplementedError('VolumeStore operations not available.')
   elif settings.HasField('hdf5'):
     path = settings.hdf5.split(':')
-    if len(path) != 2:
-      raise ValueError('hdf5 volume_path should be specified as file_path:'
-                       'hdf5_internal_dataset_path.  Got: ' + settings.hdf5)
-    volume = h5py.File(path[0], 'r')[path[1]]
+    if len(path[0].split('.raw')) == 2:
+      volume = np.fromfile(
+        path[0], dtype='uint8').reshape(
+          [128, 128, 128]).transpose(2, 1, 0)
+    else:
+      if len(path) != 2:
+        raise ValueError('hdf5 volume_path should be specified as file_path:'
+                         'hdf5_internal_dataset_path.  Got: ' + settings.hdf5)
+      volume = h5py.File(path[0], 'r')[path[1]]
   else:
     raise ValueError('A volume_path must be set.')
 

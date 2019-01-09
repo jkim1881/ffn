@@ -54,6 +54,9 @@ MSEC_IN_SEC = 1000
 MAX_SELF_CONSISTENT_ITERS = 50
 
 
+from tensorflow.python.tools import inspect_checkpoint
+
+
 # Visualization.
 # ---------------------------------------------------------------------------
 class DynamicImage(object):
@@ -858,6 +861,7 @@ class Runner(object):
     """
     with timer_counter(self.counters, 'restore-tf-checkpoint'):
       logging.info('Loading checkpoint.')
+      inspect_checkpoint.print_tensors_in_checkpoint_file(checkpoint_path, tensor_name=None, all_tensors=False, all_tensor_names=True)
       self.model.saver.restore(self.session, checkpoint_path)
       logging.info('Checkpoint loaded.')
 
@@ -944,10 +948,11 @@ class Runner(object):
 
     if self.topup is None:
       self.saver = tf.train.Saver()
+      session = tf.Session()
+      self.session = session
       self._load_model_checkpoint(request.model_checkpoint_path)
       config = tf.ConfigProto()
       # tf.reset_default_graph()
-      session = tf.Session(config=config)
       logging.info('Available TF devices: %r', session.list_devices())
     else:
       self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
@@ -961,8 +966,7 @@ class Runner(object):
           log_device_placement=False, allow_soft_placement=True),
         checkpoint_dir=self.topup['train_dir'],
         scaffold=scaffold)
-
-    self.session = session
+      self.session = session
     self.executor.session = session
     self.executor.start_server()
 
