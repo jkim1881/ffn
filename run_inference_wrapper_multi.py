@@ -78,12 +78,12 @@ if __name__ == '__main__':
     fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
-    net_name = 'feedback_hgru_v5_3l_notemp_ol'#'convstack_3d_shallow' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
-    train_dataset_name = 'allbutberson89'
+    net_name = 'convstack_3d_bn_f'#'convstack_3d_shallow' #'convstack_3d_shallow'#'feedback_hgru_v5_3l_notemp'#
+    train_dataset_name = 'berson2x_w_memb'
 
-    min_ckpt = 152650
-    max_ckpt = 152660 # 240000 #120000
-    ckpt_steps = 15000 #30000 # 15000
+    min_ckpt = 42500
+    max_ckpt = 44500 # 240000 #120000
+    ckpt_steps = 50 # 30000 # 15000
 
     test_dataset_name = 'fullberson' #'isbi20138' #'fullberson'#'neuroproof'
     test_dataset_shape = [384,384,384] #[100, 256, 256] # [384, 384, 384]#[520, 520, 520] # [384, 192, 384] [192,192,192]
@@ -91,7 +91,6 @@ if __name__ == '__main__':
 
     image_mean = 154 #128
     image_stddev = 33
-
 
     ### DEFINE NAMES
     net_cond_name = net_name + '_' + train_dataset_name + '_r0'
@@ -108,7 +107,6 @@ if __name__ == '__main__':
         suffix += '_until_' +str(max_ckpt) + '.txt'
     else:
         suffix += '.txt'
-
     eval_result_txt_fullpath = os.path.join(ckpt_root, fov_type, net_cond_name, 'eval_on_'+ test_dataset_name + suffix)
     if os.path.isfile(eval_result_txt_fullpath):
         eval_result_txt = open(eval_result_txt_fullpath, "a")
@@ -123,6 +121,8 @@ if __name__ == '__main__':
     ## Get list of ckpts to load
     print('>>>>> TRIMMING CKPS')
     ckpt_list = find_all_ckpts(ckpt_root, fov_type, net_cond_name)
+    import ipdb
+    ipdb.set_trace()
     to_remove = []
     if min_ckpt != None:
         for ckpt in ckpt_list:
