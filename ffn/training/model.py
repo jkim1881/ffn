@@ -156,8 +156,6 @@ class FFNModel(object):
           opt = optimizer.optimizer_from_flags()
       else:
           opt = optimizer_functional.optimizer_from_flags(TA) #TODO(jk)
-      import ipdb
-      ipdb.set_trace()
       grads_and_vars = opt.compute_gradients(loss)
 
       for g, v in grads_and_vars:
