@@ -30,14 +30,12 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
 
   conv = tf.contrib.layers.conv3d
 
-  if not is_training:
-    if adabn:
-        bn_decay = 0.95
-    else:
-        bn_decay = 1.0
-  else:
-    bn_decay=0.95
   train_bn = True
+  bn_decay = 0.95
+  if not is_training:
+    if not adabn:
+        bn_decay = 1.0
+        train_bn = False
 
   with tf.contrib.framework.arg_scope([conv], num_outputs=32,
                                       kernel_size=(3, 3, 3),
