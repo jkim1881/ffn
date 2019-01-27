@@ -110,23 +110,5 @@ class ConvStack3DFFNModel(model.FFNModel):
       self.show_center_slice(self.labels, sigmoid=False)
       self.add_summaries()
 
-    # ADABN: Add only non-bn vars to saver
-    var_list = tf.global_variables()
-    moving_ops_names = ['moving_mean:', 'moving_variance:']
-    # var_list = [
-    #       x for x in var_list
-    #       if x.name.split('/')[-1].split(':')[0] + ':'
-    #       not in moving_ops_names]
-    # self.saver = tf.train.Saver(
-    #       var_list=var_list,
-    #       keep_checkpoint_every_n_hours=100)
-    # ADABN: Define bn-var initializer to reset moments every iteration
-    moment_list = [
-      x for x in tf.global_variables()
-      if x.name.split('/')[-1].split(':')[0] + ':'
-      in moving_ops_names]
-    self.moment_list = moment_list
-    self.ada_initializer = tf.variables_initializer(
-      var_list=moment_list)
-
+    self.moment_list = None
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1)
