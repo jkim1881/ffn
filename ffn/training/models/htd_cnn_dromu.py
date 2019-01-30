@@ -67,9 +67,9 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                               hgru1_fsiz=[1, 9, 9],
                               hgru2_fsiz=[3, 5, 5],
                               hgru_td_fsiz=[1, 1, 1],
-                              hgru_h1_nl=tf.nn.tanh,
-                              hgru_h2_nl=tf.nn.tanh,
-                              hgru_bistream_weights='shared',
+                              hgru_h1_nl=tf.nn.relu,
+                              hgru_h2_nl=tf.nn.relu,
+                              hgru_bistream_weights='independent',
                               hgru_symmetric_weights=True,
                               hgru_soft_coefficients=True,
                               belly_up_td=False,
@@ -79,7 +79,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                               ds_pool_list=[[1, 2, 2], [2, 2, 2]],
                               ds_stride_list=[[1, 2, 2], [2, 2, 2]],
                               use_dsus_skip=True,
-                              use_homunculus=False)
+                              use_homunculus=True)
       net = hgru_net.build(x, ffn_seed=input_seed)
 
   finalbn_param_initializer = {

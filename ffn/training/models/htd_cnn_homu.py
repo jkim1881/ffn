@@ -79,7 +79,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                               ds_pool_list=[[1, 2, 2], [2, 2, 2]],
                               ds_stride_list=[[1, 2, 2], [2, 2, 2]],
                               use_dsus_skip=True,
-                              use_homunculus=False)
+                              use_homunculus=True)
       net = hgru_net.build(x, ffn_seed=input_seed)
 
   finalbn_param_initializer = {

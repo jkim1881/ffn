@@ -41,7 +41,8 @@ class hGRU(object):
             ds_pool_list,
             ds_stride_list,
 
-            use_dsus_skip
+            use_dsus_skip,
+            use_homunculus=False
             ):
 
         # global params
@@ -53,6 +54,7 @@ class hGRU(object):
         self.train_bn = train_bn
         self.bn_decay = bn_decay
         self.in_k = in_k
+        self.use_homunculus = use_homunculus
 
         # hgru params
         self.hgru1_fsiz = hgru1_fsiz
@@ -136,6 +138,14 @@ class hGRU(object):
         self.hgru1.prepare_tensors()
         self.hgru2.prepare_tensors()
         self.hgru_td.prepare_tensors()
+
+        # HOMU
+        if self.use_homunculus:
+            self.homunculus = tf.get_variable(
+                                name='homunculus',
+                                dtype=self.dtype,
+                                initializer=tf.zeros(self.timesteps),
+                                trainable=self.train)
 
         # DS US KERNELS
         in_k = self.in_k
@@ -306,11 +316,11 @@ class hGRU(object):
 
         # HGRU_TD
         if self.belly_up_td:
-            l1_h2 = self.hgru_td.run(us_out, l1_h2)
+            fb_act = self.hgru_td.run(us_out, l1_h2)
         else:
-            l1_h2 = self.hgru_td.run(l1_h2, us_out)
-        l1_h2 = tf.contrib.layers.batch_norm(
-            inputs=l1_h2,
+            fb_act = self.hgru_td.run(l1_h2, us_out)
+        fb_act = tf.contrib.layers.batch_norm(
+            inputs=fb_act,
             scale=True,
             center=False,
             fused=True,
@@ -320,6 +330,14 @@ class hGRU(object):
             updates_collections=None,
             reuse=None,
             is_training=self.train_bn)
+
+        # HOMUNCULUS
+        if self.use_homunculus:
+            homu = tf.nn.sigmoid(tf.gather(self.homunculus, timestep))
+            l1_h2 = fb_act*homu + l1_h2*(1-homu)
+        else:
+            l1_h2 = fb_act
+
         return l1_h2, l2_h2
 
     def compute_shape(self, in_length, stride):
