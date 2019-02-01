@@ -42,7 +42,8 @@ class hGRU(object):
             ds_stride_list,
 
             use_dsus_skip,
-            use_homunculus=False
+            use_homunculus=False,
+            force_h = False
             ):
 
         # global params
@@ -55,6 +56,7 @@ class hGRU(object):
         self.bn_decay = bn_decay
         self.in_k = in_k
         self.use_homunculus = use_homunculus
+        self.force_h = force_h
 
         # hgru params
         self.hgru1_fsiz = hgru1_fsiz
@@ -99,36 +101,37 @@ class hGRU(object):
                           train_bn=self.train_bn,
                           bn_decay=self.bn_decay,
                           dtype=self.dtype)
-        self.hgru2 = hGRU(var_scope=self.var_scope + '/hgru2',
-                          fsiz=self.hgru2_fsiz,
-                          num_channels=self.ds_k_list[-1],
-                          use_3d=self.use_3d,
-                          symmetric_conv_weights=self.hgru_symmetric_weights,
-                          bistream_weights=self.hgru_bistream_weights,
-                          soft_coefficients=self.hgru_soft_coefficients,
-                          h1_nl=self.hgru_h1_nl,
-                          h2_nl=self.hgru_h2_nl,
-                          gate_nl=tf.nn.sigmoid,
-                          bn_reuse=False,
-                          train=self.train,
-                          train_bn=self.train_bn,
-                          bn_decay=self.bn_decay,
-                          dtype=self.dtype)
-        self.hgru_td = hGRU(var_scope=self.var_scope + '/hgru_td',
-                          fsiz=self.hgru_td_fsiz,
-                          num_channels=self.in_k,
-                          use_3d=self.use_3d,
-                          symmetric_conv_weights=False,
-                          bistream_weights=self.hgru_bistream_weights,
-                          soft_coefficients=self.hgru_soft_coefficients,
-                          h1_nl=self.hgru_h1_nl,
-                          h2_nl=self.hgru_h2_nl,
-                          gate_nl=tf.nn.sigmoid,
-                          bn_reuse=False,
-                          train=self.train,
-                          train_bn=self.train_bn,
-                          bn_decay=self.bn_decay,
-                          dtype=self.dtype)
+        if not self.force_h:
+            self.hgru2 = hGRU(var_scope=self.var_scope + '/hgru2',
+                              fsiz=self.hgru2_fsiz,
+                              num_channels=self.ds_k_list[-1],
+                              use_3d=self.use_3d,
+                              symmetric_conv_weights=self.hgru_symmetric_weights,
+                              bistream_weights=self.hgru_bistream_weights,
+                              soft_coefficients=self.hgru_soft_coefficients,
+                              h1_nl=self.hgru_h1_nl,
+                              h2_nl=self.hgru_h2_nl,
+                              gate_nl=tf.nn.sigmoid,
+                              bn_reuse=False,
+                              train=self.train,
+                              train_bn=self.train_bn,
+                              bn_decay=self.bn_decay,
+                              dtype=self.dtype)
+            self.hgru_td = hGRU(var_scope=self.var_scope + '/hgru_td',
+                              fsiz=self.hgru_td_fsiz,
+                              num_channels=self.in_k,
+                              use_3d=self.use_3d,
+                              symmetric_conv_weights=False,
+                              bistream_weights=self.hgru_bistream_weights,
+                              soft_coefficients=self.hgru_soft_coefficients,
+                              h1_nl=self.hgru_h1_nl,
+                              h2_nl=self.hgru_h2_nl,
+                              gate_nl=tf.nn.sigmoid,
+                              bn_reuse=False,
+                              train=self.train,
+                              train_bn=self.train_bn,
+                              bn_decay=self.bn_decay,
+                              dtype=self.dtype)
 
         print('>>>>>>>>>>>>>>>>>>>>>>IS_TRAINING: ' + str(self.train))
 
@@ -136,83 +139,84 @@ class hGRU(object):
 
         # HGRU KERNELS
         self.hgru1.prepare_tensors()
-        self.hgru2.prepare_tensors()
-        self.hgru_td.prepare_tensors()
+        if not self.force_h:
+            self.hgru2.prepare_tensors()
+            self.hgru_td.prepare_tensors()
 
-        # HOMU
-        if self.use_homunculus:
-            self.homunculus = tf.get_variable(
-                                name='homunculus',
-                                dtype=self.dtype,
-                                initializer=tf.zeros(self.timesteps),
-                                trainable=self.train)
+            # HOMU
+            if self.use_homunculus:
+                self.homunculus = tf.get_variable(
+                                    name='homunculus',
+                                    dtype=self.dtype,
+                                    initializer=tf.zeros(self.timesteps),
+                                    trainable=self.train)
 
-        # DS US KERNELS
-        in_k = self.in_k
-        for i, (fsiz, psiz, out_k) in enumerate(zip(self.ds_fsiz_list, self.ds_pool_list, self.ds_k_list)):
-            for rep in range(self.ds_conv_repeat):
-                with tf.variable_scope('ds%s_%s' % (i,rep)):
-                    setattr(
-                        self,
-                        'ds%s_%s_w' % (i,rep),
-                        tf.get_variable(
-                            name='w',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=fsiz + [in_k if rep==0 else out_k, out_k],
+            # DS US KERNELS
+            in_k = self.in_k
+            for i, (fsiz, psiz, out_k) in enumerate(zip(self.ds_fsiz_list, self.ds_pool_list, self.ds_k_list)):
+                for rep in range(self.ds_conv_repeat):
+                    with tf.variable_scope('ds%s_%s' % (i,rep)):
+                        setattr(
+                            self,
+                            'ds%s_%s_w' % (i,rep),
+                            tf.get_variable(
+                                name='w',
                                 dtype=self.dtype,
-                                uniform=True),
-                            trainable=self.train))
-                with tf.variable_scope('us%s_%s' % (i,rep)):
-                    fsiz = [m+n-1 for m,n in zip(fsiz,psiz)] if (rep == self.ds_conv_repeat - 1) else fsiz
-                    self.one_by_one = [1 for s in fsiz]
-                    setattr(
-                        self,
-                        'us%s_%s_w' % (i,rep),
-                        tf.get_variable(
-                            name='w',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=fsiz + [in_k if rep==0 else out_k, out_k],
+                                initializer=initialization.xavier_initializer(
+                                    shape=fsiz + [in_k if rep==0 else out_k, out_k],
+                                    dtype=self.dtype,
+                                    uniform=True),
+                                trainable=self.train))
+                    with tf.variable_scope('us%s_%s' % (i,rep)):
+                        fsiz = [m+n-1 for m,n in zip(fsiz,psiz)] if (rep == self.ds_conv_repeat - 1) else fsiz
+                        self.one_by_one = [1 for s in fsiz]
+                        setattr(
+                            self,
+                            'us%s_%s_w' % (i,rep),
+                            tf.get_variable(
+                                name='w',
                                 dtype=self.dtype,
-                                uniform=True),
-                            trainable=self.train))
-            if (i < len(self.ds_fsiz_list) - 1) and self.use_dsus_skip:
-                with tf.variable_scope('skip%s' % i):
-                    setattr(
-                        self,
-                        'skip%s_kappa' % i,
-                        tf.get_variable(
-                            name='kappa',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=self.one_by_one + [out_k],
+                                initializer=initialization.xavier_initializer(
+                                    shape=fsiz + [in_k if rep==0 else out_k, out_k],
+                                    dtype=self.dtype,
+                                    uniform=True),
+                                trainable=self.train))
+                if (i < len(self.ds_fsiz_list) - 1) and self.use_dsus_skip:
+                    with tf.variable_scope('skip%s' % i):
+                        setattr(
+                            self,
+                            'skip%s_kappa' % i,
+                            tf.get_variable(
+                                name='kappa',
                                 dtype=self.dtype,
-                                uniform=True),
-                            trainable=self.train))
-                    setattr(
-                        self,
-                        'skip%s_gamma' % i,
-                        tf.get_variable(
-                            name='gamma',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=self.one_by_one + [out_k],
+                                initializer=initialization.xavier_initializer(
+                                    shape=self.one_by_one + [out_k],
+                                    dtype=self.dtype,
+                                    uniform=True),
+                                trainable=self.train))
+                        setattr(
+                            self,
+                            'skip%s_gamma' % i,
+                            tf.get_variable(
+                                name='gamma',
                                 dtype=self.dtype,
-                                uniform=True),
-                            trainable=self.train))
-                    setattr(
-                        self,
-                        'skip%s_omega' % i,
-                        tf.get_variable(
-                            name='omega',
-                            dtype=self.dtype,
-                            initializer=initialization.xavier_initializer(
-                                shape=self.one_by_one + [out_k],
+                                initializer=initialization.xavier_initializer(
+                                    shape=self.one_by_one + [out_k],
+                                    dtype=self.dtype,
+                                    uniform=True),
+                                trainable=self.train))
+                        setattr(
+                            self,
+                            'skip%s_omega' % i,
+                            tf.get_variable(
+                                name='omega',
                                 dtype=self.dtype,
-                                uniform=True),
-                            trainable=self.train))
-            in_k = out_k
+                                initializer=initialization.xavier_initializer(
+                                    shape=self.one_by_one + [out_k],
+                                    dtype=self.dtype,
+                                    uniform=True),
+                                trainable=self.train))
+                in_k = out_k
 
     def full(self, x, l1_h2, l2_h2, timestep):
         if self.use_3d:
@@ -340,6 +344,31 @@ class hGRU(object):
 
         return l1_h2, l2_h2
 
+    def full_h(self, x, l1_h2, timestep):
+        if self.use_3d:
+            max_pool = tf.nn.max_pool3d
+            conv = tf.nn.conv3d
+            deconv = tf.nn.conv3d_transpose
+        else:
+            max_pool = tf.nn.max_pool
+            conv = tf.nn.conv2d
+            deconv = tf.nn.conv2d_transpose
+
+        # HGRU1
+        l1_h2 = self.hgru1.run(x, l1_h2)
+        l1_h2 = tf.contrib.layers.batch_norm(
+            inputs=l1_h2,
+            scale=True,
+            center=False,
+            fused=True,
+            renorm=False,
+            param_initializers=self.bn_param_initializer,
+            decay=self.bn_decay,
+            updates_collections=None,
+            reuse=None,
+            is_training=self.train_bn)
+        return l1_h2
+
     def compute_shape(self, in_length, stride):
         if in_length % stride == 0:
             return in_length/stride
@@ -364,10 +393,15 @@ class hGRU(object):
             l1_h2 = tf.ones(l1_h2_shape, dtype=self.dtype)*ffn_seed*2 - 1
         else:
             l1_h2 = tf.zeros(l1_h2_shape, dtype=self.dtype)
-        l2_h2 = tf.zeros(l2_h2_shape, dtype=self.dtype)
+        if not self.force_h:
+            l2_h2 = tf.zeros(l2_h2_shape, dtype=self.dtype)
+            for i in range(self.timesteps):
+                l1_h2_out, l2_h2_out = self.full(x, l1_h2, l2_h2, i)
+                l1_h2 = l1_h2_out
+                l2_h2 = l2_h2_out
+        else:
+            for i in range(self.timesteps):
+                l1_h2_out = self.full_h(x, l1_h2, i)
+                l1_h2 = l1_h2_out
 
-        for i in range(self.timesteps):
-            l1_h2_out, l2_h2_out = self.full(x, l1_h2, l2_h2, i)
-            l1_h2 = l1_h2_out
-            l2_h2 = l2_h2_out
         return l1_h2
