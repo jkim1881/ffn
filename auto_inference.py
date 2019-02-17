@@ -73,6 +73,7 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
+    ckpts = 10
     with_membrane = False
     validation_mode = True
     adabn = True
@@ -104,38 +105,8 @@ if __name__ == '__main__':
     print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
     load_from_ckpt = 'None'
     ckpt_list = find_all_ckpts(ckpt_root, cond_name)
+    trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpts*2))][:ckpts]
     import ipdb;ipdb.set_trace()
-    to_remove = []
-    if min_ckpt != None:
-        for ckpt in ckpt_list:
-            if ckpt < min_ckpt:
-                to_remove.append(ckpt)
-    if max_ckpt != None:
-        for ckpt in ckpt_list:
-            if ckpt > max_ckpt:
-                to_remove.append(ckpt)
-    for ckpt in to_remove:
-        if ckpt in ckpt_list:
-            ckpt_list.remove(ckpt)
-    to_remove = []
-    if ckpt_steps<500:
-        interval = len(ckpt_list)/ckpt_steps
-        for i, ckpt in enumerate(ckpt_list):
-            if i % interval != 0:
-                to_remove.append(ckpt)
-    else:
-        interval = ckpt_steps
-        accumulator = ckpt_list[0]
-        for i, ckpt in enumerate(ckpt_list):
-            if i ==0:
-                continue
-            if (ckpt-accumulator) >= interval:
-                accumulator = ckpt
-            else:
-                to_remove.append(ckpt)
-    for ckpt in to_remove:
-        if ckpt in ckpt_list:
-            ckpt_list.remove(ckpt)
 
     print('>>>>>>>>>>>>>>>>>>>>> Running....')
     command = 'python ' + os.path.join(script_root, 'train_old.py') + \
