@@ -5,8 +5,8 @@ import sys
 import numpy as np
 import train_functional
 
-def find_all_ckpts(ckpt_root, fov_type, net_cond_name):
-    raw_items = os.listdir(os.path.join(ckpt_root, fov_type, net_cond_name))
+def find_all_ckpts(ckpt_root, net_cond_name):
+    raw_items = os.listdir(os.path.join(ckpt_root, net_cond_name))
     items = []
     for item in raw_items:
         if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
     load_from_ckpt = 'None'
-    ckpt_list = find_all_ckpts(ckpt_root, fov_type, cond_name)
+    ckpt_list = find_all_ckpts(ckpt_root, cond_name)
     import ipdb;ipdb.set_trace()
     to_remove = []
     if min_ckpt != None:
