@@ -696,7 +696,7 @@ def train_ffn(model_cls, **model_kwargs):
       eval_curve_txt.write("CKPT: " + str(FLAGS.ckpt_idx))
       eval_curve_txt.write("\n")
       eval_curve_txt.close()
-      while step < FLAGS.eval_steps:
+      while step_since_session_start < FLAGS.eval_steps:
         if (step % 20 == 0) & (step_since_session_start > 0):
           # TODO (jk): text log of learning curve. refresh file.
           logging.info('Step: ' + str(step) +
