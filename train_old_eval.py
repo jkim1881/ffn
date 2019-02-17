@@ -707,7 +707,7 @@ def train_ffn(model_cls, **model_kwargs):
 
         seed, patches, labels, weights = next(batch_it)
         updated_seed, step, summ, accuracy = run_training_step(
-            sess, model, summ_op, None,
+            sess, model, None, None,
             feed_dict={
                 model.loss_weights: weights,
                 model.labels: labels,
