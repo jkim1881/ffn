@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import numpy as np
-import train_functional
 
 def find_all_ckpts(ckpt_root, net_cond_name):
     raw_items = os.listdir(os.path.join(ckpt_root, net_cond_name))
