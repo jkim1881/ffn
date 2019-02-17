@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     for ckpt_idx in trimmed_list:
         print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
-        ckpt_path = os.path.join(cond_name, 'model.ckpt-' + str(ckpt_idx))
+        ckpt_path = os.path.join(ckpt_root, cond_name, 'model.ckpt-' + str(ckpt_idx))
         train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
         ## COPY CKPT AND MOVE
         if not os.path.exists(train_dir):
