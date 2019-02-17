@@ -108,7 +108,7 @@ if __name__ == '__main__':
         train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
         ## COPY CKPT AND MOVE
         if not os.path.exists(train_dir):
-            os.path.makedirs(train_dir)
+            os.makedirs(train_dir)
         from shutil import copyfile
         copyfile(ckpt_path, os.path.join(train_dir,'model.ckpt-' + str(ckpt_idx)))
 
