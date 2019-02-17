@@ -104,13 +104,16 @@ if __name__ == '__main__':
 
     for ckpt_idx in trimmed_list:
         print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
-        ckpt_path = os.path.join(ckpt_root, cond_name, 'model.ckpt-' + str(ckpt_idx))
+        ckpt_path = os.path.join(ckpt_root, cond_name, 'model.ckpt-' + str(ckpt_idx) + '*')
         train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
         ## COPY CKPT AND MOVE
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
-        from shutil import copyfile
-        copyfile(ckpt_path, os.path.join(train_dir,'model.ckpt-' + str(ckpt_idx)))
+        import glob
+        import shutil
+        for file in glob.glob(ckpt_path):
+            print(file)
+            shutil.copy(file, train_dir)
 
         command = 'python ' + os.path.join(script_root, 'train_old_eval.py') + \
                   ' --train_coords ' + coords_fullpath + \
