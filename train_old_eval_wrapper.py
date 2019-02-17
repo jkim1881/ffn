@@ -73,15 +73,11 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
-    ckpts = 10
+    ckpt_ticks = 10
     with_membrane = False
-    validation_mode = True
     adabn = True
-
-    max_steps = 16*1000000/batch_size
-    optimizer = 'adam' #'adam' #'sgd'
-    image_mean = 128
-    image_stddev = 33
+    eval_steps = 6000/batch_size
+    move_threshold = 0.9
 
     print('>>>>>>>>>>>>>>>>>>>>> Dataset = ' + tfrecords_name)
     cond_name = net_name + '_' + tfrecords_name + '_r0' #+ str(irep)
@@ -105,26 +101,35 @@ if __name__ == '__main__':
     print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
     load_from_ckpt = 'None'
     ckpt_list = find_all_ckpts(ckpt_root, cond_name)
-    trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpts*2))][:ckpts]
-    import ipdb;ipdb.set_trace()
+    trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks*2))][:ckpt_ticks]
 
-    print('>>>>>>>>>>>>>>>>>>>>> Running....')
-    command = 'python ' + os.path.join(script_root, 'train_old.py') + \
-              ' --train_coords ' + coords_fullpath + \
-              ' --data_volumes ' + data_string + \
-              ' --label_volumes ' + label_string + \
-              ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
-              ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
-              ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
-              ' --image_mean ' + str(image_mean) + \
-              ' --image_stddev ' + str(image_stddev) + \
-              ' --max_steps=' + str(max_steps) + \
-              ' --optimizer ' + optimizer + \
-              ' --load_from_ckpt ' + load_from_ckpt + \
-              ' --batch_size=' + str(batch_size) + \
-              ' --with_membrane=' + str(with_membrane) + \
-              ' --validation_mode=' + str(validation_mode) + \
-              ' --adabn=' + str(adabn)
+    for ckpt_idx in trimmed_list:
+        print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
+        ckpt_path = os.path.join(cond_name, 'model.ckpt-' + str(ckpt_idx))
+        train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
+        ## COPY CKPT AND MOVE
+        if not os.path.exists(train_dir):
+            os.path.makedirs(train_dir)
+        from shutil import copyfile
+        copyfile(ckpt_path, os.path.join(train_dir,'model.ckpt-' + str(ckpt_idx)))
 
-    ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
-    subprocess.call(command, shell=True)
+        command = 'python ' + os.path.join(script_root, 'train_old_eval.py') + \
+                  ' --train_coords ' + coords_fullpath + \
+                  ' --data_volumes ' + data_string + \
+                  ' --label_volumes ' + label_string + \
+                  ' --train_dir ' + train_dir + \
+                  ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
+                  ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
+                  ' --image_mean ' + str(128) + \
+                  ' --image_stddev ' + str(33) + \
+                  ' --eval_steps=' + str(eval_steps) + \
+                  ' --optimizer ' + 'adam' + \
+                  ' --ckpt_idx ' + str(ckpt_idx) + \
+                  ' --batch_size=' + str(batch_size) + \
+                  ' --with_membrane=' + str(with_membrane) + \
+                  ' --validation_mode=' + str(True) + \
+                  ' --adabn=' + str(adabn) + \
+                  ' --threshold=' + str(move_threshold)
+
+        ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
+        subprocess.call(command, shell=True)

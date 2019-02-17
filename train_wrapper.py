@@ -53,6 +53,7 @@ if __name__ == '__main__':
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
+    move_threshold = 0.7
     validation_mode = False
     adabn = True
     load_from_ckpt = 'None'
@@ -109,7 +110,8 @@ if __name__ == '__main__':
               ' --batch_size=' + str(batch_size) + \
               ' --with_membrane=' + str(with_membrane) + \
               ' --validation_mode=' + str(validation_mode) + \
-              ' --adabn=' + str(adabn)
+              ' --adabn=' + str(adabn) + \
+              ' --threshold=' + str(move_threshold)
 
     ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
     subprocess.call(command, shell=True)
