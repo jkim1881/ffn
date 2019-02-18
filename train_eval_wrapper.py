@@ -56,9 +56,9 @@ if __name__ == '__main__':
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     ckpt_ticks = 10
-    verbose = True
+    verbose = False
     with_membrane = False
-    adabn = True
+    adabn = False
     eval_steps = 6000/batch_size
     move_threshold = 0.9
 
