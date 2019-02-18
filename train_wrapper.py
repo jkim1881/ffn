@@ -24,14 +24,14 @@ if __name__ == '__main__':
     #                      'cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
-    # volumes_name_list = ['neuroproof',
-    #		         'cremi_a',
-    #			 'cremi_b',
-    # 			 'cremi_c',
-    #			 'berson']
     volumes_name_list = ['neuroproof',
-			 'isbi2013',
-			 'berson']
+                         'cremi_a',
+                         'cremi_b',
+                         'cremi_c',
+                         'berson']
+    volumes_name_list = ['neuroproof',
+                         'isbi2013',
+                         'berson']
     # volumes_name_list = ['cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']

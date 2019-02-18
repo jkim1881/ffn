@@ -87,6 +87,8 @@ flags.DEFINE_string('model_args', None,
                     'constructor.')
 flags.DEFINE_boolean('with_membrane', False,
                      'JKJKJK')
+flags.DEFINE_boolean('progress_verbose', True,
+                     'JKJKJK')
 flags.DEFINE_integer('ckpt_idx', None,
                      'JKJKJK')
 
@@ -697,7 +699,7 @@ def train_ffn(model_cls, **model_kwargs):
       eval_curve_txt.write("\n")
       eval_curve_txt.close()
       while step_since_session_start < FLAGS.eval_steps:
-        if (step % 20 == 0) & (step_since_session_start > 0):
+        if (step % 20 == 0) & (step_since_session_start > 0) & FLAGS.progress_verbose:
           # TODO (jk): text log of learning curve. refresh file.
           logging.info('Step: ' + str(step) +
                ',   prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
@@ -731,6 +733,9 @@ def train_ffn(model_cls, **model_kwargs):
                            '_accuracy_' + str(accuracy))
       eval_curve_txt.write("\n")
       eval_curve_txt.close()
+      print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
+            ', recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
+            ', acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))))
 
 def main(argv=()):
   del argv  # Unused.
