@@ -65,8 +65,15 @@ if __name__ == '__main__':
     for eval_vol_list, eval_tfr, train_tfr in zip(eval_volumes_name_list_list, eval_tfrecords_name_list, train_tfrecords_name_list):
         print('>>>>>>>>>>>>>>>>>>>>> Train Dataset = ' + train_tfr)
         print('>>>>>>>>>>>>>>>>>>>>> Eval Dataset = ' + eval_tfr)
+
         cond_name = net_name + '_' + train_tfr + '_r0'
+        train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
         coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
+
+        eval_curve_txt = open(os.path.join(train_dir, 'eval.txt'), "a")
+        eval_curve_txt.write(">>>>>Eval on: " + eval_tfr)
+        eval_curve_txt.write("\n")
+        eval_curve_txt.close()
 
         data_string = ''
         label_string = ''
@@ -90,7 +97,6 @@ if __name__ == '__main__':
         for ckpt_idx in trimmed_list:
             print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
             ckpt_path = os.path.join(ckpt_root, cond_name, 'model.ckpt-' + str(ckpt_idx) + '*')
-            train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
             ## COPY CKPT AND MOVE
             if not os.path.exists(train_dir):
                 os.makedirs(train_dir)
