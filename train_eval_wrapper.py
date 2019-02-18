@@ -70,6 +70,8 @@ if __name__ == '__main__':
         train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
         coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
 
+        if not os.path.exists(train_dir):
+            os.makedirs(train_dir)
         eval_curve_txt = open(os.path.join(train_dir, 'eval.txt'), "a")
         eval_curve_txt.write(">>>>>Eval on: " + eval_tfr)
         eval_curve_txt.write("\n")
@@ -98,8 +100,6 @@ if __name__ == '__main__':
             print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
             ckpt_path = os.path.join(ckpt_root, cond_name, 'model.ckpt-' + str(ckpt_idx) + '*')
             ## COPY CKPT AND MOVE
-            if not os.path.exists(train_dir):
-                os.makedirs(train_dir)
             import glob
             import shutil
             for file in glob.glob(ckpt_path):
