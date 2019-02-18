@@ -59,7 +59,7 @@ if __name__ == '__main__':
     verbose = False
     with_membrane = False
     adabn = False
-    eval_steps = 6000/batch_size
+    eval_steps = 9000/batch_size # three full rounds
     move_threshold = 0.9
 
     for eval_vol_list, eval_tfr, train_tfr in zip(eval_volumes_name_list_list, eval_tfrecords_name_list, train_tfrecords_name_list):
