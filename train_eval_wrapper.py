@@ -73,13 +73,13 @@ if __name__ == '__main__':
         for i, evol in enumerate(eval_vol_list):
             volume_fullpath = os.path.join(hdf_root, evol, dataset_type, 'grayscale_maps.h5')
             groundtruth_fullpath = os.path.join(hdf_root, evol, dataset_type, 'groundtruth.h5')
-            if len(volumes_name_list)==1:
+            if len(eval_vol_list)==1:
                 partition_prefix='jk'
             else:
                 partition_prefix=str(i)
             data_string += partition_prefix + ':' + volume_fullpath + ':raw'
             label_string += partition_prefix + ':' + groundtruth_fullpath + ':stack'
-            if i < len(volumes_name_list)-1:
+            if i < len(eval_vol_list)-1:
                 data_string += ','
                 label_string += ','
 
