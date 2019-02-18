@@ -68,6 +68,8 @@ if __name__ == '__main__':
 
         cond_name = net_name + '_' + train_tfr + '_r0'
         train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
+        if adabn:
+            train_dir += '_ada'
         coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
 
         if not os.path.exists(train_dir):
