@@ -32,7 +32,7 @@ writer.close()
 # # BERSON 384 GT (because it needs to be redone)
 path = '/media/data_cifs/andreas/connectomics/Berson'
 file = 'updated_Berson.h5'
-gt_labels = h5py.File(os.path.join(path, file), 'r')['masks']
+gt_labels = np.array(h5py.File(os.path.join(path, file), 'r')['masks'])
 gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
 writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
 writer.create_dataset('stack', data=volume_n_membrane, dtype='<i8')
