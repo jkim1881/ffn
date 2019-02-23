@@ -96,7 +96,7 @@ class FFNModel(object):
     # along the X axis.
     self._images = []
 
-  def set_uniform_io_size(self, patch_size):
+  def set_uniform_io_size(self, patch_size, optional_output_size=None):
     """Initializes unset input/output sizes to 'patch_size', sets input shapes.
 
     This assumes that the inputs and outputs are of equal size, and that exactly
@@ -109,7 +109,10 @@ class FFNModel(object):
       None
     """
     if self.pred_mask_size is None:
-      self.pred_mask_size = patch_size
+      if optional_output_size is None:
+        self.pred_mask_size = patch_size
+      else:
+        self.pred_mask_size = optional_output_size
     if self.input_seed_size is None:
       self.input_seed_size = patch_size
     if self.input_image_size is None:
