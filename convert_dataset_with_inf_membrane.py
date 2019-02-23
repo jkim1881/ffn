@@ -14,9 +14,8 @@ out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
 # # BERSON 384
 name = 'berson_w_inf_memb'
 volume = np.load('/media/data_cifs/connectomics/datasets/berson_0.npz')['volume']
-membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v1_predictions.npy')
-import ipdb
-ipdb.set_trace()
+membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v1_predictions.npy')[:,:,:,0]
+
 membrane = np.expand_dims(membrane, axis=3)
 volume = np.expand_dims(volume, axis=3)
 volume_n_membrane = np.concatenate([volume, membrane], axis=3)
@@ -32,7 +31,7 @@ writer.close()
 # BERSON 768 384 384
 name = 'berson2x_w_inf_memb'
 volume = np.load('/media/data_cifs/connectomics/datasets/berson_v2_0.npz')['volume']
-membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v2_predictions.npy')
+membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v2_predictions.npy')[:,:,:,0]
 # transpose
 membrane = np.transpose(membrane, (0,2,1))
 volume = np.transpose(volume, (0,2,1))
