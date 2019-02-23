@@ -56,3 +56,12 @@ if not os.path.isdir(write_dir):
 writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
 writer.create_dataset('raw', data=volume_n_membrane, dtype='|u1')
 writer.close()
+
+# # BERSON 768 GT (because it needs to be redone)
+labelpath = '/media/data_cifs/connectomics/datasets/berson2x_labels.npy'
+gt_labels = np.load(labelpath)
+import ipdb;ipdb.set_trace()
+gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
+writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
+writer.create_dataset('stack', data=gt_labels, dtype='<i8')
+writer.close()
