@@ -35,7 +35,7 @@ file = 'updated_Berson.h5'
 gt_labels = np.array(h5py.File(os.path.join(path, file), 'r')['masks'])
 gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
 writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
-writer.create_dataset('stack', data=volume_n_membrane, dtype='<i8')
+writer.create_dataset('stack', data=gt_labels, dtype='<i8')
 writer.close()
 
 # BERSON 768 384 384
