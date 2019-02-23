@@ -9,18 +9,6 @@ import skimage.measure
 import skimage.morphology
 import sys
 
-/media/data_cifs/connectomics/datasets/berson_v2_0.npz [volume]
-    384, 384, 768 (zyx)
-/media/data_cifs/connectomics/datasets/berson_0.npz [volume]
-    384, 384, 384 (zyx)
-
-
-/media/data_cifs/connectomics/datasets/berson_v2_predictions.npy
-    384, 384, 768 (zyx) 0-th channel
-/media/data_cifs/connectomics/datasets/berson_v1_predictions.npy
-    384, 384, 384 (zyx) 0-th channel
-
-
 out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
 
 # # BERSON 384
