@@ -15,6 +15,7 @@ out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
 name = 'berson_w_inf_memb'
 volume = np.load('/media/data_cifs/connectomics/datasets/berson_0.npz')['volume']
 membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v1_predictions.npy')[:,:,:,0]
+membrane*=255
 
 membrane = np.expand_dims(membrane, axis=3)
 volume = np.expand_dims(volume, axis=3)
@@ -28,10 +29,20 @@ writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
 writer.create_dataset('raw', data=volume_n_membrane, dtype='|u1')
 writer.close()
 
+# # BERSON 384 GT (because it needs to be redone)
+path = '/media/data_cifs/andreas/connectomics/Berson'
+file = 'updated_Berson.h5'
+gt_labels = h5py.File(os.path.join(path, file), 'r')['masks']
+gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
+writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
+writer.create_dataset('stack', data=volume_n_membrane, dtype='<i8')
+writer.close()
+
 # BERSON 768 384 384
 name = 'berson2x_w_inf_memb'
 volume = np.load('/media/data_cifs/connectomics/datasets/berson_v2_0.npz')['volume']
 membrane = np.load('/media/data_cifs/connectomics/datasets/berson_v2_predictions.npy')[:,:,:,0]
+membrane*=255
 # transpose
 membrane = np.transpose(membrane, (0,2,1))
 volume = np.transpose(volume, (0,2,1))

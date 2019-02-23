@@ -36,6 +36,17 @@ lom should be (fov_size // 2) + deltas
      --margin 9,36,36
 
 
+>>>>>>>>>>>>> wide_fov (berson3x_w_inf_memb)
+ fov_size = [57, 57, 13]
+    deltas = [8, 8, 3]
+    -> lom = [36, 36, 9] (originally 42 42 9)
+
+  python build_coordinates.py \
+     --partition_volumes 1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson_w_inf_memb/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_inf_memb/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson3x_w_inf_memb/train/tf_record_file \
+     --margin 9,36,36
+
+
 >>>>>>>>>>>>> wide_fov (berson2x_w_memb)
  fov_size = [57, 57, 13]
     deltas = [8, 8, 3]
