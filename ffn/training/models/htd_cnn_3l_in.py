@@ -187,7 +187,21 @@ class ConvStack3DFFNModel(model.FFNModel):
     self.logistic = tf.sigmoid(logit_seed)
 
     if self.labels is not None:
-      self.set_up_sigmoid_pixelwise_loss(logit_seed)
+      dx = self.input_seed_size[0] - self.pred_mask_size[0]
+      dy = self.input_seed_size[1] - self.pred_mask_size[1]
+      dz = self.input_seed_size[2] - self.pred_mask_size[2]
+
+      if self.optional_output_size is not None:
+        # crop output to fit optional output size
+        logit_seed_cropped = logit_seed[:,
+                           dz // 2: -(dz - dz // 2),
+                           dy // 2: -(dy - dy // 2),
+                           dx // 2: -(dx - dx // 2),
+                           :]
+
+        self.set_up_sigmoid_pixelwise_loss(logit_seed_cropped)
+      else:
+        self.set_up_sigmoid_pixelwise_loss(logit_seed)
       if self.TA is None:
         self.set_up_optimizer(max_gradient_entry_mag=0.0)
       else:
