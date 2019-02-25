@@ -213,11 +213,18 @@ class FFNModel(object):
     dy = self.input_seed_size[1] - self.pred_mask_size[1]
     dz = self.input_seed_size[2] - self.pred_mask_size[2]
 
+    if self.optional_output_size is not None:
+      # crop output to fit optional output size
+      update = update[:,
+                      dz // 2: -(dz - dz // 2),
+                      dy // 2: -(dy - dy // 2),
+                      dx // 2: -(dx - dx // 2),
+                      :]
+
     if dx == 0 and dy == 0 and dz == 0:
       seed += update
     else:
-      import ipdb
-      ipdb.set_trace()
+      import ipdb;ipdb.set_trace()
       seed += tf.pad(update, [[0, 0],
                               [dz // 2, dz - dz // 2],
                               [dy // 2, dy - dy // 2],
