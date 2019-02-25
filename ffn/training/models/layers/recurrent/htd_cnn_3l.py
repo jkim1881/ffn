@@ -443,6 +443,7 @@ class hGRU(object):
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD3
+        import ipdb;ipdb.set_trace()
         if self.belly_up_td:
             fb_act3 = self.hgru_td3.run(us_out, l3_h2)
         else:
