@@ -424,7 +424,7 @@ class hGRU(object):
         for rep in reversed(range(self.ds_conv_repeat)):
             with tf.variable_scope('us%s_%s' % (j, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
-            low_shape = ds_in_list[j].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[j].get_shape().as_list()
+            low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
