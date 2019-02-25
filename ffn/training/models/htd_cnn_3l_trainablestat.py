@@ -62,6 +62,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                               use_3d=True,
                               train=is_training,
                               train_bn=train_bn,
+                              use_in=False,
                               bn_decay=bn_decay,
                               in_k=in_k,
 

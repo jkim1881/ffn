@@ -22,6 +22,7 @@ class hGRU(object):
             use_3d,
             train,
             train_bn,
+            use_in,
             bn_decay,
             in_k,
 
@@ -57,6 +58,7 @@ class hGRU(object):
         self.use_3d = use_3d
         self.train = train
         self.train_bn = train_bn
+        self.use_in = use_in
         self.bn_decay = bn_decay
         self.in_k = in_k
         self.use_homunculus = use_homunculus
@@ -294,17 +296,24 @@ class hGRU(object):
 
         # HGRU1
         l1_h2 = self.hgru1.run(x, l1_h2)
-        l1_h2 = tf.contrib.layers.batch_norm(
-            inputs=l1_h2,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
+        if self.use_in:
+            l1_h2 = tf.contrib.layers.instance_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            l1_h2 = tf.contrib.layers.batch_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.bn_param_initializer,
+                decay=self.bn_decay,
+                updates_collections=None,
+                reuse=None,
+                is_training=self.train_bn)
         ds_in = l1_h2
 
         # DS
@@ -320,10 +329,41 @@ class hGRU(object):
             with tf.variable_scope('ds%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
             ds_intm = conv(ds_intm, weights, strides=[1,1,1,1,1] if self.use_3d else [1,1,1,1], padding='SAME')
-            ds_intm = tf.contrib.layers.batch_norm(
-                inputs=ds_intm,
+            if self.use_in:
+                ds_intm = tf.contrib.layers.instance_norm(
+                    inputs=ds_intm,
+                    scale=True,
+                    center=True,
+                    trainable=self.train_bn)
+            else:
+                ds_intm = tf.contrib.layers.batch_norm(
+                    inputs=ds_intm,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.bn_param_initializer,
+                    decay=self.bn_decay,
+                    updates_collections=None,
+                    reuse=None,
+                    is_training=self.train_bn)
+            ds_intm = tf.nn.relu(ds_intm)
+        ds_out = max_pool(ds_intm, ksize=[1]+psiz+[1], strides=[1]+strd+[1], padding='SAME')
+        ds_out_list.append(ds_out)
+
+        # HGRU2
+        l2_h2 = self.hgru2.run(ds_out, l2_h2)
+        if self.use_in:
+            l1_h2 = tf.contrib.layers.instance_norm(
+                inputs=l1_h2,
                 scale=True,
-                center=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            l1_h2 = tf.contrib.layers.batch_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
                 fused=True,
                 renorm=False,
                 param_initializers=self.bn_param_initializer,
@@ -331,23 +371,6 @@ class hGRU(object):
                 updates_collections=None,
                 reuse=None,
                 is_training=self.train_bn)
-            ds_intm = tf.nn.relu(ds_intm)
-        ds_out = max_pool(ds_intm, ksize=[1]+psiz+[1], strides=[1]+strd+[1], padding='SAME')
-        ds_out_list.append(ds_out)
-
-        # HGRU2
-        l2_h2 = self.hgru2.run(ds_out, l2_h2)
-        l2_h2 = tf.contrib.layers.batch_norm(
-            inputs=l2_h2,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
         ds_in = l2_h2
 
         # DS
@@ -360,10 +383,41 @@ class hGRU(object):
             with tf.variable_scope('ds%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
             ds_intm = conv(ds_intm, weights, strides=[1,1,1,1,1] if self.use_3d else [1,1,1,1], padding='SAME')
-            ds_intm = tf.contrib.layers.batch_norm(
-                inputs=ds_intm,
+            if self.use_in:
+                ds_intm = tf.contrib.layers.instance_norm(
+                    inputs=ds_intm,
+                    scale=True,
+                    center=True,
+                    trainable=self.train_bn)
+            else:
+                ds_intm = tf.contrib.layers.batch_norm(
+                    inputs=ds_intm,
+                    scale=True,
+                    center=True,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.bn_param_initializer,
+                    decay=self.bn_decay,
+                    updates_collections=None,
+                    reuse=None,
+                    is_training=self.train_bn)
+            ds_intm = tf.nn.relu(ds_intm)
+        ds_out = max_pool(ds_intm, ksize=[1]+psiz+[1], strides=[1]+strd+[1], padding='SAME')
+        ds_out_list.append(ds_out)
+
+        # HGRU3
+        l3_h2 = self.hgru3.run(ds_out, l3_h2)
+        if self.use_in:
+            l3_h2 = tf.contrib.layers.instance_norm(
+                inputs=l3_h2,
                 scale=True,
-                center=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            l3_h2 = tf.contrib.layers.batch_norm(
+                inputs=l3_h2,
+                scale=True,
+                center=False,
                 fused=True,
                 renorm=False,
                 param_initializers=self.bn_param_initializer,
@@ -371,23 +425,6 @@ class hGRU(object):
                 updates_collections=None,
                 reuse=None,
                 is_training=self.train_bn)
-            ds_intm = tf.nn.relu(ds_intm)
-        ds_out = max_pool(ds_intm, ksize=[1]+psiz+[1], strides=[1]+strd+[1], padding='SAME')
-        ds_out_list.append(ds_out)
-
-        # HGRU3
-        l3_h2 = self.hgru3.run(ds_out, l3_h2)
-        l3_h2 = tf.contrib.layers.batch_norm(
-            inputs=l3_h2,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
         ds_in = l3_h2
 
         # TOP DS
@@ -400,17 +437,24 @@ class hGRU(object):
             with tf.variable_scope('ds%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
             ds_intm = conv(ds_intm, weights, strides=[1,1,1,1,1] if self.use_3d else [1,1,1,1], padding='SAME')
-            ds_intm = tf.contrib.layers.batch_norm(
-                inputs=ds_intm,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                reuse=None,
-                is_training=self.train_bn)
+            if self.use_in:
+                l1_h2 = tf.contrib.layers.instance_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=False,
+                    trainable=self.train_bn)
+            else:
+                l1_h2 = tf.contrib.layers.batch_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=False,
+                    fused=True,
+                    renorm=False,
+                    param_initializers=self.bn_param_initializer,
+                    decay=self.bn_decay,
+                    updates_collections=None,
+                    reuse=None,
+                    is_training=self.train_bn)
             ds_intm = tf.nn.relu(ds_intm)
         ds_out = max_pool(ds_intm, ksize=[1]+psiz+[1], strides=[1]+strd+[1], padding='SAME')
         ds_out_list.append(ds_out)
@@ -428,17 +472,24 @@ class hGRU(object):
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
-            us_intm = tf.contrib.layers.batch_norm(
-                            inputs=us_intm,
-                            scale=True,
-                            center=True,
-                            fused=True,
-                            renorm=False,
-                            param_initializers=self.bn_param_initializer,
-                            decay=self.bn_decay,
-                            updates_collections=None,
-                            reuse=None,
-                            is_training=self.train_bn)
+            if self.use_in:
+                l1_h2 = tf.contrib.layers.instance_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=False,
+                    trainable=self.train_bn)
+            else:
+                l1_h2 = tf.contrib.layers.batch_norm(
+                                inputs=l1_h2,
+                                scale=True,
+                                center=False,
+                                fused=True,
+                                renorm=False,
+                                param_initializers=self.bn_param_initializer,
+                                decay=self.bn_decay,
+                                updates_collections=None,
+                                reuse=None,
+                                is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD3
@@ -446,17 +497,24 @@ class hGRU(object):
             fb_act3 = self.hgru_td3.run(us_out, l3_h2)
         else:
             fb_act3 = self.hgru_td3.run(l3_h2, us_out)
-        fb_act3 = tf.contrib.layers.batch_norm(
-            inputs=fb_act3,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
+        if self.use_in:
+            l1_h2 = tf.contrib.layers.instance_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            l1_h2 = tf.contrib.layers.batch_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.bn_param_initializer,
+                decay=self.bn_decay,
+                updates_collections=None,
+                reuse=None,
+                is_training=self.train_bn)
         l3_h2 = fb_act3
         us_in = l3_h2
 
@@ -472,17 +530,24 @@ class hGRU(object):
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
-            us_intm = tf.contrib.layers.batch_norm(
-                            inputs=us_intm,
-                            scale=True,
-                            center=True,
-                            fused=True,
-                            renorm=False,
-                            param_initializers=self.bn_param_initializer,
-                            decay=self.bn_decay,
-                            updates_collections=None,
-                            reuse=None,
-                            is_training=self.train_bn)
+            if self.use_in:
+                l1_h2 = tf.contrib.layers.instance_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=False,
+                    trainable=self.train_bn)
+            else:
+                l1_h2 = tf.contrib.layers.batch_norm(
+                                inputs=l1_h2,
+                                scale=True,
+                                center=False,
+                                fused=True,
+                                renorm=False,
+                                param_initializers=self.bn_param_initializer,
+                                decay=self.bn_decay,
+                                updates_collections=None,
+                                reuse=None,
+                                is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD2
@@ -490,17 +555,24 @@ class hGRU(object):
             fb_act2 = self.hgru_td2.run(us_out, l2_h2)
         else:
             fb_act2 = self.hgru_td2.run(l2_h2, us_out)
-        fb_act2 = tf.contrib.layers.batch_norm(
-            inputs=fb_act2,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
+        if self.use_in:
+            l1_h2 = tf.contrib.layers.instance_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            l1_h2 = tf.contrib.layers.batch_norm(
+                inputs=l1_h2,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.bn_param_initializer,
+                decay=self.bn_decay,
+                updates_collections=None,
+                reuse=None,
+                is_training=self.train_bn)
         l2_h2 = fb_act2
         us_in = l2_h2
 
@@ -516,17 +588,24 @@ class hGRU(object):
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
-            us_intm = tf.contrib.layers.batch_norm(
-                            inputs=us_intm,
-                            scale=True,
-                            center=True,
-                            fused=True,
-                            renorm=False,
-                            param_initializers=self.bn_param_initializer,
-                            decay=self.bn_decay,
-                            updates_collections=None,
-                            reuse=None,
-                            is_training=self.train_bn)
+            if self.use_in:
+                l1_h2 = tf.contrib.layers.instance_norm(
+                    inputs=l1_h2,
+                    scale=True,
+                    center=False,
+                    trainable=self.train_bn)
+            else:
+                l1_h2 = tf.contrib.layers.batch_norm(
+                                inputs=l1_h2,
+                                scale=True,
+                                center=False,
+                                fused=True,
+                                renorm=False,
+                                param_initializers=self.bn_param_initializer,
+                                decay=self.bn_decay,
+                                updates_collections=None,
+                                reuse=None,
+                                is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD1
@@ -534,17 +613,24 @@ class hGRU(object):
             fb_act1 = self.hgru_td1.run(us_out, l1_h2)
         else:
             fb_act1 = self.hgru_td1.run(l1_h2, us_out)
-        fb_act1 = tf.contrib.layers.batch_norm(
-            inputs=fb_act1,
-            scale=True,
-            center=False,
-            fused=True,
-            renorm=False,
-            param_initializers=self.bn_param_initializer,
-            decay=self.bn_decay,
-            updates_collections=None,
-            reuse=None,
-            is_training=self.train_bn)
+        if self.use_in:
+            fb_act1 = tf.contrib.layers.instance_norm(
+                inputs=fb_act1,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            fb_act1 = tf.contrib.layers.batch_norm(
+                inputs=fb_act1,
+                scale=True,
+                center=False,
+                fused=True,
+                renorm=False,
+                param_initializers=self.bn_param_initializer,
+                decay=self.bn_decay,
+                updates_collections=None,
+                reuse=None,
+                is_training=self.train_bn)
         l1_h2 = fb_act1
 
         # # HOMUNCULUS (DISABLED IN THIS OBJECT)
