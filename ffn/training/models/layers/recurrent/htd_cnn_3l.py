@@ -419,11 +419,10 @@ class hGRU(object):
         # TOP US
         i_ds = 2
         strd = self.ds_stride_list[::-1][i_ds]
-        j = len(self.ds_stride_list)-1-i_ds
         us_intm = us_in
         import ipdb;ipdb.set_trace()
         for rep in reversed(range(self.ds_conv_repeat)):
-            with tf.variable_scope('us%s_%s' % (j, rep), reuse=tf.AUTO_REUSE):
+            with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
             low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
@@ -431,16 +430,16 @@ class hGRU(object):
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             us_intm = tf.contrib.layers.batch_norm(
-                inputs=us_intm,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                reuse=None,
-                is_training=self.train_bn)
+                            inputs=us_intm,
+                            scale=True,
+                            center=True,
+                            fused=True,
+                            renorm=False,
+                            param_initializers=self.bn_param_initializer,
+                            decay=self.bn_decay,
+                            updates_collections=None,
+                            reuse=None,
+                            is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD3
@@ -466,27 +465,26 @@ class hGRU(object):
         # US
         i_ds = 1
         strd = self.ds_stride_list[::-1][i_ds]
-        j = len(self.ds_stride_list)-1-i_ds
         us_intm = us_in
         for rep in reversed(range(self.ds_conv_repeat)):
-            with tf.variable_scope('us%s_%s' % (j, rep), reuse=tf.AUTO_REUSE):
+            with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
-            low_shape = ds_in_list[j].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[j].get_shape().as_list()
+            low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             us_intm = tf.contrib.layers.batch_norm(
-                inputs=us_intm,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                reuse=None,
-                is_training=self.train_bn)
+                            inputs=us_intm,
+                            scale=True,
+                            center=True,
+                            fused=True,
+                            renorm=False,
+                            param_initializers=self.bn_param_initializer,
+                            decay=self.bn_decay,
+                            updates_collections=None,
+                            reuse=None,
+                            is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD2
@@ -511,27 +509,26 @@ class hGRU(object):
         # US
         i_ds = 0
         strd = self.ds_stride_list[::-1][i_ds]
-        j = len(self.ds_stride_list)-1-i_ds
         us_intm = us_in
         for rep in reversed(range(self.ds_conv_repeat)):
-            with tf.variable_scope('us%s_%s' % (j, rep), reuse=tf.AUTO_REUSE):
+            with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
-            low_shape = ds_in_list[j].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[j].get_shape().as_list()
+            low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             us_intm = tf.contrib.layers.batch_norm(
-                inputs=us_intm,
-                scale=True,
-                center=True,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                reuse=None,
-                is_training=self.train_bn)
+                            inputs=us_intm,
+                            scale=True,
+                            center=True,
+                            fused=True,
+                            renorm=False,
+                            param_initializers=self.bn_param_initializer,
+                            decay=self.bn_decay,
+                            updates_collections=None,
+                            reuse=None,
+                            is_training=self.train_bn)
             us_out = tf.nn.relu(us_intm)
 
         # HGRU_TD1
