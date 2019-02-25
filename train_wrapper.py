@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import numpy as np
-import train_functional
 
 if __name__ == '__main__':
 
