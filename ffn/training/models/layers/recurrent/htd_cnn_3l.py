@@ -421,6 +421,7 @@ class hGRU(object):
         strd = self.ds_stride_list[::-1][i_ds]
         j = len(self.ds_stride_list)-1-i_ds
         us_intm = us_in
+        import ipdb;ipdb.set_trace()
         for rep in reversed(range(self.ds_conv_repeat)):
             with tf.variable_scope('us%s_%s' % (j, rep), reuse=tf.AUTO_REUSE):
                 weights = tf.get_variable(name='w')
