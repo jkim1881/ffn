@@ -224,7 +224,6 @@ class FFNModel(object):
     if dx == 0 and dy == 0 and dz == 0:
       seed += update
     else:
-      import ipdb;ipdb.set_trace()
       seed += tf.pad(update, [[0, 0],
                               [dz // 2, dz - dz // 2],
                               [dy // 2, dy - dy // 2],
