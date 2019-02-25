@@ -23,30 +23,35 @@ if __name__ == '__main__':
     #                      'cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
-    volumes_name_list = ['neuroproof',
-                         'cremi_a',
-                         'cremi_b',
-                         'cremi_c',
-                         'berson']
-    volumes_name_list = ['neuroproof',
-                         'isbi2013',
-                         'berson']
+    # volumes_name_list = ['neuroproof',
+    #                      'cremi_a',
+    #                      'cremi_b',
+    #                      'cremi_c',
+    #                      'berson']
+    # volumes_name_list = ['neuroproof',
+    #                      'isbi2013',
+    #                      'berson']
     # volumes_name_list = ['cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
     # volumes_name_list = ['berson_w_memb']
-    tfrecords_name = 'allbutcremi'
+    tfrecords_name = 'berson3x_w_inf_memb'
     dataset_type = 'train' #'val' #'train'
-    with_membrane = False
+    with_membrane = True
 
+    optional_output_size=None
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
     # deltas = [8, 8, 8]
     # fov_type = 'flat_fov'
     # fov_size = [41, 41, 21]
     # deltas = [10, 10, 5]
-    fov_type = 'wide_fov'
-    fov_size = [57, 57, 13]
+    # fov_type = 'wide_fov'
+    # fov_size = [57, 57, 13]
+    # deltas = [8, 8, 3]
+    fov_type = 'ultrawide_fov'
+    fov_size = [114, 114, 26]
+    optional_output_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
@@ -93,14 +98,17 @@ if __name__ == '__main__':
             data_string += ','
             label_string += ','
 
-
+    if optional_output_size is None:
+        model_args = '"{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"'
+    else:
+        model_args = '"{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + ', \\"optional_output_size\\": ' + str(optional_output_size) + '}"'
     command = 'python ' + os.path.join(script_root, 'train_old.py') + \
               ' --train_coords ' + coords_fullpath + \
               ' --data_volumes ' + data_string + \
               ' --label_volumes ' + label_string + \
               ' --train_dir ' + os.path.join(ckpt_root, cond_name) + \
               ' --model_name '+net_name_obj+'.ConvStack3DFFNModel' + \
-              ' --model_args "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}"' + \
+              ' --model_args ' + model_args + \
               ' --image_mean ' + str(image_mean) + \
               ' --image_stddev ' + str(image_stddev) + \
               ' --max_steps=' + str(max_steps) + \
