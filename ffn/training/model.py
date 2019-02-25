@@ -217,7 +217,7 @@ class FFNModel(object):
       seed += update
     else:
       import ipdb
-      ipdb.set_Trace()
+      ipdb.set_trace()
       seed += tf.pad(update, [[0, 0],
                               [dz // 2, dz - dz // 2],
                               [dy // 2, dy - dy // 2],
