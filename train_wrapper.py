@@ -9,7 +9,7 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1])
 
     script_root = '/home/drew/ffn'
-    net_name_obj = 'convstack_3d_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'htd_cnn_3l' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     # volumes_name_list = ['isbi2013']
     # volumes_name_list = ['neuroproof']
