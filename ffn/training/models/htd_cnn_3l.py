@@ -193,7 +193,12 @@ class ConvStack3DFFNModel(model.FFNModel):
                                            [dy // 2, dy - dy // 2],
                                            [dx // 2, dx - dx // 2],
                                            [0, 0]])
-    import ipdb;ipdb.set_trace()
+      mask = tf.pad(tf.ones_like(logit_update_cropped), [[0, 0],
+                                           [dz // 2, dz - dz // 2],
+                                           [dy // 2, dy - dy // 2],
+                                           [dx // 2, dx - dx // 2],
+                                           [0, 0]])
+      self.loss_weights *= mask
     logit_seed = self.update_seed(self.input_seed, logit_update_padded)
 
     # Make predictions available, both as probabilities and logits.
