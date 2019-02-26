@@ -197,10 +197,15 @@ class ConvStack3DFFNModel(model.FFNModel):
                            dy // 2: -(dy - dy // 2),
                            dx // 2: -(dx - dx // 2),
                            :]
+        labels_padded = tf.pad(self.labels, [[0, 0],
+                              [dz // 2, dz - dz // 2],
+                              [dy // 2, dy - dy // 2],
+                              [dx // 2, dx - dx // 2],
+                              [0, 0]])
         self.logistic = tf.sigmoid(logit_seed_cropped)
         self.set_up_sigmoid_pixelwise_loss(logit_seed_cropped)
-        self.show_center_slice(logit_seed_cropped)
-        self.show_center_slice(self.labels, sigmoid=False)
+        self.show_center_slice(logit_seed)
+        self.show_center_slice(labels_padded, sigmoid=False)
       else:
         self.logistic = tf.sigmoid(logit_seed)
         self.set_up_sigmoid_pixelwise_loss(logit_seed)
