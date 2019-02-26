@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # deltas = [8, 8, 3]
     fov_type = 'ultrawide_fov'
     fov_size = [114, 114, 26]
-    optional_output_size = [57, 57, 13]
+    # optional_output_size = [57, 57, 13]
     deltas = [8, 8, 3]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
