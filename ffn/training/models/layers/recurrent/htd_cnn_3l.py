@@ -438,14 +438,14 @@ class hGRU(object):
                 weights = tf.get_variable(name='w')
             ds_intm = conv(ds_intm, weights, strides=[1,1,1,1,1] if self.use_3d else [1,1,1,1], padding='SAME')
             if self.use_in:
-                l1_h2 = tf.contrib.layers.instance_norm(
-                    inputs=l1_h2,
+                ds_intm = tf.contrib.layers.instance_norm(
+                    inputs=ds_intm,
                     scale=True,
                     center=False,
                     trainable=self.train_bn)
             else:
-                l1_h2 = tf.contrib.layers.batch_norm(
-                    inputs=l1_h2,
+                ds_intm = tf.contrib.layers.batch_norm(
+                    inputs=ds_intm,
                     scale=True,
                     center=False,
                     fused=True,
@@ -473,14 +473,14 @@ class hGRU(object):
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             if self.use_in:
-                l1_h2 = tf.contrib.layers.instance_norm(
-                    inputs=l1_h2,
+                us_intm = tf.contrib.layers.instance_norm(
+                    inputs=us_intm,
                     scale=True,
                     center=False,
                     trainable=self.train_bn)
             else:
-                l1_h2 = tf.contrib.layers.batch_norm(
-                                inputs=l1_h2,
+                us_intm = tf.contrib.layers.batch_norm(
+                                inputs=us_intm,
                                 scale=True,
                                 center=False,
                                 fused=True,
@@ -498,14 +498,14 @@ class hGRU(object):
         else:
             fb_act3 = self.hgru_td3.run(l3_h2, us_out)
         if self.use_in:
-            l1_h2 = tf.contrib.layers.instance_norm(
-                inputs=l1_h2,
+            fb_act3 = tf.contrib.layers.instance_norm(
+                inputs=fb_act3,
                 scale=True,
                 center=False,
                 trainable=self.train_bn)
         else:
-            l1_h2 = tf.contrib.layers.batch_norm(
-                inputs=l1_h2,
+            fb_act3 = tf.contrib.layers.batch_norm(
+                inputs=fb_act3,
                 scale=True,
                 center=False,
                 fused=True,
@@ -527,20 +527,18 @@ class hGRU(object):
                 weights = tf.get_variable(name='w')
             low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
-            import ipdb;
-            ipdb.set_trace()
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             if self.use_in:
-                l1_h2 = tf.contrib.layers.instance_norm(
-                    inputs=l1_h2,
+                us_intm = tf.contrib.layers.instance_norm(
+                    inputs=us_intm,
                     scale=True,
                     center=False,
                     trainable=self.train_bn)
             else:
-                l1_h2 = tf.contrib.layers.batch_norm(
-                                inputs=l1_h2,
+                us_intm = tf.contrib.layers.batch_norm(
+                                inputs=us_intm,
                                 scale=True,
                                 center=False,
                                 fused=True,
@@ -558,14 +556,14 @@ class hGRU(object):
         else:
             fb_act2 = self.hgru_td2.run(l2_h2, us_out)
         if self.use_in:
-            l1_h2 = tf.contrib.layers.instance_norm(
-                inputs=l1_h2,
+            fb_act2 = tf.contrib.layers.instance_norm(
+                inputs=fb_act2,
                 scale=True,
                 center=False,
                 trainable=self.train_bn)
         else:
-            l1_h2 = tf.contrib.layers.batch_norm(
-                inputs=l1_h2,
+            fb_act2 = tf.contrib.layers.batch_norm(
+                inputs=fb_act2,
                 scale=True,
                 center=False,
                 fused=True,
@@ -587,18 +585,19 @@ class hGRU(object):
                 weights = tf.get_variable(name='w')
             low_shape = ds_in_list[i_ds].get_shape().as_list()[:-1] + [us_intm.get_shape().as_list()[-1]] if (rep > 0) else ds_in_list[i_ds].get_shape().as_list()
             strides = [1]+strd+[1] if (rep == self.ds_conv_repeat - 1) else [1]+self.one_by_one+[1]
+            import ipdb;ipdb.set_trace()
             us_intm = deconv(us_intm, weights,
                              output_shape=low_shape,
                              strides=strides, padding='SAME')
             if self.use_in:
-                l1_h2 = tf.contrib.layers.instance_norm(
-                    inputs=l1_h2,
+                us_intm = tf.contrib.layers.instance_norm(
+                    inputs=us_intm,
                     scale=True,
                     center=False,
                     trainable=self.train_bn)
             else:
-                l1_h2 = tf.contrib.layers.batch_norm(
-                                inputs=l1_h2,
+                us_intm = tf.contrib.layers.batch_norm(
+                                inputs=us_intm,
                                 scale=True,
                                 center=False,
                                 fused=True,
