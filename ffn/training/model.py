@@ -109,10 +109,7 @@ class FFNModel(object):
       None
     """
     if self.pred_mask_size is None:
-      if optional_output_size is None:
-        self.pred_mask_size = patch_size
-      else:
-        self.pred_mask_size = optional_output_size
+      self.pred_mask_size = patch_size
     if self.input_seed_size is None:
       self.input_seed_size = patch_size
     if self.input_image_size is None:
