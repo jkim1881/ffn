@@ -34,7 +34,8 @@ if __name__ == '__main__':
     # volumes_name_list = ['cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
-    volumes_name_list = ['berson_w_inf_memb','berson2x_w_inf_memb']
+    # volumes_name_list = ['berson_w_inf_memb','berson2x_w_inf_memb']
+    volumes_name_list = ['ss', 'ss']
     tfrecords_name = 'berson3x_w_inf_memb'
     dataset_type = 'train' #'val' #'train'
     with_membrane = True

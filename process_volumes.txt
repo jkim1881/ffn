@@ -50,7 +50,7 @@ lom should be (fov_size // 2) + deltas
 >>>>>>>>>>>>> ultrawide_fov (berson3x_w_inf_memb)
  fov_size = [114, 114, 26]
     deltas = [8, 8, 3]
-    -> lom = [65, 65, 16] (originally 42 42 9)
+    -> lom = [65, 65, 16]
 
   python compute_partitions.py \
     --input_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/groundtruth.h5:stack \
