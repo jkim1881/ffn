@@ -462,7 +462,7 @@ class hGRU(object):
 
         # TOP US
         i_ds = 2
-        strd = self.ds_stride_list[::-1][i_ds]
+        strd = self.ds_stride_list[i_ds]
         us_intm = us_in
         for rep in reversed(range(self.ds_conv_repeat)):
             with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
@@ -520,7 +520,7 @@ class hGRU(object):
 
         # US
         i_ds = 1
-        strd = self.ds_stride_list[::-1][i_ds]
+        strd = self.ds_stride_list[i_ds]
         us_intm = us_in
         for rep in reversed(range(self.ds_conv_repeat)):
             with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
@@ -578,8 +578,7 @@ class hGRU(object):
 
         # US
         i_ds = 0
-        strd = self.ds_stride_list[::-1][i_ds]
-        import ipdb;ipdb.set_trace()
+        strd = self.ds_stride_list[i_ds]
         us_intm = us_in
         for rep in reversed(range(self.ds_conv_repeat)):
             with tf.variable_scope('us%s_%s' % (i_ds, rep), reuse=tf.AUTO_REUSE):
