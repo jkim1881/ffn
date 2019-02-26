@@ -199,15 +199,18 @@ class ConvStack3DFFNModel(model.FFNModel):
                            :]
         self.logistic = tf.sigmoid(logit_seed_cropped)
         self.set_up_sigmoid_pixelwise_loss(logit_seed_cropped)
+        self.show_center_slice(logit_seed_cropped)
+        self.show_center_slice(self.labels, sigmoid=False)
       else:
         self.logistic = tf.sigmoid(logit_seed)
         self.set_up_sigmoid_pixelwise_loss(logit_seed)
+        self.show_center_slice(logit_seed)
+        self.show_center_slice(self.labels, sigmoid=False)
       if self.TA is None:
         self.set_up_optimizer(max_gradient_entry_mag=0.0)
       else:
         self.set_up_optimizer(max_gradient_entry_mag=0.0, TA=self.TA)
-      self.show_center_slice(logit_seed)
-      self.show_center_slice(self.labels, sigmoid=False)
+
       self.add_summaries()
 
     # ADABN: Add only non-bn vars to saver
