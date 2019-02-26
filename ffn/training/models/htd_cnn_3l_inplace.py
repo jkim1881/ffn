@@ -184,7 +184,6 @@ class ConvStack3DFFNModel(model.FFNModel):
 
     # Make predictions available, both as probabilities and logits.
     self.logits = logit_seed
-    self.logistic = tf.sigmoid(logit_seed)
 
     if self.labels is not None:
       dx = self.input_seed_size[0] - self.pred_mask_size[0]
@@ -198,16 +197,25 @@ class ConvStack3DFFNModel(model.FFNModel):
                            dy // 2: -(dy - dy // 2),
                            dx // 2: -(dx - dx // 2),
                            :]
-
+        labels_padded = tf.pad(self.labels, [[0, 0],
+                              [dz // 2, dz - dz // 2],
+                              [dy // 2, dy - dy // 2],
+                              [dx // 2, dx - dx // 2],
+                              [0, 0]])
+        self.logistic = tf.sigmoid(logit_seed_cropped)
         self.set_up_sigmoid_pixelwise_loss(logit_seed_cropped)
+        self.show_center_slice(logit_seed)
+        self.show_center_slice(labels_padded, sigmoid=False)
       else:
+        self.logistic = tf.sigmoid(logit_seed)
         self.set_up_sigmoid_pixelwise_loss(logit_seed)
+        self.show_center_slice(logit_seed)
+        self.show_center_slice(self.labels, sigmoid=False)
       if self.TA is None:
         self.set_up_optimizer(max_gradient_entry_mag=0.0)
       else:
         self.set_up_optimizer(max_gradient_entry_mag=0.0, TA=self.TA)
-      self.show_center_slice(logit_seed)
-      self.show_center_slice(self.labels, sigmoid=False)
+
       self.add_summaries()
 
     # ADABN: Add only non-bn vars to saver

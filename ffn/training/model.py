@@ -203,7 +203,6 @@ class FFNModel(object):
     # tf.contrib.deprecated.image_summary(
     #     'state/' + self.offset_label, tf.concat(self._images, 2),
     #     max_images=max_images)
-    import ipdb;ipdb.set_trace()
     tf.contrib.deprecated.image_summary(
         'state', tf.concat(self._images, 2),
         max_images=max_images)
