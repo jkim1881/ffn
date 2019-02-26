@@ -82,9 +82,9 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
 
                               ds_fsiz_list=[[1, 7, 7], [1, 5, 5], [1, 3, 3]],
                               ds_conv_repeat=1,
-                              ds_k_list=[18, 18, 18],
-                              ds_pool_list=[[2, 2, 2], [2, 2, 2], [1, 2, 2]],
-                              ds_stride_list=[[2, 2, 2], [2, 2, 2], [1, 2, 2]],
+                              ds_k_list=[16, 18, 20],
+                              ds_pool_list=[[2, 2, 2], [1, 2, 2], [1, 2, 2]],
+                              ds_stride_list=[[2, 2, 2], [1, 2, 2], [1, 2, 2]],
                               use_trainable_states=False)
 
       net = hgru_net.build(x, ffn_seed=input_seed)
