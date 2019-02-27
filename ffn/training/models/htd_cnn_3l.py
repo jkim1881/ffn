@@ -199,7 +199,9 @@ class ConvStack3DFFNModel(model.FFNModel):
                                            [dx // 2, dx - dx // 2],
                                            [0, 0]])
       self.loss_weights *= mask
-    logit_seed = self.update_seed(self.input_seed, logit_update_padded)
+      logit_seed = self.update_seed(self.input_seed, logit_update_padded)
+    else:
+      logit_seed = self.update_seed(self.input_seed, logit_update)
 
     # Make predictions available, both as probabilities and logits.
     self.logits = logit_seed

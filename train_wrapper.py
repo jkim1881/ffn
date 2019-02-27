@@ -19,7 +19,7 @@ if __name__ == '__main__':
     #                      'cremi_c',
     #                      'berson']
     # volumes_name_list = ['neuroproof',
-    #                       'isbi2013',
+    #                      'isbi2013',
     #                      'cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
@@ -34,13 +34,13 @@ if __name__ == '__main__':
     # volumes_name_list = ['cremi_a',
     #                      'cremi_b',
     #                      'cremi_c']
-    # volumes_name_list = ['berson_w_inf_memb','berson2x_w_inf_memb']
+    # volumes_name_list = ['berson_w_inf_memb', 'berson2x_w_inf_memb']
     volumes_name_list = ['berson_w_inf_memb', 'berson2x_w_inf_memb']
     tfrecords_name = 'berson3x_w_inf_memb'
     dataset_type = 'train' #'val' #'train'
     with_membrane = True
 
-    optional_output_size=None
+    optional_output_size = None
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
     # deltas = [8, 8, 8]

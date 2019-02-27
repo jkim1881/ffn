@@ -161,7 +161,7 @@ class ConvStack3DFFNModel(model.FFNModel):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=not(is_training), tag=tag)
 
     self.optional_output_size = optional_output_size
-    self.set_uniform_io_size(fov_size, optional_output_size=optional_output_size)
+    self.set_uniform_io_size(fov_size)
     self.depth = depth
     self.reuse=reuse
     self.TA=TA
@@ -179,38 +179,38 @@ class ConvStack3DFFNModel(model.FFNModel):
     with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
                                           depth=self.depth, is_training=self.is_training, adabn=self.adabn)
-
-    logit_seed = self.update_seed(self.input_seed, logit_update)
+    if self.optional_output_size is not None:
+      dx = self.input_seed_size[0] - self.optional_output_size[0]
+      dy = self.input_seed_size[1] - self.optional_output_size[1]
+      dz = self.input_seed_size[2] - self.optional_output_size[2]
+      logit_update_cropped = logit_update[:,
+                                          dz // 2: -(dz - dz // 2),
+                                          dy // 2: -(dy - dy // 2),
+                                          dx // 2: -(dx - dx // 2),
+                                          :]
+      logit_update_padded = tf.pad(logit_update_cropped, [[0, 0],
+                                           [dz // 2, dz - dz // 2],
+                                           [dy // 2, dy - dy // 2],
+                                           [dx // 2, dx - dx // 2],
+                                           [0, 0]])
+      mask = tf.pad(tf.ones_like(logit_update_cropped), [[0, 0],
+                                           [dz // 2, dz - dz // 2],
+                                           [dy // 2, dy - dy // 2],
+                                           [dx // 2, dx - dx // 2],
+                                           [0, 0]])
+      self.loss_weights *= mask
+      logit_seed = self.update_seed(self.input_seed, logit_update_padded)
+    else:
+      logit_seed = self.update_seed(self.input_seed, logit_update)
 
     # Make predictions available, both as probabilities and logits.
     self.logits = logit_seed
 
     if self.labels is not None:
-      dx = self.input_seed_size[0] - self.pred_mask_size[0]
-      dy = self.input_seed_size[1] - self.pred_mask_size[1]
-      dz = self.input_seed_size[2] - self.pred_mask_size[2]
-
-      if self.optional_output_size is not None:
-        # crop output to fit optional output size
-        logit_seed_cropped = logit_seed[:,
-                           dz // 2: -(dz - dz // 2),
-                           dy // 2: -(dy - dy // 2),
-                           dx // 2: -(dx - dx // 2),
-                           :]
-        labels_padded = tf.pad(self.labels, [[0, 0],
-                              [dz // 2, dz - dz // 2],
-                              [dy // 2, dy - dy // 2],
-                              [dx // 2, dx - dx // 2],
-                              [0, 0]])
-        self.logistic = tf.sigmoid(logit_seed_cropped)
-        self.set_up_sigmoid_pixelwise_loss(logit_seed_cropped)
-        self.show_center_slice(logit_seed)
-        self.show_center_slice(labels_padded, sigmoid=False)
-      else:
-        self.logistic = tf.sigmoid(logit_seed)
-        self.set_up_sigmoid_pixelwise_loss(logit_seed)
-        self.show_center_slice(logit_seed)
-        self.show_center_slice(self.labels, sigmoid=False)
+      self.logistic = tf.sigmoid(logit_seed)
+      self.set_up_sigmoid_pixelwise_loss(logit_seed)
+      self.show_center_slice(logit_seed)
+      self.show_center_slice(self.labels, sigmoid=False)
       if self.TA is None:
         self.set_up_optimizer(max_gradient_entry_mag=0.0)
       else:
