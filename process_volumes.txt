@@ -59,33 +59,34 @@ lom should be (fov_size // 2) + deltas
     --input_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/groundtruth.h5:stack \
     --output_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af \
     --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --lom_radius 16,65,65 \
+    --lom_radius 65,65,16 \
     --min_size 3000
 
   python compute_partitions.py \
-    --input_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/groundtruth.h5:stack \
+    --input_volume /media/data_cifs/connect11omics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/groundtruth.h5:stack \
     --output_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
     --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --lom_radius 16,65,65 \
+    --lom_radius 65,65,16 \
     --min_size 3000
 
 (3x)
   python build_coordinates.py \
      --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson3x_w_inf_memb/train/tf_record_file \
-     --margin 65,65,16
+     --margin 16,65,65
+
 
 (2x)
   python build_coordinates.py \
      --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/tf_record_file \
-     --margin 65,65,16
+     --margin 16,65,65
 
 (1x)
   python build_coordinates.py \
      --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/tf_record_file \
-     --margin 65,65,16
+     --margin 16,65,65
 
 
 
