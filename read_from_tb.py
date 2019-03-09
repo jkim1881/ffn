@@ -3,12 +3,12 @@ import numpy as np
 import tensorflow as tf
 
 gs_folder = '/media/data_cifs/connectomics/ffn_ckpts'
-tbs = ['wide_fov/htd_cnn_3l_berson3x_w_inf_memb_r0/events.out.tfevents.1551181357.serrep2',
-       'wide_fov/htd_cnn_3l_in_berson3x_w_inf_memb_r0/events.out.tfevents.1551181470.serrep2',
-       'wide_fov/htd_cnn_3l_inplace_berson3x_w_inf_memb_r0/events.out.tfevents.1551181417.serrep2',
-       'wide_fov/htd_cnn_3l_trainablestat_berson3x_w_inf_memb_r0/events.out.tfevents.1551181544.serrep2',
-       'wide_fov/htd_cnn_3l_newrf_berson3x_w_inf_memb_r0/events.out.tfevents.1551181593.serrep2',
-       'ultrawide_fov/htd_cnn_3l_in_berson3x_w_inf_memb_r0/events.out.tfevents.1551312783.serrep6']
+tbs = ['wide_fov/htd_cnn_3l_allbutberson_w_inf_memb_r0/events.out.tfevents.1551181357.serrep2',
+       'wide_fov/htd_cnn_3l_in_allbutberson_w_inf_memb_r0/events.out.tfevents.1551181470.serrep2',
+       'wide_fov/htd_cnn_3l_inplace_allbutberson_w_inf_memb_r0/events.out.tfevents.1551181417.serrep2',
+       'wide_fov/htd_cnn_3l_trainablestat_allbutberson_w_inf_memb_r0/events.out.tfevents.1551181544.serrep2',
+       'wide_fov/htd_cnn_3l_newrf_allbutberson_w_inf_memb_r0/events.out.tfevents.1551181593.serrep2',
+       'ultrawide_fov/htd_cnn_3l_in_allbutberson_w_inf_memb_r0/events.out.tfevents.1551312783.serrep6']
 names = ['3l',
          'in',
          'inplace',
@@ -26,6 +26,7 @@ path = [os.path.join(gs_folder, x) for x in tbs]
 step, step_sc, accuracy, precision, recall = [], [], [], [], []
 if isinstance(path, list):
     import matplotlib.pyplot as plt
+    plt.figure(figsize=(10,14))
     for imodel, p in enumerate(path):
         step.append([])
         accuracy.append([])
