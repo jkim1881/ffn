@@ -53,7 +53,7 @@ if isinstance(path, list):
         plt.subplot(224);
         plt.plot(step[imodel][:len(accuracy[imodel])], accuracy[imodel], label=names[imodel]);plt.title('accuracy')
     plt.legend()
-    plt.savefig(os.path.join(gs_folders,'curves.pdf'))
+    plt.savefig(os.path.join(gs_folder,'curves.pdf'))
     #plt.show()
 
 else:
