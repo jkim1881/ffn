@@ -51,7 +51,7 @@ if isinstance(path, list):
         plt.subplot(223);
         plt.plot(step[imodel][:len(recall[imodel])], recall[imodel]);plt.title('recall')
         plt.subplot(224);
-        plt.plot(step[imodel][:len(accuracy[imodel])], accuracy[imodel]);plt.title('accuracy')
+        plt.plot(step[imodel][:len(accuracy[imodel])], accuracy[imodel], label=names[imodel]);plt.title('accuracy')
     plt.legend()
     plt.savefig(os.path.join(gs_folders,'curves.pdf'))
     #plt.show()
