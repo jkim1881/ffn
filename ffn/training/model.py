@@ -164,10 +164,13 @@ class FFNModel(object):
 
       if max_gradient_entry_mag > 0.0:
         print('Clip gradient: ON')
-        grads_and_vars = [(tf.clip_by_value(g,
-                                            -max_gradient_entry_mag,
-                                            +max_gradient_entry_mag), v)
+        grads_and_vars = [(tf.clip_by_norm(g,
+                                           max_gradient_entry_mag), v)
                           for g, v, in grads_and_vars]
+        # grads_and_vars = [(tf.clip_by_value(g,
+        #                                     -max_gradient_entry_mag,
+        #                                     +max_gradient_entry_mag), v)
+        #                   for g, v, in grads_and_vars]
 
       # TODO(b/34707785): Hopefully remove need for these deprecated calls.  Let
       # one warning through so that we have some (low) possibility of noticing if

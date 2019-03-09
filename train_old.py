@@ -627,7 +627,7 @@ def train_ffn(model_cls, **model_kwargs):
       # that the FFN is instantiated within the current context.
 
       if not FLAGS.validation_mode:
-        model = model_cls(with_membrane=FLAGS.with_membrane, is_training=True, **model_kwargs)
+        model = model_cls(with_membrane=FLAGS.with_membrane, is_training=True, grad_clip_val=5.0, **model_kwargs)
       else:
         model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, adabn=FLAGS.adabn, **model_kwargs)
 
