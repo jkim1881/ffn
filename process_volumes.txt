@@ -2,18 +2,24 @@ TODO:
 
 lom should be (fov_size // 2) + deltas
 
->>>>>>>>>>>>> wide_fov (allbutcremi)
-
   python build_coordinates.py \
-     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/neuroproof/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutcremi/train/tf_record_file \
+     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/neuroproof/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af\
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutberson/train/tf_record_file \
      --margin 9,36,36
 
->>>>>>>>>>>>> wide_fov (allbutisbi)
+  python build_coordinates.py \
+     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
+     --margin 9,36,36
 
   python build_coordinates.py \
      --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/neuroproof/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutisbi/train/tf_record_file \
+     --margin 9,36,36
+
+  python build_coordinates.py \
+     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/neuroproof/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
+     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutcremi/train/tf_record_file \
      --margin 9,36,36
 
 >>>>>>>>>>>>> wide_fov (hippocampus)
@@ -47,46 +53,6 @@ lom should be (fov_size // 2) + deltas
      --partition_volumes 1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson_w_inf_memb/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson2x_w_inf_memb/train/af.h5:af \
      --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/berson3x_w_inf_memb/train/tf_record_file \
      --margin 9,36,36
-
-
-
->>>>>>>>>>>>> ultrawide_fov (berson3x_w_inf_memb)
- fov_size = [114, 114, 26]
-    deltas = [8, 8, 3]
-    -> lom = [65, 65, 16]
-
-  python compute_partitions.py \
-    --input_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/groundtruth.h5:stack \
-    --output_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af \
-    --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --lom_radius 65,65,16 \
-    --min_size 3000
-
-  python compute_partitions.py \
-    --input_volume /media/data_cifs/connect11omics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/groundtruth.h5:stack \
-    --output_volume /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
-    --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
-    --lom_radius 65,65,16 \
-    --min_size 3000
-
-(3x)
-  python build_coordinates.py \
-     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson3x_w_inf_memb/train/tf_record_file \
-     --margin 16,65,65
-
-
-(2x)
-  python build_coordinates.py \
-     --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson2x_w_inf_memb/train/tf_record_file \
-     --margin 16,65,65
-
-(1x)
-  python build_coordinates.py \
-     --partition_volumes jk:/media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/ultrawide_fov/berson_w_inf_memb/train/tf_record_file \
-     --margin 16,65,65
 
 
 
@@ -128,20 +94,6 @@ lom should be (fov_size // 2) + deltas
 
 
 
-
->>>>>>>>>>>>> wide_fov (allbutfib)
-
-  python build_coordinates.py \
-     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,3:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af,4:/media/data_cifs/connectomics/datasets/third_party/wide_fov/berson/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/allbutfib/train/tf_record_file \
-     --margin 9,36,36
-
->>>>>>>>>>>>> wide_fov (cremi_abc)
-
-  python build_coordinates.py \
-     --partition_volumes 0:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_a/train/af.h5:af,1:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_b/train/af.h5:af,2:/media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_c/train/af.h5:af \
-     --coordinate_output /media/data_cifs/connectomics/datasets/third_party/wide_fov/cremi_abc/train/tf_record_file \
-     --margin 9,36,36
 
 
 >>>>>>>>>>>>> flat_fov
