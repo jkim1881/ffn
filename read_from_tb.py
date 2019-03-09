@@ -2,7 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-gs_folders = '/media/data_cifs/connectomics/ffn_ckpts'
+gs_folder = '/media/data_cifs/connectomics/ffn_ckpts'
 tbs = ['wide_fov/htd_cnn_3l_berson3x_w_inf_memb_r0/events.out.tfevents.1551181357.serrep2',
        'wide_fov/htd_cnn_3l_in_berson3x_w_inf_memb_r0/events.out.tfevents.1551181470.serrep2',
        'wide_fov/htd_cnn_3l_inplace_berson3x_w_inf_memb_r0/events.out.tfevents.1551181417.serrep2',
