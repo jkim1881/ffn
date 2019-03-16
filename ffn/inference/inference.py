@@ -1093,6 +1093,7 @@ class Runner(object):
       src_bbox = bounding_box.BoundingBox(
           start=src_corner[::-1], size=src_size[::-1])
       src_image = get_data_3d(self._image_volume, src_bbox)
+      import ipdb;ipdb.set_trace()
       logging.info('Fetched image of size %r prior to transform',
                    src_image.shape)
 
