@@ -931,7 +931,7 @@ class Runner(object):
 
     #### TODO: manually added. should edit according to specs
     args['batch_size'] = batch_size
-    args['is_training'] = True
+    args['is_training'] = False
     args['adabn'] = False
     args['tag'] = ''
     self.model = model_class(**args)
@@ -945,10 +945,11 @@ class Runner(object):
 
     if self.topup is None:
       self.saver = tf.train.Saver()
+      session = tf.Session(config=config)
+      self.session = session
       self._load_model_checkpoint(request.model_checkpoint_path)
       config = tf.ConfigProto()
       # tf.reset_default_graph()
-      session = tf.Session(config=config)
       logging.info('Available TF devices: %r', session.list_devices())
     else:
       self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.25)
@@ -962,8 +963,8 @@ class Runner(object):
           log_device_placement=False, allow_soft_placement=True),
         checkpoint_dir=self.topup['train_dir'],
         scaffold=scaffold)
+      self.session = session
 
-    self.session = session
     self.executor.session = session
     self.executor.start_server()
 
