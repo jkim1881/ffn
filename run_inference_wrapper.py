@@ -141,14 +141,14 @@ if __name__ == '__main__':
             os.makedirs(os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type))
         infer_result_txt = open(infer_result_txt_fullpath, "w+")
         infer_result_txt.write('>>>>>>>>>>>>>> Infer on: ' + infer_volume_name)
-        infer_result_txt.write('>>>>>>>>>>>>>> Ckpt: ' + checkpoint_num)
+        infer_result_txt.write('>>>>>>>>>>>>>> Ckpt: ' + str(checkpoint_num))
         infer_result_txt.write("\n")
         infer_result_txt.close()
 
         ### RUN INFERENCE
         print('>>>>>>>>>>>>>> Model: ' + net_cond_name)
         print('>>>>>>>>>>>>>> Infer on: ' + infer_volume_name)
-        print('>>>>>>>>>>>>>> Ckpt: ' + checkpoint_num)
+        print('>>>>>>>>>>>>>> Ckpt: ' + str(checkpoint_num))
         print('Output at: ' + inference_fullpath)
         write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, inference_fullpath,
                              net_name,
@@ -180,6 +180,6 @@ if __name__ == '__main__':
         if arand < current_best_arand:
             current_best_arand = arand
             current_best_ckpt = checkpoint_num
-    print('>>>>>>>>>>>>>> Job finished. Best ckpt out of ' + len(trimmed_list) + ' ckpts is: ' + current_best_ckpt)
+    print('>>>>>>>>>>>>>> Job finished. Best ckpt out of ' + len(trimmed_list) + ' ckpts is: ' + str(current_best_ckpt))
 # .npz
 # #
