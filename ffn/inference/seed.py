@@ -83,7 +83,7 @@ class BaseSeedPolicy(object):
       if len(canvas_shape)==4:
         canvas_shape = canvas_shape[:-1]
       if (np.all(curr - self.canvas.margin >= 0) and
-          np.all(curr + self.canvas.margin < scanvas_shape)):
+          np.all(curr + self.canvas.margin < canvas_shape)):
         return tuple(curr)  # z, y, x
 
     raise StopIteration()
