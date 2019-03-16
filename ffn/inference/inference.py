@@ -195,7 +195,8 @@ class Canvas(object):
                keep_history=False,
                checkpoint_path=None,
                checkpoint_interval_sec=0,
-               corner_zyx=None):
+               corner_zyx=None,
+               with_membrane=False):
     """Initializes the canvas.
 
     Args:
@@ -261,9 +262,14 @@ class Canvas(object):
     # Current working area. This represents an object probability map
     # in logit form, and is fed directly as the mask input to the FFN
     # model.
-    self.seed = np.zeros(self.shape, dtype=np.float32)
-    self.segmentation = np.zeros(self.shape, dtype=np.int32)
-    self.seg_prob = np.zeros(self.shape, dtype=np.uint8)
+    if with_membrane:
+      self.seed = np.zeros(self.shape[:-1], dtype=np.float32)
+      self.segmentation = np.zeros(self.shape[:-1], dtype=np.int32)
+      self.seg_prob = np.zeros(self.shape[:-1], dtype=np.uint8)
+    else:
+      self.seed = np.zeros(self.shape, dtype=np.float32)
+      self.segmentation = np.zeros(self.shape, dtype=np.int32)
+      self.seg_prob = np.zeros(self.shape, dtype=np.uint8)
 
     # When an initial segmentation is provided, maps the global ID space
     # to locally used IDs.
@@ -358,7 +364,6 @@ class Canvas(object):
       return False
 
     # Location already segmented?
-    import ipdb;ipdb.set_trace()
     if self.segmentation[pos] > 0:
       self.counters['skip_invalid_pos'].Increment()
       logging.debug('.. segmentation already active: %r', pos)
@@ -1165,6 +1170,7 @@ class Runner(object):
             self.request.segmentation_output_dir, corner),
         checkpoint_interval_sec=self.request.checkpoint_interval,
         corner_zyx=dst_corner,
+        with_membrane=with_membrane,
         **canvas_kwargs)
 
     if self.request.HasField('init_segmentation'):
