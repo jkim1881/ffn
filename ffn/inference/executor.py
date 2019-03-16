@@ -204,9 +204,9 @@ class ThreadingBatchExecutor(BatchExecutor):
             l = len(ready)
             self.input_seed[l, ..., 0] = seed
             if self.with_membrane:
-              self.input_image[l, ..., 0] = image
-            else:
               self.input_image[l, ...] = image
+            else:
+              self.input_image[l, ..., 0] = image
             ready.append(client_id)
 
       if ready:
