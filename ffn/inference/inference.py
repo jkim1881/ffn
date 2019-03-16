@@ -929,9 +929,10 @@ class Runner(object):
     else:
       args = {}
 
-    #### TODO: manually added. should edit according to specs
+    #### TODO (jk, 3/19): manually added. should edit according to specs
     args['batch_size'] = batch_size
     args['is_training'] = False
+    args['with_membrane'] = True
     args['adabn'] = False
     args['tag'] = ''
     self.model = model_class(**args)
