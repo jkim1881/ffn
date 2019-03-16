@@ -1083,13 +1083,21 @@ class Runner(object):
 
       # Fetch the image from the volume using the src bounding box.
       def get_data_3d(volume, bbox):
-        import ipdb;ipdb.set_trace()
         slc = bbox.to_slice()
-        if volume.ndim == 4:
-          slc = np.index_exp[0:1] + slc
+        if with_membrane:
+          if volume.ndim == 5:
+            slc = np.index_exp[0:1] + slc
+        else:
+          if volume.ndim == 4:
+            slc = np.index_exp[0:1] + slc
         data = volume[slc]
-        if data.ndim == 4:
-          data = data.squeeze(axis=0)
+        if with_membrane:
+          if data.ndim == 5:
+            data = data.squeeze(axis=0)
+        else:
+          if data.ndim == 4:
+            data = data.squeeze(axis=0)
+        import ipdb;ipdb.set_trace()
         return data
       src_bbox = bounding_box.BoundingBox(
           start=src_corner[::-1], size=src_size[::-1])
