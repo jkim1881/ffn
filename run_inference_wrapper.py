@@ -153,7 +153,7 @@ if __name__ == '__main__':
         print('>>>>>>>>>>>>>> Ckpt: ' + str(checkpoint_num))
         print('Output at: ' + inference_fullpath)
         write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, inference_fullpath,
-                             net_name,
+                             net_name, seed_policy,
                              fov_size, deltas, move_threshold,
                              image_mean, image_stddev)
         command = 'python ' + os.path.join(script_root, 'run_inference.py') + \
