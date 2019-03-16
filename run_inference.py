@@ -33,6 +33,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('bounding_box', None,
                     'BoundingBox proto in text format defining the area '
                     'to segmented.')
+flags.DEFINE_boolean('with_membrane', False,
+                     'JKJKJK')
 
 
 def main(unused_argv):
@@ -47,7 +49,7 @@ def main(unused_argv):
   runner = inference.Runner()
   runner.start(request)
   runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
-             (bbox.size.z, bbox.size.y, bbox.size.x))
+             (bbox.size.z, bbox.size.y, bbox.size.x), with_membrane=FLAGS.with_membrane)
 
   counter_path = os.path.join(request.segmentation_output_dir, 'counters.txt')
   if not gfile.Exists(counter_path):

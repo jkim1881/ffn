@@ -24,6 +24,8 @@ from .. import model
 
 # Note: this model was originally trained with conv3d layers initialized with
 # TruncatedNormalInitializedVariable with stddev = 0.01.
+
+############ TODO (jk, 319): BN is used after the model. hGRU modules still use BN
 def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, adabn=False):
   """Computes single-object mask prediction."""
 

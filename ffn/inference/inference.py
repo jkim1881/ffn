@@ -1044,7 +1044,7 @@ class Runner(object):
     else:
       return None
 
-  def make_canvas(self, corner, subvol_size, **canvas_kwargs):
+  def make_canvas(self, corner, subvol_size, with_membrane=False, **canvas_kwargs):
     """Builds the Canvas object for inference on a subvolume.
 
     Args:
@@ -1075,7 +1075,7 @@ class Runner(object):
           dst_corner, dst_size, forward=False)
       # Ensure that the request bounds don't extend beyond volume bounds.
       src_corner, src_size = storage.clip_subvolume_to_bounds(
-          src_corner, src_size, self._image_volume)
+          src_corner, src_size, self._image_volume, with_membrane=with_membrane)
 
       logging.info('Requested bounds are %r + %r', corner, subvol_size)
       logging.info('Destination bounds are %r + %r', dst_corner, dst_size)
@@ -1093,7 +1093,7 @@ class Runner(object):
       src_bbox = bounding_box.BoundingBox(
           start=src_corner[::-1], size=src_size[::-1])
       src_image = get_data_3d(self._image_volume, src_bbox)
-      import ipdb;ipdb.set_trace()
+
       logging.info('Fetched image of size %r prior to transform',
                    src_image.shape)
 
@@ -1227,7 +1227,7 @@ class Runner(object):
     with storage.atomic_file(prob_path) as fd:
       np.savez_compressed(fd, qprob=prob)
 
-  def run(self, corner, subvol_size, reset_counters=True):
+  def run(self, corner, subvol_size, reset_counters=True, with_membrane=False):
     """Runs FFN inference over a subvolume.
 
     Args:
@@ -1253,7 +1253,7 @@ class Runner(object):
       print('>>>>>>>>>>>>>>>>>>>>>>SEGMENTATION EXISTS. OVERWRITING.')
       # return None
 
-    canvas, alignment = self.make_canvas(corner, subvol_size)
+    canvas, alignment = self.make_canvas(corner, subvol_size, with_membrane=with_membrane)
     if canvas is None:
       return None
 

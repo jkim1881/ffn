@@ -70,6 +70,7 @@ if __name__ == '__main__':
     net_name_obj = 'htd_cnn_3l_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
     train_tfrecords_name = 'berson3x_w_inf_memb'
+    with_membrane = True
 
     infer_volume_name = 'berson_w_inf_memb'
     infer_volume_type = 'train'
@@ -156,7 +157,8 @@ if __name__ == '__main__':
                              image_mean, image_stddev)
         command = 'python ' + os.path.join(script_root, 'run_inference.py') + \
                   ' --inference_request="$(cat ' + request_txt_fullpath + ')"' +\
-                  ' --bounding_box "start { x:0 y:0 z:0 } size { x:' + str(xdim) + ' y:' + str(ydim) + ' z:' + str(zdim) + ' }"'
+                  ' --bounding_box "start { x:0 y:0 z:0 } size { x:' + str(xdim) + ' y:' + str(ydim) + ' z:' + str(zdim) + ' }"' + \
+                  ' --with_membrane=' + str(with_membrane)
         subprocess.call(command, shell=True)
         print('>>>>>>>>>>>>>> Inference finished')
 

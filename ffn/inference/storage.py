@@ -261,7 +261,7 @@ def load_origins(segmentation_dir, corner):
     return data['origins'].item()
 
 
-def clip_subvolume_to_bounds(corner, size, volume):
+def clip_subvolume_to_bounds(corner, size, volume, with_membrane=False):
   """Clips a subvolume bounding box to the image volume store bounds.
 
   Args:
@@ -274,8 +274,12 @@ def clip_subvolume_to_bounds(corner, size, volume):
     size: the size argument, clipped to the volume bounds
   """
   volume_size = volume.shape
-  if volume.ndim == 4:
-    volume_size = volume_size[1:]
+  if with_membrane:
+    if volume.ndim == 5:
+      volume_size = volume_size[1:]
+  else:
+    if volume.ndim == 4:
+      volume_size = volume_size[1:]
   volume_bounds = bounding_box.BoundingBox(start=(0, 0, 0), size=volume_size)
   subvolume_bounds = bounding_box.BoundingBox(start=corner, size=size)
   clipped_bounds = bounding_box.intersection(volume_bounds, subvolume_bounds)
