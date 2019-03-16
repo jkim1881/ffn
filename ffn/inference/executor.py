@@ -201,6 +201,7 @@ class ThreadingBatchExecutor(BatchExecutor):
           else:
             client_id, seed, image, fetches = data
             l = len(ready)
+            import ipdb;ipdb.set_trace()
             self.input_seed[l, ..., 0] = seed
             self.input_image[l, ..., 0] = image
             ready.append(client_id)
