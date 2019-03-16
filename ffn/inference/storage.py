@@ -277,6 +277,7 @@ def clip_subvolume_to_bounds(corner, size, volume, with_membrane=False):
   if with_membrane:
     if volume.ndim == 5:
       volume_size = volume_size[1:]
+    volume_size = volume_size[:-1]
   else:
     if volume.ndim == 4:
       volume_size = volume_size[1:]
