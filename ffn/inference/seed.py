@@ -146,6 +146,57 @@ class PolicyPeaks(BaseSeedPolicy):
     self.coords = idxs
 
 
+class PolicyMembranePeaks(BaseSeedPolicy):
+  """Attempts to find points away from edges in the image.
+
+  Runs a 3d Sobel filter to detect edges in the raw data, followed
+  by a distance transform and peak finding to identify seed points.
+  """
+
+  def _init_coords(self):
+    logging.info('peaks: starting')
+
+    # Edge detection.
+    edges = ndimage.generic_gradient_magnitude(
+        self.canvas.image[:,:,:,1].astype(np.float32),
+        ndimage.sobel)
+
+    # Adaptive thresholding.
+    sigma = 49.0 / 6.0
+    thresh_image = np.zeros(edges.shape, dtype=np.float32)
+    ndimage.gaussian_filter(edges, sigma, output=thresh_image, mode='reflect')
+    filt_edges = edges > thresh_image
+
+    del edges, thresh_image
+
+    # This prevents a border effect where the large amount of masked area
+    # screws up the distance transform below.
+    if (self.canvas.restrictor is not None and
+        self.canvas.restrictor.mask is not None):
+      filt_edges[self.canvas.restrictor.mask] = 1
+
+    logging.info('peaks: filtering done')
+    dt = ndimage.distance_transform_edt(1 - filt_edges).astype(np.float32)
+    logging.info('peaks: edt done')
+
+    # Use a specifc seed for the noise so that results are reproducible
+    # regardless of what happens before the policy is called.
+    state = np.random.get_state()
+    np.random.seed(42)
+    idxs = skimage.feature.peak_local_max(
+        dt + np.random.random(dt.shape) * 1e-4,
+        indices=True, min_distance=3, threshold_abs=0, threshold_rel=0)
+    np.random.set_state(state)
+
+    # After skimage upgrade to 0.13.0 peak_local_max returns peaks in
+    # descending order, versus ascending order previously.  Sort ascending to
+    # maintain historic behavior.
+    idxs = np.array(sorted((z, y, x) for z, y, x in idxs))
+
+    logging.info('peaks: found %d local maxima', idxs.shape[0])
+    self.coords = idxs
+
+
 class PolicyPeaks2d(BaseSeedPolicy):
   """Attempts to find points away from edges at each 2d slice of image.
 

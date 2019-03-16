@@ -6,7 +6,7 @@ import metrics
 import h5py
 
 def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, output_fullpath,
-                         net_name,
+                         net_name, seed_policy,
                          fov_size, deltas, move_threshold,
                          image_mean=128, image_stddev=33):
     # 'validate_request_' + str(validate_jobid) + '.txt'
@@ -19,7 +19,7 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.write('}')
     file.write('image_mean: ' + str(image_mean) + '\n')
     file.write('image_stddev: ' + str(image_stddev) + '\n')
-    file.write('seed_policy: "PolicyPeaks" \n')
+    file.write('seed_policy: "'+seed_policy+'" \n')
     file.write('model_checkpoint_path: "' + ckpt_fullpath + '" \n')
     file.write('model_name: "'+net_name+'.ConvStack3DFFNModel" \n')
     file.write('model_args: "{\\"depth\\": 12, \\"fov_size\\": ' + str(fov_size) + ', \\"deltas\\": ' + str(deltas) + '}" \n')
@@ -71,6 +71,7 @@ if __name__ == '__main__':
     net_name = net_name_obj
     train_tfrecords_name = 'berson3x_w_inf_memb'
     with_membrane = True
+    seed_policy = 'PolicyMembranePeaks' #'PolicyPeaks'
 
     infer_volume_name = 'berson_w_inf_memb'
     infer_volume_type = 'train'

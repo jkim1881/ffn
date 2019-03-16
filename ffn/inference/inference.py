@@ -1185,7 +1185,7 @@ class Runner(object):
       kwargs.update(json.loads(self.request.seed_policy_args))
     return functools.partial(policy_cls, **kwargs)
 
-  def save_segmentation(self, canvas, alignment, target_path, prob_path):
+  def save_segmentation(self, canvas, alignment, target_path, prob_path, with_membrane=False):
     """Saves segmentation to a file.
 
     Args:
@@ -1204,6 +1204,7 @@ class Runner(object):
           im3d,
           alignment.corner,
           alignment.size,
+          with_membrane=with_membrane,
           forward=False)
 
     def unalign_origins(origins, canvas_corner):
@@ -1274,7 +1275,7 @@ class Runner(object):
         np.savez_compressed(fd, im=canvas.image)
 
     canvas.segment_all(seed_policy=self.get_seed_policy(corner, subvol_size))
-    self.save_segmentation(canvas, alignment, seg_path, prob_path)
+    self.save_segmentation(canvas, alignment, seg_path, prob_path, with_membrane=with_membrane)
 
     # Attempt to remove the checkpoint file now that we no longer need it.
     try:
