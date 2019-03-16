@@ -35,7 +35,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
         train_bn = False
 
   in_k = 14
-
+  import ipdb;ipdb.set_trace()
   if input_patches.get_shape().as_list()[-1] == 2:
       image = tf.expand_dims(input_patches[:,:,:,:,0], axis=4)
       membrane = tf.expand_dims(input_patches[:,:,:,:,1], axis=4)
