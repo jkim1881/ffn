@@ -86,7 +86,8 @@ class Alignment(object):
                      dst_corner,
                      dst_size,
                      fill=0,
-                     forward=True):
+                     forward=True,
+                     with_membrane=False):
     """Aligns the subvolume and crops to a bounding box.
 
     Args:
@@ -105,6 +106,11 @@ class Alignment(object):
     del forward  # forward and inverse are identical for identity transforms
 
     # If the source and destination geometries are the same, just return source
+    if with_membrane:
+      import ipdb;ipdb.set_trace()
+      source_corner += [0]
+      dst_corner += [0]
+      dst_size += [2]
     if np.all(np.array(src_corner) == np.array(dst_corner)) and np.all(
         np.array(source.shape) == np.array(dst_size)):
       return source
