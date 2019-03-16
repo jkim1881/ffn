@@ -358,6 +358,7 @@ class Canvas(object):
       return False
 
     # Location already segmented?
+    import ipdb;ipdb.set_trace()
     if self.segmentation[pos] > 0:
       self.counters['skip_invalid_pos'].Increment()
       logging.debug('.. segmentation already active: %r', pos)
