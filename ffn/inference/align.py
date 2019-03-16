@@ -107,10 +107,9 @@ class Alignment(object):
 
     # If the source and destination geometries are the same, just return source
     if with_membrane:
-      import ipdb;ipdb.set_trace()
-      source_corner += [0]
-      dst_corner += [0]
-      dst_size += [2]
+      src_corner = np.concatenate([src_corner, [0]])
+      dst_corner = np.concatenate([dst_corner, [0]])
+      dst_size = tuple(np.concatenate([dst_size, [2]]))
     if np.all(np.array(src_corner) == np.array(dst_corner)) and np.all(
         np.array(source.shape) == np.array(dst_size)):
       return source
