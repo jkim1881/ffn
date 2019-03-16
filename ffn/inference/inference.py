@@ -349,6 +349,7 @@ class Canvas(object):
     low = np_pos - self.margin
     high = np_pos + self.margin
 
+    import ipdb;ipdb.set_trace()
     if np.any(low < 0) or np.any(high >= self.shape):
       self.counters['skip_invalid_pos'].Increment()
       logging.debug('.. too close to border: %r', pos)
