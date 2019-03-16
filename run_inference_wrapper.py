@@ -139,7 +139,7 @@ if __name__ == '__main__':
         infer_result_txt_fullpath = os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type, 'score.txt')
         if not os.path.exists(os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type)):
             os.makedirs(os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type))
-        infer_result_txt = open(eval_result_txt_fullpath, "w+")
+        infer_result_txt = open(infer_result_txt_fullpath, "w+")
         infer_result_txt.write('>>>>>>>>>>>>>> Infer on: ' + infer_volume_name)
         infer_result_txt.write('>>>>>>>>>>>>>> Ckpt: ' + checkpoint_num)
         infer_result_txt.write("\n")
