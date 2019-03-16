@@ -4,12 +4,14 @@ import subprocess
 import sys
 import numpy as np
 
-def find_all_ckpts(ckpt_root, net_cond_name):
+def find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap):
     raw_items = os.listdir(os.path.join(ckpt_root, net_cond_name))
     items = []
     for item in raw_items:
         if (item.split('.')[0]=='model') & (item.split('.')[-1]=='meta'):
-            items.append(int(item.split('.')[1].split('-')[1]))
+            ckpt = int(item.split('.')[1].split('-')[1])
+            if ckpt < ckpt_cap:
+                items.append(ckpt)
     items.sort()
     return items
 
@@ -56,10 +58,11 @@ if __name__ == '__main__':
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     ckpt_ticks = 10
+    ckpt_cap = 650000 # max number of iters from which to load ckpts
     verbose = False
     with_membrane = False
     adabn = False
-    eval_steps = 9000/batch_size # three full rounds
+    eval_steps = 15000/batch_size # five full rounds
     move_threshold = 0.9
 
     for eval_vol_list, eval_tfr, train_tfr in zip(eval_volumes_name_list_list, eval_tfrecords_name_list, train_tfrecords_name_list):
@@ -95,7 +98,7 @@ if __name__ == '__main__':
                 label_string += ','
 
         print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
-        ckpt_list = find_all_ckpts(ckpt_root, cond_name)
+        ckpt_list = find_all_ckpts(ckpt_root, cond_name, ckpt_cap)
         trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks*2))][:ckpt_ticks]
 
         for ckpt_idx in trimmed_list:
