@@ -944,11 +944,11 @@ class Runner(object):
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
     if self.topup is None:
+      config = tf.ConfigProto()
       self.saver = tf.train.Saver()
       session = tf.Session(config=config)
       self.session = session
       self._load_model_checkpoint(request.model_checkpoint_path)
-      config = tf.ConfigProto()
       # tf.reset_default_graph()
       logging.info('Available TF devices: %r', session.list_devices())
     else:
