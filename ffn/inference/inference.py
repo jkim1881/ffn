@@ -931,8 +931,8 @@ class Runner(object):
 
     #### TODO (jk, 3/19): manually added. should edit according to specs
     args['batch_size'] = batch_size
-    args['is_training'] = False
     args['with_membrane'] = True
+    args['is_training'] = False
     args['adabn'] = False
     args['tag'] = ''
     self.model = model_class(**args)

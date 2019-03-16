@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
         ### RUN INFERENCE
         print('>>>>>>>>>>>>>> Model: ' + net_cond_name)
-        print('>>>>>>>>>>>>>> Infer on: ' + infer_volume_name)
+        print('>>>>>>>>>>>>>> Infer on: ' + infer_volume_name + ' with shape (xyz): ' + str([xdim, ydim, zdim]))
         print('>>>>>>>>>>>>>> Ckpt: ' + str(checkpoint_num))
         print('Output at: ' + inference_fullpath)
         write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, inference_fullpath,
