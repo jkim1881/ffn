@@ -125,7 +125,7 @@ class ThreadingBatchExecutor(BatchExecutor):
   if the batch size is 1.
   """
 
-  def __init__(self, model, counters, batch_size, expected_clients=1):
+  def __init__(self, model, counters, batch_size, expected_clients=1, with_membrane=False):
     super(ThreadingBatchExecutor, self).__init__(model, counters,
                                                  batch_size)
     self._lock = threading.Lock()
@@ -148,8 +148,9 @@ class ThreadingBatchExecutor(BatchExecutor):
     # Arrays fed to TF.
     self.input_seed = np.zeros([batch_size] + self._input_seed_size + [1],
                                dtype=np.float32)
-    self.input_image = np.zeros([batch_size] + self._input_image_size + [1],
+    self.input_image = np.zeros([batch_size] + self._input_image_size + [2 if with_membrane else 1],
                                 dtype=np.float32)
+    self.with_membrane = with_membrane
     self.th_executor = None
 
   def start_server(self):
@@ -201,9 +202,11 @@ class ThreadingBatchExecutor(BatchExecutor):
           else:
             client_id, seed, image, fetches = data
             l = len(ready)
-            import ipdb;ipdb.set_trace()
             self.input_seed[l, ..., 0] = seed
-            self.input_image[l, ..., 0] = image
+            if self.with_membrane:
+              self.input_image[l, ..., 0] = image
+            else:
+              self.input_image[l, ...] = image
             ready.append(client_id)
 
       if ready:

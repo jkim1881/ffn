@@ -870,7 +870,8 @@ class Runner(object):
       self.model.saver.restore(self.session, checkpoint_path)
       logging.info('Checkpoint loaded.')
 
-  def start(self, request, batch_size=1, exec_cls=None, topup=None, reuse=False, tag=None):
+  def start(self, request, batch_size=1, exec_cls=None, topup=None,
+            reuse=False, tag=None, with_membrane=False):
     """Opens input volumes and initializes the FFN."""
     self.request = request
     self.topup = topup
@@ -950,7 +951,7 @@ class Runner(object):
       exec_cls = executor.ThreadingBatchExecutor
 
     ########################## INFERENCE GRAPH MADE
-    self.executor = exec_cls(self.model, self.counters, batch_size)
+    self.executor = exec_cls(self.model, self.counters, batch_size, with_membrane=with_membrane)
     self.movement_policy_fn = movement.get_policy_fn(request, self.model)
 
     if self.topup is None:

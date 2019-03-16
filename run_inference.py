@@ -47,7 +47,7 @@ def main(unused_argv):
   text_format.Parse(FLAGS.bounding_box, bbox)
 
   runner = inference.Runner()
-  runner.start(request)
+  runner.start(request, with_membrane=with_membrane)
   runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
              (bbox.size.z, bbox.size.y, bbox.size.x), with_membrane=FLAGS.with_membrane)
 
