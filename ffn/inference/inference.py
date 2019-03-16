@@ -929,10 +929,11 @@ class Runner(object):
     else:
       args = {}
 
+    #### TODO: manually added. should edit according to specs
     args['batch_size'] = batch_size
     args['is_training'] = True
-    args['reuse'] = reuse
-    args['tag'] = tag
+    args['adabn'] = False
+    args['tag'] = ''
     self.model = model_class(**args)
 
     if exec_cls is None:
