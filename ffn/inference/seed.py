@@ -79,8 +79,11 @@ class BaseSeedPolicy(object):
       # TODO(mjanusz): Get rid of this.
       # Do early filtering of clearly invalid locations (too close to image
       # borders) as late filtering might be expensive.
+      canvas_shape = self.canvas.shape
+      if len(canvas_shape)==4:
+        canvas_shape = canvas_shape[:-1]
       if (np.all(curr - self.canvas.margin >= 0) and
-          np.all(curr + self.canvas.margin < self.canvas.shape)):
+          np.all(curr + self.canvas.margin < scanvas_shape)):
         return tuple(curr)  # z, y, x
 
     raise StopIteration()
