@@ -1210,6 +1210,7 @@ class Runner(object):
     def unalign_image(im3d):
       if alignment is None:
         return im3d
+      import ipdb;ipdb.set_trace()
       return alignment.align_and_crop(
           canvas.corner_zyx,
           im3d,
