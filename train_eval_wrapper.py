@@ -35,12 +35,13 @@ if __name__ == '__main__':
     net_name_obj = 'convstack_3d_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
 
+    train_tfrecords_name_list = ['allbutberson', 'allbutfib', 'allbutisbi', 'allbutcremi']
     eval_volumes_name_list_list = [['berson'],
                                    ['neuroproof'],
                                    ['isbi2013'],
                                    ['cremi_a','cremi_b','cremi_c']]
     eval_tfrecords_name_list = ['berson','neuroproof','isbi2013','cremi_abc']
-    train_tfrecords_name_list = ['allbutberson','allbutfib','allbutisbi','allbutcremi']
+
 
     dataset_type = 'train' #'val' #'train'
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     ckpt_ticks = 10
-    ckpt_cap = 650000 # max number of iters from which to load ckpts
+    ckpt_cap = 680000 # max number of iters from which to load ckpts
     verbose = False
     with_membrane = False
     adabn = False
