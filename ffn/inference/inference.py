@@ -1212,12 +1212,11 @@ class Runner(object):
         return im3d
       import ipdb;ipdb.set_trace()
       return alignment.align_and_crop(
-          canvas.corner_zyx,
-          im3d,
-          alignment.corner,
-          alignment.size,
-          with_membrane=with_membrane,
-          forward=False)
+        canvas.corner_zyx,im3d,
+        alignment.corner,
+        alignment.size,
+        with_membrane=False,
+        forward=False)
 
     def unalign_origins(origins, canvas_corner):
       out_origins = dict()
