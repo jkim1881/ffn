@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
-        eval_curve_txt = open(os.path.join(train_dir, 'eval.txt'), "a")
+        eval_curve_txt = open(os.path.join(train_dir, 'eval.txt'), "w")
         eval_curve_txt.write(">>>>>Eval on: " + eval_tfr + ", adabn: " + str(adabn))
         eval_curve_txt.write("\n")
         eval_curve_txt.close()

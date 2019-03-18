@@ -183,6 +183,6 @@ if __name__ == '__main__':
         if arand < current_best_arand:
             current_best_arand = arand
             current_best_ckpt = checkpoint_num
-    print('>>>>>>>>>>>>>> Job finished. Best ckpt out of ' + len(trimmed_list) + ' ckpts is: ' + str(current_best_ckpt))
+    print('>>>>>>>>>>>>>> Job finished. Best ckpt out of ' + str(len(trimmed_list)) + ' ckpts is: ' + str(current_best_ckpt))
 # .npz
 # #
