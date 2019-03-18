@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
         print('gt_unique_lbls: ' + str(gt_unique.shape) + ' seg_unique_lbls: ' + str(seg_unique.shape))
         print('arand: ' + str(arand) + ', precision: ' + str(precision) + ' recall: ' + str(recall))
-        infer_result_txt = open(eval_result_txt_fullpath, "a")
+        infer_result_txt = open(infer_result_txt_fullpath, "a")
         infer_result_txt.write('>>>> arand: ' + str(arand) + ', precision: ' + str(precision) + ', recall: ' + str(recall))
         infer_result_txt.write("\n")
         infer_result_txt.close()
