@@ -91,7 +91,7 @@ if __name__ == '__main__':
     ckpt_ticks = 10
     ckpt_cap = 650000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
-    move_threshold = 0.7
+    move_threshold = 0.9
 
     image_mean = 128
     image_stddev = 33
