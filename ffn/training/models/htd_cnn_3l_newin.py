@@ -75,6 +75,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                               hgru_td1_fsiz=[1, 1, 1],
                               hgru_h1_nl=tf.nn.relu,
                               hgru_h2_nl=tf.nn.relu,
+                              hgru_use_in=True,
                               hgru_bistream_weights='independent',
                               hgru_in_place_integration=False, #########
                               hgru_symmetric_weights=False,

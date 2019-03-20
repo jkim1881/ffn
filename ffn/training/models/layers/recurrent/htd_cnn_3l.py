@@ -46,6 +46,7 @@ class hGRU(object):
             ds_pool_list,
             ds_stride_list,
 
+            hgru_use_in=False,
             use_dsus_skip=False,
             use_homunculus=False,
             use_trainable_states=False
@@ -59,6 +60,7 @@ class hGRU(object):
         self.train = train
         self.train_bn = train_bn
         self.use_in = use_in
+        self.hgru_use_in =hgru_use_in
         self.bn_decay = bn_decay
         self.in_k = in_k
         self.use_homunculus = use_homunculus
@@ -112,7 +114,7 @@ class hGRU(object):
                           h2_nl=self.hgru_h2_nl,
                           gate_nl=tf.nn.sigmoid,
                           bn_reuse=False,
-                          use_in=self.use_in,
+                          use_in=self.hgru_use_in,
                           train=self.train,
                           train_bn=self.train_bn,
                           bn_decay=self.bn_decay,
@@ -129,7 +131,7 @@ class hGRU(object):
                           h2_nl=self.hgru_h2_nl,
                           gate_nl=tf.nn.sigmoid,
                           bn_reuse=False,
-                          use_in=self.use_in,
+                          use_in=self.hgru_use_in,
                           train=self.train,
                           train_bn=self.train_bn,
                           bn_decay=self.bn_decay,
@@ -146,7 +148,7 @@ class hGRU(object):
                           h2_nl=self.hgru_h2_nl,
                           gate_nl=tf.nn.sigmoid,
                           bn_reuse=False,
-                          use_in=self.use_in,
+                          use_in=self.hgru_use_in,
                           train=self.train,
                           train_bn=self.train_bn,
                           bn_decay=self.bn_decay,
@@ -163,7 +165,7 @@ class hGRU(object):
                              h2_nl=self.hgru_h2_nl,
                              gate_nl=tf.nn.sigmoid,
                              bn_reuse=False,
-                             use_in=self.use_in,
+                             use_in=self.hgru_use_in,
                              train=self.train,
                              train_bn=self.train_bn,
                              bn_decay=self.bn_decay,
@@ -180,7 +182,7 @@ class hGRU(object):
                              h2_nl=self.hgru_h2_nl,
                              gate_nl=tf.nn.sigmoid,
                              bn_reuse=False,
-                             use_in=self.use_in,
+                             use_in=self.hgru_use_in,
                              train=self.train,
                              train_bn=self.train_bn,
                              bn_decay=self.bn_decay,
@@ -197,7 +199,7 @@ class hGRU(object):
                              h2_nl=self.hgru_h2_nl,
                              gate_nl=tf.nn.sigmoid,
                              bn_reuse=False,
-                             use_in=self.use_in,
+                             use_in=self.hgru_use_in,
                              train=self.train,
                              train_bn=self.train_bn,
                              bn_decay=self.bn_decay,
