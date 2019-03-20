@@ -126,6 +126,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
+  logits = tf.clip_by_value(logits,-4.5,4.5)
   import numpy as np
   extras = 0
   hgru_w = 0
