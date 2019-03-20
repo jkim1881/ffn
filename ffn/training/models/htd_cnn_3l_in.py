@@ -90,35 +90,35 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
 
       net = hgru_net.build(x, ffn_seed=input_seed)
 
-  finalbn_param_initializer = {
-      'moving_mean': tf.constant_initializer(0., dtype=tf.float32),
-      'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
-      'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
-  }
+  # finalbn_param_initializer = {
+  #     'moving_mean': tf.constant_initializer(0., dtype=tf.float32),
+  #     'moving_variance': tf.constant_initializer(1., dtype=tf.float32),
+  #     'gamma': tf.constant_initializer(0.1, dtype=tf.float32)
+  # }
   net = tf.nn.relu(net)
-  net = tf.contrib.layers.batch_norm(
-      inputs=net,
-      scale=True,
-      center=True,
-      fused=True,
-      renorm=False,
-      decay=bn_decay,
-      param_initializers=finalbn_param_initializer,
-      is_training=train_bn)
+  # net = tf.contrib.layers.batch_norm(
+  #     inputs=net,
+  #     scale=True,
+  #     center=True,
+  #     fused=True,
+  #     renorm=False,
+  #     decay=bn_decay,
+  #     param_initializers=finalbn_param_initializer,
+  #     is_training=train_bn)
   logits = tf.contrib.layers.conv3d(net,
                                     scope='conv_lom1',
                                     num_outputs=in_k,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
-  logits = tf.contrib.layers.batch_norm(
-      inputs=logits,
-      scale=True,
-      center=False,
-      fused=True,
-      renorm=False,
-      decay=bn_decay,
-      param_initializers=finalbn_param_initializer,
-      is_training=train_bn)
+  # logits = tf.contrib.layers.batch_norm(
+  #     inputs=logits,
+  #     scale=True,
+  #     center=False,
+  #     fused=True,
+  #     renorm=False,
+  #     decay=bn_decay,
+  #     param_initializers=finalbn_param_initializer,
+  #     is_training=train_bn)
   logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
@@ -176,12 +176,13 @@ class ConvStack3DFFNModel(model.FFNModel):
 
     if self.input_patches is None:
       self.input_patches = tf.placeholder(
-          tf.float32, [1] + list(self.input_image_size[::-1]) +[1],
+          tf.float32, [1] + list(self.input_image_size[::-1]) + [1],
           name='patches')
 
     with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
                                           depth=self.depth, is_training=self.is_training, adabn=self.adabn)
+
     if self.optional_output_size is not None:
       dx = self.input_seed_size[0] - self.optional_output_size[0]
       dy = self.input_seed_size[1] - self.optional_output_size[1]

@@ -32,6 +32,7 @@ class hGRU(object):
             h2_nl=tf.nn.tanh,
             gate_nl=tf.nn.sigmoid,
             bn_reuse=False,
+            use_in=False,
             train=True,
             train_bn=True,
             bn_decay=0.95,
@@ -43,6 +44,7 @@ class hGRU(object):
         self.bn_decay = bn_decay
         self.var_scope = var_scope
         self.bn_reuse=bn_reuse
+        self.use_in=use_in
         self.symmetric_weights= symmetric_conv_weights
         if (bistream_weights is not 'independent') & (bistream_weights is not 'shared') & (bistream_weights is not 'symmetric'):
             raise ValueError('bistreaam_weights should be independent, shared or symmetric')
@@ -161,7 +163,7 @@ class hGRU(object):
                     uniform=True),
                 trainable=self.train)
 
-            if self.bn_reuse:
+            if self.bn_reuse and not self.use_in:
                 # Make the batchnorm variables
                 scopes = ['c1/bn', 'c2/bn', 'g1/bn', 'g1/bn']
                 shapes = [self.num_channels, self.num_channels, self.num_channels, self.num_channels]
@@ -242,32 +244,39 @@ class hGRU(object):
                            deconv_size=h2.get_shape().as_list(),
                            padding=None)
         g1 += gate_bias
-        if self.bn_reuse:
-            with tf.variable_scope(
-                    '%s_g1/bn' % (self.var_scope),
-                    reuse=tf.AUTO_REUSE) as scope:
+        if self.use_in:
+            g1 = tf.contrib.layers.instance_norm(
+                inputs=g1,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            if self.bn_reuse:
+                with tf.variable_scope(
+                        '%s_g1/bn' % (self.var_scope),
+                        reuse=tf.AUTO_REUSE) as scope:
+                    g1 = tf.contrib.layers.batch_norm(
+                        inputs=g1,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        reuse=tf.AUTO_REUSE,
+                        scope=scope,
+                        decay=self.bn_decay,
+                        updates_collections=None,
+                        is_training=self.train_bn)
+            else:
                 g1 = tf.contrib.layers.batch_norm(
                     inputs=g1,
                     scale=True,
                     center=False,
                     fused=True,
                     renorm=False,
-                    reuse=tf.AUTO_REUSE,
-                    scope=scope,
+                    param_initializers=self.bn_param_initializer,
                     decay=self.bn_decay,
                     updates_collections=None,
                     is_training=self.train_bn)
-        else:
-            g1 = tf.contrib.layers.batch_norm(
-                inputs=g1,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                is_training=self.train_bn)
         g1 = self.gate_nl(g1)
 
         # COMPUTE C1
@@ -286,32 +295,39 @@ class hGRU(object):
                      deconv_size=None,
                      padding=None)
 
-        if self.bn_reuse:
-            with tf.variable_scope(
-                    '%s_c1/bn' % (self.var_scope),
-                    reuse=tf.AUTO_REUSE) as scope:
+        if self.use_in:
+            c1 = tf.contrib.layers.instance_norm(
+                inputs=c1,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            if self.bn_reuse:
+                with tf.variable_scope(
+                        '%s_c1/bn' % (self.var_scope),
+                        reuse=tf.AUTO_REUSE) as scope:
+                    c1 = tf.contrib.layers.batch_norm(
+                        inputs=c1,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        reuse=tf.AUTO_REUSE,
+                        scope=scope,
+                        decay=self.bn_decay,
+                        updates_collections=None,
+                        is_training=self.train_bn)
+            else:
                 c1 = tf.contrib.layers.batch_norm(
                     inputs=c1,
                     scale=True,
                     center=False,
                     fused=True,
                     renorm=False,
-                    reuse=tf.AUTO_REUSE,
-                    scope=scope,
+                    param_initializers=self.bn_param_initializer,
                     decay=self.bn_decay,
                     updates_collections=None,
                     is_training=self.train_bn)
-        else:
-            c1 = tf.contrib.layers.batch_norm(
-                inputs=c1,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                is_training=self.train_bn)
 
         # COMBINE
         if self.in_place_integration:
@@ -329,32 +345,39 @@ class hGRU(object):
                           symmetric_weights=False,
                           padding=None)
         g2 += gate_bias
-        if self.bn_reuse:
-            with tf.variable_scope(
-                    '%s_g2/bn' % (self.var_scope),
-                    reuse=tf.AUTO_REUSE) as scope:
+        if self.use_in:
+            g2 = tf.contrib.layers.instance_norm(
+                inputs=g2,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            if self.bn_reuse:
+                with tf.variable_scope(
+                        '%s_g2/bn' % (self.var_scope),
+                        reuse=tf.AUTO_REUSE) as scope:
+                    g2 = tf.contrib.layers.batch_norm(
+                        inputs=g2,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        reuse=tf.AUTO_REUSE,
+                        scope=scope,
+                        decay=self.bn_decay,
+                        updates_collections=None,
+                        is_training=self.train_bn)
+            else:
                 g2 = tf.contrib.layers.batch_norm(
                     inputs=g2,
                     scale=True,
                     center=False,
                     fused=True,
                     renorm=False,
-                    reuse=tf.AUTO_REUSE,
-                    scope=scope,
+                    param_initializers=self.bn_param_initializer,
                     decay=self.bn_decay,
                     updates_collections=None,
                     is_training=self.train_bn)
-        else:
-            g2 = tf.contrib.layers.batch_norm(
-                inputs=g2,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                is_training=self.train_bn)
         g2 = self.gate_nl(g2)
 
         # COMPUTE C2
@@ -372,32 +395,39 @@ class hGRU(object):
                      deconv_size=None,
                      symmetric_weights=self.symmetric_weights,
                      padding=None)
-        if self.bn_reuse:
-            with tf.variable_scope(
-                    '%s_c2/bn' % (self.var_scope),
-                    reuse=tf.AUTO_REUSE) as scope:
+        if self.use_in:
+            c2 = tf.contrib.layers.instance_norm(
+                inputs=c2,
+                scale=True,
+                center=False,
+                trainable=self.train_bn)
+        else:
+            if self.bn_reuse:
+                with tf.variable_scope(
+                        '%s_c2/bn' % (self.var_scope),
+                        reuse=tf.AUTO_REUSE) as scope:
+                    c2 = tf.contrib.layers.batch_norm(
+                        inputs=c2,
+                        scale=True,
+                        center=False,
+                        fused=True,
+                        renorm=False,
+                        reuse=tf.AUTO_REUSE,
+                        scope=scope,
+                        decay=self.bn_decay,
+                        updates_collections=None,
+                        is_training=self.train_bn)
+            else:
                 c2 = tf.contrib.layers.batch_norm(
                     inputs=c2,
                     scale=True,
                     center=False,
                     fused=True,
                     renorm=False,
-                    reuse=tf.AUTO_REUSE,
-                    scope=scope,
+                    param_initializers=self.bn_param_initializer,
                     decay=self.bn_decay,
                     updates_collections=None,
                     is_training=self.train_bn)
-        else:
-            c2 = tf.contrib.layers.batch_norm(
-                inputs=c2,
-                scale=True,
-                center=False,
-                fused=True,
-                renorm=False,
-                param_initializers=self.bn_param_initializer,
-                decay=self.bn_decay,
-                updates_collections=None,
-                is_training=self.train_bn)
 
         if self.in_place_integration:
             h2_candidate = combine_coeffs[0] * c2 + combine_coeffs[1] * c2 * h2 + combine_coeffs[2] * h2

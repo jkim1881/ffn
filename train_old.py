@@ -782,7 +782,6 @@ def train_ffn(model_cls, **model_kwargs):
         #   eval_tracker.reset()
         #   print('REFRESHING MOMENTS, eval tracker...')
 
-
         seed, patches, labels, weights = next(batch_it)
         updated_seed, step, summ, accuracy = run_training_step(
             sess, model, summ_op, None,
