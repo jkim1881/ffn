@@ -1245,7 +1245,7 @@ class Runner(object):
     with storage.atomic_file(prob_path) as fd:
       np.savez_compressed(fd, qprob=prob)
 
-  def run(self, corner, subvol_size, reset_counters=True, with_membrane=False):
+  def run(self, corner, subvol_size, reset_counters=True, with_membrane=False, fake=False):
     """Runs FFN inference over a subvolume.
 
     Args:
@@ -1285,7 +1285,8 @@ class Runner(object):
         np.savez_compressed(fd, im=canvas.image)
 
     canvas.segment_all(seed_policy=self.get_seed_policy(corner, subvol_size))
-    self.save_segmentation(canvas, alignment, seg_path, prob_path, with_membrane=with_membrane)
+    if not fake:
+      self.save_segmentation(canvas, alignment, seg_path, prob_path, with_membrane=with_membrane)
 
     # Attempt to remove the checkpoint file now that we no longer need it.
     try:
