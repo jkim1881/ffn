@@ -82,6 +82,9 @@ if __name__ == '__main__':
             train_dir += '_ada'
         coords_fullpath = os.path.join(hdf_root, topup_tfr, dataset_type, 'tf_record_file')
 
+        if not os.path.exists(train_dir):
+            os.makedirs(train_dir)
+
         data_string = ''
         label_string = ''
         for i, tvol in enumerate(topup_vol_list):
