@@ -66,7 +66,7 @@ if __name__ == '__main__':
     verbose = False
     with_membrane = False
     validation_mode = False
-    cap_gradient = 0.001
+    cap_gradient = 0.0
     topup_mode=True
 
     adabn = True
