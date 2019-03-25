@@ -5,6 +5,7 @@ import sys
 import numpy as np
 
 def find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap):
+    ckpt_cap = 9999999999999 if ckpt_cap is None else ckpt_cap
     raw_items = os.listdir(os.path.join(ckpt_root, net_cond_name))
     items = []
     for item in raw_items:
@@ -59,17 +60,17 @@ if __name__ == '__main__':
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
 
     ckpt_ticks = 10
-    ckpt_cap = 680000 # max number of iters from which to load ckpts
+    ckpt_cap = None # 680000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
     use_latest = True
 
     verbose = False
     with_membrane = False
-    validation_mode = True
-    cap_gradient = 0.0
+    validation_mode = False
+    cap_gradient = 0.00001
     topup_mode=True
-
     adabn = True
+
     topup_steps = 15000/batch_size # five full rounds
     move_threshold = 0.9
 
