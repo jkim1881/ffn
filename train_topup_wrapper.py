@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
         print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
         if use_latest:
-            ckpt_list = find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap)
+            ckpt_list = find_all_ckpts(ckpt_root, cond_name, ckpt_cap)
             trimmed_list = [ckpt_list[-1]]
         else:
             if single_ckpt is None:
