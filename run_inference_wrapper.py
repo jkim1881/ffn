@@ -91,6 +91,7 @@ if __name__ == '__main__':
     ckpt_ticks = 10
     ckpt_cap = 650000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
+    use_latest= True
     move_threshold = 0.9
 
     image_mean = 128
@@ -114,11 +115,14 @@ if __name__ == '__main__':
     ## COLLECT CKPTS
     print('>>>>> TRIMMING CKPS')
     print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
-    if single_ckpt is None:
+    if use_latest:
         ckpt_list = find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap)
-        trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks * 2))][:ckpt_ticks]
+        trimmed_list = [ckpt_list[-1]]
     else:
-        trimmed_list = [single_ckpt]
+        if single_ckpt is None:
+            trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks * 2))][:ckpt_ticks]
+        else:
+            trimmed_list = [single_ckpt]
     print('>>>>> DONE.')
     print('>>>>> CKPTS TO USE :: '+ str(trimmed_list))
 

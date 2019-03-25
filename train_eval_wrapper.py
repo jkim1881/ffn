@@ -60,6 +60,9 @@ if __name__ == '__main__':
 
     ckpt_ticks = 10
     ckpt_cap = 680000 # max number of iters from which to load ckpts
+    single_ckpt = None
+    use_latest = False
+
     verbose = False
     with_membrane = False
     adabn = False
@@ -99,8 +102,14 @@ if __name__ == '__main__':
                 label_string += ','
 
         print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
-        ckpt_list = find_all_ckpts(ckpt_root, cond_name, ckpt_cap)
-        trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks*2))][:ckpt_ticks]
+        if use_latest:
+            ckpt_list = find_all_ckpts(ckpt_root, cond_name, ckpt_cap)
+            trimmed_list = [ckpt_list[-1]]
+        else:
+            if single_ckpt is None:
+                trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks * 2))][:ckpt_ticks]
+            else:
+                trimmed_list = [single_ckpt]
 
         for ckpt_idx in trimmed_list:
             print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
