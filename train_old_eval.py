@@ -653,7 +653,7 @@ def train_ffn(model_cls, **model_kwargs):
       sv = tf.train.Supervisor(
           logdir=train_dir,
           is_chief=(FLAGS.task == 0),
-          saver=None,
+          saver=model.saver,
           summary_op=None,
           save_summaries_secs=summary_rate_secs,
           save_model_secs=save_model_secs,
