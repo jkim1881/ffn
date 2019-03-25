@@ -32,7 +32,7 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1])
 
     script_root = '/home/drew/ffn'
-    net_name_obj = 'convstack_3d_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'convstack_3d_bn_f' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
 
     train_tfrecords_name_list = ['allbutberson', 'allbutfib', 'allbutisbi', 'allbutcremi']
@@ -61,6 +61,7 @@ if __name__ == '__main__':
     ckpt_ticks = 10
     ckpt_cap = 680000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
+    use_latest = True
 
     verbose = False
     with_membrane = False
@@ -97,11 +98,14 @@ if __name__ == '__main__':
                 label_string += ','
 
         print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
-        if single_ckpt is None:
+        if use_latest:
             ckpt_list = find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap)
-            trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks * 2))][:ckpt_ticks]
+            trimmed_list = [ckpt_list[-1]]
         else:
-            trimmed_list = [single_ckpt]
+            if single_ckpt is None:
+                trimmed_list = ckpt_list[-1::-(len(ckpt_list) / (ckpt_ticks * 2))][:ckpt_ticks]
+            else:
+                trimmed_list = [single_ckpt]
 
         for ckpt_idx in trimmed_list:
             print('>>>>>>>>>>>>>>>>>>>>> Running....(CKPT='+str(ckpt_idx)+')')
