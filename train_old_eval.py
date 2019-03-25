@@ -723,6 +723,7 @@ def train_ffn(model_cls, **model_kwargs):
         mask.update_at(seed, (0, 0, 0), updated_seed)
 
       # RECORD RESULT
+      print('RAN FOR ' + str(step_since_session_start) +' STEPS.')
       print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
             ', recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
             ', acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))))
