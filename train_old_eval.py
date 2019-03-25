@@ -153,6 +153,8 @@ flags.DEFINE_boolean('adabn', False,
                      'adabn')
 flags.DEFINE_boolean('validation_mode', False,
                      'If true, learning rate is set to zero with SGD. Accuracy stats are accumulated over 1K samples')
+flags.DEFINE_boolean('topup_mode', False,
+                     'topup')
 
 FLAGS = flags.FLAGS
 
@@ -628,7 +630,7 @@ def train_ffn(model_cls, **model_kwargs):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
 
-      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=False, adabn=FLAGS.adabn, **model_kwargs)
+      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=FLAGS.validation_mode, adabn=FLAGS.adabn, **model_kwargs)
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
@@ -643,7 +645,7 @@ def train_ffn(model_cls, **model_kwargs):
       # Start supervisor.
       train_dir = FLAGS.train_dir
       summary_rate_secs = 999999
-      save_model_secs = 999999
+      save_model_secs = 30 if FLAGS.topup_mode else 999999
       sv = tf.train.Supervisor(
           logdir=train_dir,
           is_chief=(FLAGS.task == 0),
@@ -693,11 +695,6 @@ def train_ffn(model_cls, **model_kwargs):
 
       t_last = time.time()
 
-      # Add title to eval curve text
-      eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
-      eval_curve_txt.write("CKPT: " + str(FLAGS.ckpt_idx))
-      eval_curve_txt.write("\n")
-      eval_curve_txt.close()
       while step_since_session_start < FLAGS.eval_steps:
         if (step % 20 == 0) & (step_since_session_start > 0) & FLAGS.progress_verbose:
           # TODO (jk): text log of learning curve. refresh file.
@@ -722,17 +719,6 @@ def train_ffn(model_cls, **model_kwargs):
         mask.update_at(seed, (0, 0, 0), updated_seed)
 
       # RECORD RESULT
-      eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
-      precision = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.0001)
-      recall = eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.0001)
-      accuracy = (eval_tracker.tp + eval_tracker.tn) / (
-          eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.0001)
-      eval_curve_txt.write('step_' + str(step) +
-                           '_precision_' + str(precision) +
-                           '_recall_' + str(recall) +
-                           '_accuracy_' + str(accuracy))
-      eval_curve_txt.write("\n")
-      eval_curve_txt.close()
       print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
             ', recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
             ', acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))))
