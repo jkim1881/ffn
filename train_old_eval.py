@@ -630,7 +630,7 @@ def train_ffn(model_cls, **model_kwargs):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
 
-      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=FLAGS.validation_mode, adabn=FLAGS.adabn, **model_kwargs)
+      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=(not FLAGS.validation_mode), adabn=FLAGS.adabn, **model_kwargs)
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
 
       eval_tracker = EvalTracker(eval_shape_zyx)
