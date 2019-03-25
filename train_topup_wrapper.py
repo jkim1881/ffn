@@ -93,7 +93,7 @@ if __name__ == '__main__':
                 partition_prefix=str(i)
             data_string += partition_prefix + ':' + volume_fullpath + ':raw'
             label_string += partition_prefix + ':' + groundtruth_fullpath + ':stack'
-            if i < len(eval_vol_list)-1:
+            if i < len(topup_vol_list)-1:
                 data_string += ','
                 label_string += ','
 
