@@ -65,7 +65,8 @@ if __name__ == '__main__':
 
     verbose = False
     with_membrane = False
-    validation_mode = True
+    validation_mode = False
+    cap_gradient = 0.001
     topup_mode=True
 
     adabn = True
@@ -135,6 +136,7 @@ if __name__ == '__main__':
                       ' --batch_size=' + str(batch_size) + \
                       ' --with_membrane=' + str(with_membrane) + \
                       ' --validation_mode=' + str(validation_mode) + \
+                      ' --cap_gradient=' + str(cap_gradient) + \
                       ' --topup_mode=' + str(topup_mode) + \
                       ' --progress_verbose=' + str(verbose) + \
                       ' --adabn=' + str(adabn) + \

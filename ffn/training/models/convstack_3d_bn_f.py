@@ -96,7 +96,8 @@ def _predict_object_mask(net, depth=9, is_training=True, adabn=False):
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, adabn=False, reuse=False, tag='', TA=None):
+  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9,
+               is_training=True, grad_clip_val=None, adabn=False, reuse=False, tag='', TA=None):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=not(is_training), tag=tag)
     self.set_uniform_io_size(fov_size)
     self.depth = depth
@@ -104,6 +105,10 @@ class ConvStack3DFFNModel(model.FFNModel):
     self.TA = TA
     self.is_training=is_training
     self.adabn=adabn
+    if grad_clip_val is None:
+        self.grad_clip_val = 0.0
+    else:
+        self.grad_clip_val = grad_clip_val
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -127,9 +132,9 @@ class ConvStack3DFFNModel(model.FFNModel):
     if self.labels is not None:
       self.set_up_sigmoid_pixelwise_loss(logit_seed)
       if self.TA is None:
-        self.set_up_optimizer(max_gradient_entry_mag=0.0)
+        self.set_up_optimizer(max_gradient_entry_mag=self.grad_clip_val)
       else:
-        self.set_up_optimizer(max_gradient_entry_mag=0.0, TA=self.TA)
+        self.set_up_optimizer(max_gradient_entry_mag=self.grad_clip_val, TA=self.TA)
       self.show_center_slice(logit_seed)
       self.show_center_slice(self.labels, sigmoid=False)
       self.add_summaries()

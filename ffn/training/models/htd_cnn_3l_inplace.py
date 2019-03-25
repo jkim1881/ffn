@@ -168,7 +168,10 @@ class ConvStack3DFFNModel(model.FFNModel):
     self.TA=TA
     self.is_training=is_training
     self.adabn=adabn
-    self.grad_clip_val = grad_clip_val
+    if grad_clip_val is None:
+        self.grad_clip_val = 0.0
+    else:
+        self.grad_clip_val = grad_clip_val
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
