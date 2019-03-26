@@ -35,7 +35,7 @@ from concurrent import futures
 import numpy as np
 import tensorflow as tf
 from .inference_utils import timer_counter
-
+from skimage.filters import gaussian
 
 # pylint:disable=g-import-not-at-top
 try:
