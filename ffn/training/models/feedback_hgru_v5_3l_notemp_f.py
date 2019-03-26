@@ -148,15 +148,21 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
 
-  def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, is_training=True, adabn=False, reuse=False, tag='', TA=None):
+  def __init__(self, with_membrane=False, fov_size=None, optional_output_size=None, deltas=None, batch_size=None, depth=9,
+               is_training=True, adabn=False, reuse=False, tag='', TA=None, grad_clip_val=0.0):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=not(is_training), tag=tag)
 
+    self.optional_output_size = optional_output_size
     self.set_uniform_io_size(fov_size)
     self.depth = depth
     self.reuse=reuse
     self.TA=TA
     self.is_training=is_training
     self.adabn=adabn
+    if grad_clip_val is None:
+        self.grad_clip_val = 0.0
+    else:
+        self.grad_clip_val = grad_clip_val
 
   def define_tf_graph(self):
     self.show_center_slice(self.input_seed)
@@ -169,21 +175,43 @@ class ConvStack3DFFNModel(model.FFNModel):
     with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
                                           depth=self.depth, is_training=self.is_training, adabn=self.adabn)
-
-    logit_seed = self.update_seed(self.input_seed, logit_update)
+    if self.optional_output_size is not None:
+      dx = self.input_seed_size[0] - self.optional_output_size[0]
+      dy = self.input_seed_size[1] - self.optional_output_size[1]
+      dz = self.input_seed_size[2] - self.optional_output_size[2]
+      logit_update_cropped = logit_update[:,
+                                          dz // 2: -(dz - dz // 2),
+                                          dy // 2: -(dy - dy // 2),
+                                          dx // 2: -(dx - dx // 2),
+                                          :]
+      logit_update_padded = tf.pad(logit_update_cropped, [[0, 0],
+                                           [dz // 2, dz - dz // 2],
+                                           [dy // 2, dy - dy // 2],
+                                           [dx // 2, dx - dx // 2],
+                                           [0, 0]])
+      mask = tf.pad(tf.ones_like(logit_update_cropped), [[0, 0],
+                                           [dz // 2, dz - dz // 2],
+                                           [dy // 2, dy - dy // 2],
+                                           [dx // 2, dx - dx // 2],
+                                           [0, 0]])
+      self.loss_weights *= mask
+      logit_seed = self.update_seed(self.input_seed, logit_update_padded)
+    else:
+      logit_seed = self.update_seed(self.input_seed, logit_update)
 
     # Make predictions available, both as probabilities and logits.
     self.logits = logit_seed
-    self.logistic = tf.sigmoid(logit_seed)
 
     if self.labels is not None:
+      self.logistic = tf.sigmoid(logit_seed)
       self.set_up_sigmoid_pixelwise_loss(logit_seed)
-      if self.TA is None:
-        self.set_up_optimizer(max_gradient_entry_mag=0.0)
-      else:
-        self.set_up_optimizer(max_gradient_entry_mag=0.0, TA=self.TA)
       self.show_center_slice(logit_seed)
       self.show_center_slice(self.labels, sigmoid=False)
+      if self.TA is None:
+        self.set_up_optimizer(max_gradient_entry_mag=self.grad_clip_val)
+      else:
+        self.set_up_optimizer(max_gradient_entry_mag=self.grad_clip_val, TA=self.TA)
+
       self.add_summaries()
 
     # ADABN: Add only non-bn vars to saver
@@ -198,7 +226,8 @@ class ConvStack3DFFNModel(model.FFNModel):
     #       keep_checkpoint_every_n_hours=100)
     # ADABN: Define bn-var initializer to reset moments every iteration
     moment_list = [x for x in tf.global_variables() if (moving_ops_names[0] in x.name) | (moving_ops_names[1] in x.name)]
-    self.moment_list = moment_list
+    self.moment_list = None
+    # self.moment_list = moment_list
     self.ada_initializer = tf.variables_initializer( var_list=moment_list)
 
     self.fgru_moment_list = [x for x in moment_list if 'recurrent' in x.name]
