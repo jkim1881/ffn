@@ -72,7 +72,11 @@ def get_scored_move_offsets(deltas, prob_map, threshold=0.9):
   for axis, axis_delta in enumerate(deltas):
     if axis_delta == 0:
       continue
-    for axis_offset in (-axis_delta, axis_delta):
+    # ADDED 76-78 (326)
+    axis_deltas = np.arange(-axis_delta, axis_delta)
+    axis_deltas = axis_deltas[axis_deltas != 0]  # Remove ambiguous center slice
+    for axis_offset in axis_deltas:
+    # for axis_offset in (-axis_delta, axis_delta):
       # Move exactly by the delta along the current axis, and select the face
       # of the subvolume orthogonal to the current axis.
       face_sel = subvol_sel[:]

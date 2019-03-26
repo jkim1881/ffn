@@ -100,21 +100,23 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                                     num_outputs=in_k,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
-  logits = tf.contrib.layers.batch_norm(
-      inputs=logits,
-      scale=True,
-      center=False,
-      fused=True,
-      renorm=False,
-      decay=bn_decay,
-      param_initializers=finalbn_param_initializer,
-      is_training=train_bn)
+  # COMMENTED (326)
+  # logits = tf.contrib.layers.batch_norm(
+  #     inputs=logits,
+  #     scale=True,
+  #     center=False,
+  #     fused=True,
+  #     renorm=False,
+  #     decay=bn_decay,
+  #     param_initializers=finalbn_param_initializer,
+  #     is_training=train_bn)
   logits = tf.nn.relu(logits)
   logits = tf.contrib.layers.conv3d(logits,
                                     scope='conv_lom2',
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
+  logits = tf.clip_by_value(logits, -4.5, 4.5) # (326)
   import numpy as np
   extras = 0
   hgru_w = 0
