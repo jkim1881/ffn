@@ -67,13 +67,14 @@ if __name__ == '__main__':
 
     script_root = '/home/drew/ffn/'
 
-    net_name_obj = 'htd_cnn_3l_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp_f' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    train_tfrecords_name = 'berson3x_w_inf_memb'
-    with_membrane = True
-    seed_policy = 'PolicyMembranePeaks' #'PolicyPeaks'
+    train_tfrecords_name = 'allbutberson'
+    tag = '_topup_ada'
+    with_membrane = False
+    seed_policy = 'PolicyPeaks' #'PolicyMembranePeaks' #'PolicyPeaks'
 
-    infer_volume_name = 'berson_w_inf_memb'
+    infer_volume_name = 'berson'
     infer_volume_type = 'train'
 
     # fov_type = 'traditional_fov'
@@ -81,7 +82,7 @@ if __name__ == '__main__':
     # deltas = [8, 8, 8]
     fov_type = 'wide_fov'
     fov_size = [57, 57, 13]
-    deltas = [8, 8, 3]
+    deltas = [14, 14, 5] #[8, 8, 3]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
@@ -89,8 +90,8 @@ if __name__ == '__main__':
     request_txt_root = os.path.join(script_root, 'configs', fov_type)
 
     ckpt_ticks = 10
-    ckpt_cap = 650000 # max number of iters from which to load ckpts
-    single_ckpt = 1190936
+    ckpt_cap = 9999999 # max number of iters from which to load ckpts
+    single_ckpt = None #1190936
     use_latest= True
     move_threshold = 0.9
 
@@ -100,7 +101,7 @@ if __name__ == '__main__':
     kth_job = 0
 
     ### DEFINE PATHS
-    net_cond_name = net_name + '_' + train_tfrecords_name + '_r0'
+    net_cond_name = net_name + '_' + train_tfrecords_name + '_r0' + tag
     request_txt_fullpath = os.path.join(request_txt_root, net_cond_name + '_inferon_' + infer_volume_name + '_' + infer_volume_type + '.pbtxt')
     hdf_fullpath = os.path.join(hdf_root, infer_volume_name, infer_volume_type, 'grayscale_maps.h5')
     gt_fullpath = os.path.join(hdf_root, infer_volume_name, infer_volume_type, 'groundtruth.h5')
