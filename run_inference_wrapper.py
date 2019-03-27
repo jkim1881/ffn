@@ -29,8 +29,8 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.write('  pad_value: 0.05 \n')
     file.write('  move_threshold: ' + str(move_threshold) + ' \n')
     file.write('  min_boundary_dist { x: 1 y: 1 z: 1} \n')
-    file.write('  segment_threshold: 0.6 \n')
-    file.write('  min_segment_size: 1000 \n')
+    file.write('  segment_threshold: 0.5 \n')
+    file.write('  min_segment_size: 100 \n')
     file.write('} \n')
     file.close()
 
@@ -63,25 +63,39 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 if __name__ == '__main__':
 
     num_machines = int(sys.argv[1])
-    i_machine = int(sys.argv[2]) ####### currently useless. later implement multi-ckpt or multi-vol pipeline
+    version = sys.argv[2]
+    i_machine = 1
 
-    script_root = '/home/drew/ffn/'
+    script_root = '/media/data_cifs/cluster_projects/jk_test_ffn'
 
-    net_name_obj = 'htd_cnn_3l_in' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp_f' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    train_tfrecords_name = 'berson3x_w_inf_memb'
-    with_membrane = True
-    seed_policy = 'PolicyMembranePeaks' #'PolicyPeaks'
+    with_membrane = False
+    seed_policy = 'PolicyPeaks'  #'PolicyPeaks'
 
-    infer_volume_name = 'berson_w_inf_memb'
-    infer_volume_type = 'train'
+    if version == 'snemi':
+        train_tfrecords_name = 'allbutisbi'
+        infer_volume_name = 'isbi2013'  # neuroproof, cremi_abc, isbi2013
+    elif version == 'berson':
+        train_tfrecords_name = 'allbutberson'
+        infer_volume_name = 'berson'  # neuroproof, cremi_abc, isbi2013
+    elif version == 'fib':
+        train_tfrecords_name = 'allbutfib'
+        infer_volume_name = 'neuroproof'  # neuroproof, cremi_abc, isbi2013
+    elif version == 'cremi':
+        train_tfrecords_name = 'allbutcremi'
+        infer_volume_name = 'cremi_a'  # neuroproof, cremi_abc, isbi2013
+    else:
+        raise NotImplementedError(version)
+
+    infer_volume_type = 'val'
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
     # deltas = [8, 8, 8]
     fov_type = 'wide_fov'
     fov_size = [57, 57, 13]
-    deltas = [8, 8, 3]
+    deltas = [22, 22, 5]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
@@ -92,7 +106,7 @@ if __name__ == '__main__':
     ckpt_cap = 650000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
     use_latest= True
-    move_threshold = 0.9
+    move_threshold = 0.8
 
     image_mean = 128
     image_stddev = 33
@@ -108,8 +122,8 @@ if __name__ == '__main__':
     data = h5py.File(hdf_fullpath, 'r')
     vol_shape = data['raw'].shape
     zdim = vol_shape[0]
-    xdim = vol_shape[1]
-    ydim = vol_shape[2]
+    xdim = vol_shape[2]
+    ydim = vol_shape[1]
     data.close()
 
     ## COLLECT CKPTS
@@ -174,6 +188,10 @@ if __name__ == '__main__':
         gt_unique = np.unique(gt)
         inference_fullpath = os.path.join(inference_fullpath, '0/0/seg-0_0_0.npz')
         seg = np.load(inference_fullpath)['segmentation']
+        str_shape = ', '.join([str(x) for x in list(ims.shape)])
+        half_str_shape = ', '.join([str(x) for x in list(ims.shape)])
+        print 'Segmentation size for %s is: %s' % (version, str_shape)
+
         seg_unique = np.unique(seg)
         arand, precision, recall = metrics.adapted_rand(seg, gt, all_stats=True)
 

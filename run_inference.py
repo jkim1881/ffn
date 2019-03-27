@@ -48,9 +48,9 @@ def main(unused_argv):
 
   runner = inference.Runner()
   runner.start(request, with_membrane=FLAGS.with_membrane)
-  print('>>>>>>>>>>>>>>>>> FAKE RUN')
-  runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
-             (bbox.size.z, bbox.size.y, bbox.size.x), with_membrane=FLAGS.with_membrane, fake=True)
+  # print('>>>>>>>>>>>>>>>>> FAKE RUN')
+  # runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
+  #            (bbox.size.z, bbox.size.y, bbox.size.x), with_membrane=FLAGS.with_membrane, fake=True)
   print('>>>>>>>>>>>>>>>>> REAL RUN')
   runner.run((bbox.start.z, bbox.start.y, bbox.start.x),
              (bbox.size.z, bbox.size.y, bbox.size.x), with_membrane=FLAGS.with_membrane)
