@@ -943,7 +943,7 @@ class Runner(object):
     args['batch_size'] = batch_size
     args['with_membrane'] = False
     args['is_training'] = False
-    args['adabn'] = True
+    args['adabn'] = True  # Changed according to JK's suggestions True
     args['tag'] = ''
     self.model = model_class(**args)
 

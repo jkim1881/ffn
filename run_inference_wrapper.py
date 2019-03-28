@@ -29,8 +29,8 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.write('  pad_value: 0.05 \n')
     file.write('  move_threshold: ' + str(move_threshold) + ' \n')
     file.write('  min_boundary_dist { x: 1 y: 1 z: 1} \n')
-    file.write('  segment_threshold: 0.5 \n')
-    file.write('  min_segment_size: 100 \n')
+    file.write('  segment_threshold: 0.7 \n')  # 0.5, 0.6
+    file.write('  min_segment_size: 1000 \n')
     file.write('} \n')
     file.close()
 
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     script_root = '/media/data_cifs/cluster_projects/jk_test_ffn'
 
     net_name_obj = 'feedback_hgru_v5_3l_notemp_f' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    tag = '_topup_ada'
     net_name = net_name_obj
     with_membrane = False
     seed_policy = 'PolicyPeaks'  #'PolicyPeaks'
@@ -103,10 +104,10 @@ if __name__ == '__main__':
     request_txt_root = os.path.join(script_root, 'configs', fov_type)
 
     ckpt_ticks = 10
-    ckpt_cap = 650000 # max number of iters from which to load ckpts
+    ckpt_cap = 999990000 # max number of iters from which to load ckpts
     single_ckpt = 1190936
     use_latest= True
-    move_threshold = 0.8
+    move_threshold = 0.8  # .2 / .3
 
     image_mean = 128
     image_stddev = 33
@@ -114,7 +115,8 @@ if __name__ == '__main__':
     kth_job = 0
 
     ### DEFINE PATHS
-    net_cond_name = net_name + '_' + train_tfrecords_name + '_r0'
+    # net_cond_name = net_name + '_' + train_tfrecords_name + '_r0'
+    net_cond_name = net_name + '_' + train_tfrecords_name + '_r0' + tag
     request_txt_fullpath = os.path.join(request_txt_root, net_cond_name + '_inferon_' + infer_volume_name + '_' + infer_volume_type + '.pbtxt')
     hdf_fullpath = os.path.join(hdf_root, infer_volume_name, infer_volume_type, 'grayscale_maps.h5')
     gt_fullpath = os.path.join(hdf_root, infer_volume_name, infer_volume_type, 'groundtruth.h5')
@@ -128,9 +130,10 @@ if __name__ == '__main__':
 
     ## COLLECT CKPTS
     print('>>>>> TRIMMING CKPS')
-    print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs....')
+    print('>>>>>>>>>>>>>>>>>>>>> Collecting CKPTs from.... %s' % os.path.join(ckpt_root, net_cond_name))
     if use_latest:
         ckpt_list = find_all_ckpts(ckpt_root, net_cond_name, ckpt_cap)
+        assert len(ckpt_list), 'No checkpoints found.'
         trimmed_list = [ckpt_list[-1]]
     else:
         if single_ckpt is None:
@@ -188,8 +191,7 @@ if __name__ == '__main__':
         gt_unique = np.unique(gt)
         inference_fullpath = os.path.join(inference_fullpath, '0/0/seg-0_0_0.npz')
         seg = np.load(inference_fullpath)['segmentation']
-        str_shape = ', '.join([str(x) for x in list(ims.shape)])
-        half_str_shape = ', '.join([str(x) for x in list(ims.shape)])
+        str_shape = ', '.join([str(x) for x in vol_shape])
         print 'Segmentation size for %s is: %s' % (version, str_shape)
 
         seg_unique = np.unique(seg)

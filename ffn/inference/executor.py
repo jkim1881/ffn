@@ -36,6 +36,7 @@ import numpy as np
 import tensorflow as tf
 from .inference_utils import timer_counter
 from skimage.filters import gaussian
+from skimage import transform
 
 # pylint:disable=g-import-not-at-top
 try:
@@ -222,8 +223,14 @@ class ThreadingBatchExecutor(BatchExecutor):
         # ADDED 223-226 (326)
         logit_shape = ret['logits'].shape
         # ret['logits'] = (ret['logits'] - ret['logits'].ravel().mean()) / (ret['logits'].std() + 1e-4)
-        ret['logits'] = gaussian(ret['logits'].squeeze().transpose(1, 2, 0), sigma=1.5, multichannel=True, preserve_range=True, truncate=100)
+        ret['logits'] = gaussian(ret['logits'].squeeze().transpose(1, 2, 0), sigma=2, multichannel=True, preserve_range=True, truncate=100)
         ret['logits'] = ret['logits'].transpose(2, 0, 1).reshape(logit_shape)
+        
+        # subsample = ret['logits'].squeeze().transpose(1, 2, 0)[0:-1:2, 0:-1:2, :]
+        # subsample = transform.resize(ret['logits'].squeeze().transpose(1, 2, 0)[0:-1:2, 0:-1:2, :], logit_shape[1:-1][::-1], mode='edge', anti_aliasing=True)
+        # # subsample = (subsample - subsample.mean()) / subsample.std()
+        # subsample = (subsample - -2.66) / 0.39
+        # ret['logits'] = subsample.transpose(2, 0, 1).reshape(logit_shape)
       except Exception as e:  # pylint:disable=broad-except
         logging.exception(e)
         # If calling TF didn't work (faulty hardware, misconfiguration, etc),
