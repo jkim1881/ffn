@@ -81,16 +81,16 @@ if __name__ == '__main__':
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
         text_fullpath = os.path.join(train_dir, 'eval.txt')
-        if not os.path.exists(text_fullpath):
-            eval_curve_txt = open(text_fullpath, "w")
-        else:
-            eval_curve_txt = open(text_fullpath, "a")
 
         for eval_vol_list, eval_tfr in zip(eval_volumes_name_list_list[tr], eval_tfrecords_name_list[tr]):
             print('>>>>>>>>>>>>>>>>>>>>> Eval Dataset = ' + eval_tfr)
-
+            if not os.path.exists(text_fullpath):
+                eval_curve_txt = open(text_fullpath, "w")
+            else:
+                eval_curve_txt = open(text_fullpath, "a")
             eval_curve_txt.write(">>>>>Eval on: " + eval_tfr + ", adabn: " + str(adabn))
             eval_curve_txt.write("\n")
+            eval_curve_txt.close()
 
             coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
             data_string = ''
@@ -149,4 +149,3 @@ if __name__ == '__main__':
 
                 ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
                 subprocess.call(command, shell=True)
-        eval_curve_txt.close()
