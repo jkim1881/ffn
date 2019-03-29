@@ -725,9 +725,9 @@ def train_ffn(model_cls, **model_kwargs):
       # RECORD RESULT
       eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
       eval_curve_txt.write('\nStep: ' + str(step) +
-                           ',   prec: ' + str(np.round(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
-                           ',   recll: ' + str(np.round(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
-                           ',   acc: ' + str(np.round((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
+                           ',   prec: ' + str((eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
+                           ',   recll: ' + str((eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
+                           ',   acc: ' + str(((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
                            ',   #patches: ' + str(eval_tracker.num_patches))
       eval_curve_txt.close()
       print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
