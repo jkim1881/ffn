@@ -91,7 +91,6 @@ if __name__ == '__main__':
 
             eval_curve_txt.write(">>>>>Eval on: " + eval_tfr + ", adabn: " + str(adabn))
             eval_curve_txt.write("\n")
-            eval_curve_txt.close()
 
             coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
             data_string = ''
@@ -150,3 +149,4 @@ if __name__ == '__main__':
 
                 ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
                 subprocess.call(command, shell=True)
+            eval_curve_txt.close()
