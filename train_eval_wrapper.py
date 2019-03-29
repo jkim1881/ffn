@@ -149,4 +149,4 @@ if __name__ == '__main__':
 
                 ############# TODO(jk): USE DATA VOLUMES FOR MULTI VOLUME TRAINING????
                 subprocess.call(command, shell=True)
-            eval_curve_txt.close()
+        eval_curve_txt.close()
