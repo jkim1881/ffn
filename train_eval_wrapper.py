@@ -74,22 +74,26 @@ if __name__ == '__main__':
 
     for tr, train_tfr in enumerate(train_tfrecords_name_list):
         print('>>>>>>>>>>>>>>>>>>>>> Train Dataset = ' + train_tfr)
+        cond_name = net_name + '_' + train_tfr + '_r0'
+        train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
+        if adabn:
+            train_dir += '_ada'
+        if not os.path.exists(train_dir):
+            os.makedirs(train_dir)
+        text_fullpath = os.path.join(train_dir, 'eval.txt')
+        if not os.path.exists(text_fullpath):
+            eval_curve_txt = open(text_fullpath, "w")
+        else:
+            eval_curve_txt = open(text_fullpath, "a")
+
         for eval_vol_list, eval_tfr in zip(eval_volumes_name_list_list[tr], eval_tfrecords_name_list[tr]):
             print('>>>>>>>>>>>>>>>>>>>>> Eval Dataset = ' + eval_tfr)
 
-            cond_name = net_name + '_' + train_tfr + '_r0'
-            train_dir = os.path.join(ckpt_root, cond_name) + '_eval'
-            if adabn:
-                train_dir += '_ada'
-            coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
-
-            if not os.path.exists(train_dir):
-                os.makedirs(train_dir)
-            eval_curve_txt = open(os.path.join(train_dir, 'eval.txt'), "w")
             eval_curve_txt.write(">>>>>Eval on: " + eval_tfr + ", adabn: " + str(adabn))
             eval_curve_txt.write("\n")
             eval_curve_txt.close()
 
+            coords_fullpath = os.path.join(hdf_root, eval_tfr, dataset_type, 'tf_record_file')
             data_string = ''
             label_string = ''
             for i, evol in enumerate(eval_vol_list):

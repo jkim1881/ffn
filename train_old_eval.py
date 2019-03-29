@@ -653,7 +653,7 @@ def train_ffn(model_cls, **model_kwargs):
       sv = tf.train.Supervisor(
           logdir=train_dir,
           is_chief=(FLAGS.task == 0),
-          saver=model.saver,
+          saver=model.saver if FLAGS.topup_mode else None,
           summary_op=None,
           save_summaries_secs=summary_rate_secs,
           save_model_secs=save_model_secs,
@@ -723,7 +723,13 @@ def train_ffn(model_cls, **model_kwargs):
         mask.update_at(seed, (0, 0, 0), updated_seed)
 
       # RECORD RESULT
-      print('RAN FOR ' + str(step_since_session_start) +' STEPS.')
+      eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
+      eval_curve_txt.write('Step: ' + str(step) +
+                           ',   prec: ' + str(np.round(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
+                           ',   recll: ' + str(np.round(eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
+                           ',   acc: ' + str(np.round((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
+                           ',   #patches: ' + str(eval_tracker.num_patches))
+      eval_curve_txt.close()
       print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
             ', recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
             ', acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))))
