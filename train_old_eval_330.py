@@ -669,7 +669,8 @@ def train_ffn(model_cls, **model_kwargs):
       # TODO (jk): load from ckpt
       if FLAGS.load_from_ckpt != 'None':
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-        model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
+        ckpt_path = os.path.join(FLAGS.train_dir, 'model.ckpt-' + str(FLAGS.ckpt_idx))
+        model.saver.restore(eval_tracker.sess, ckpt_path)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
       else:
         raise NotImplementedError('Specify ckpt_idx')
