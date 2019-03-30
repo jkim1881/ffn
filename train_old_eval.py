@@ -632,7 +632,7 @@ def train_ffn(model_cls, **model_kwargs):
       # The constructor might define TF ops/placeholders, so it is important
       # that the FFN is instantiated within the current context.
 
-      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=(not FLAGS.validation_mode),
+      model = model_cls(with_membrane=FLAGS.with_membrane, is_training=not(FLAGS.validation_mode),
                         adabn=FLAGS.adabn, grad_clip_val=FLAGS.cap_gradient,
                         **model_kwargs)
       eval_shape_zyx = train_eval_size(model).tolist()[::-1]
@@ -653,7 +653,7 @@ def train_ffn(model_cls, **model_kwargs):
       sv = tf.train.Supervisor(
           logdir=train_dir,
           is_chief=(FLAGS.task == 0),
-          saver=model.saver if FLAGS.topup_mode else None,
+          saver=model.saver,
           summary_op=None,
           save_summaries_secs=summary_rate_secs,
           save_model_secs=save_model_secs,
@@ -663,6 +663,7 @@ def train_ffn(model_cls, **model_kwargs):
               config=tf.ConfigProto(
                   log_device_placement=False, allow_soft_placement=True))
       eval_tracker.sess = sess
+
       if FLAGS.ckpt_idx is not None:
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
         ckpt_path = os.path.join(FLAGS.train_dir, 'model.ckpt-' + str(FLAGS.ckpt_idx))

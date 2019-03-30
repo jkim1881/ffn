@@ -66,10 +66,10 @@ if __name__ == '__main__':
     single_ckpt = None
     use_latest = True
 
-    verbose = False
+    verbose = True
     with_membrane = False
     adabn = False
-    eval_steps = 15000/batch_size # five full rounds
+    eval_steps = 20000/batch_size # five full rounds
     move_threshold = 0.9
 
     for tr, train_tfr in enumerate(train_tfrecords_name_list):
