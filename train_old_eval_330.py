@@ -705,8 +705,9 @@ def train_ffn(model_cls, **model_kwargs):
 
       # TODO (jk): text log of learning curve. refresh file.
       max_steps = FLAGS.eval_steps
+      step_since_session_start = 0
 
-      while step < max_steps:
+      while step_since_session_start < max_steps:
         if (step % 20 == 0) & (step_since_session_start > 0):
           # TODO (jk): text log of learning curve. refresh file.
           logging.info('Step: ' + str(step) +
