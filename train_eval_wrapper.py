@@ -128,7 +128,7 @@ if __name__ == '__main__':
                     print(file)
                     shutil.copy(file, train_dir)
 
-                command = 'python ' + os.path.join(script_root, 'train_old_eval.py') + \
+                command = 'python ' + os.path.join(script_root, 'train_old_eval_330.py') + \
                           ' --train_coords ' + coords_fullpath + \
                           ' --data_volumes ' + data_string + \
                           ' --label_volumes ' + label_string + \
