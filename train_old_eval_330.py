@@ -660,7 +660,6 @@ def train_ffn(model_cls, **model_kwargs):
           save_summaries_secs=summary_rate_secs,
           save_model_secs=save_model_secs,
           recovery_wait_secs=5)
-      import ipdb;ipdb.set_trace()
       sess = sv.prepare_or_wait_for_session(
               FLAGS.master,
               config=tf.ConfigProto(
@@ -668,13 +667,6 @@ def train_ffn(model_cls, **model_kwargs):
       eval_tracker.sess = sess
 
       # TODO (jk): load from ckpt
-      if FLAGS.load_from_ckpt != 'None':
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
-        ckpt_path = os.path.join(FLAGS.train_dir, 'model.ckpt-' + str(FLAGS.ckpt_idx))
-        model.saver.restore(eval_tracker.sess, ckpt_path)
-        logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-      else:
-        raise NotImplementedError('Specify ckpt_idx')
       step = int(sess.run(model.global_step))
       step_since_session_start = 0
 

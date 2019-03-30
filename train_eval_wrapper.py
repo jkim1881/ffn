@@ -124,8 +124,11 @@ if __name__ == '__main__':
                 ## COPY CKPT AND MOVE
                 import glob
                 import shutil
+                for file in glob.glob(train_dir):
+                    os.remove(file)
                 for file in glob.glob(ckpt_path):
                     print(file)
+                    shutil.copy(file, train_dir)
                     shutil.copy(file, train_dir)
 
                 command = 'python ' + os.path.join(script_root, 'train_old_eval_330.py') + \
