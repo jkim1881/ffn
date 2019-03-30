@@ -151,8 +151,6 @@ flags.DEFINE_list('reflectable_axes', ['0', '1', '2'],
                   'List of integers equal to a subset of [0, 1, 2] specifying '
                   'which of the [z, y, x] axes, respectively, may be reflected '
                   'in order to augment the training data.')
-flags.DEFINE_boolean('validation_mode', False,
-                     'If true, learning rate is set to zero with SGD. Accuracy stats are accumulated over 1K samples')
 flags.DEFINE_boolean('adabn', False,
                      'adabn')
 flags.DEFINE_boolean('validation_mode', False,
