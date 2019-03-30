@@ -673,7 +673,6 @@ def train_ffn(model_cls, **model_kwargs):
         logging.info('>>>>>>>>>>>>>>>>>>>>> Loading checkpoint.')
         model.saver.restore(eval_tracker.sess, FLAGS.load_from_ckpt)
         logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
-              logging.info('>>>>>>>>>>>>>>>>>>>>> Checkpoint loaded.')
       else:
         raise NotImplementedError('Specify ckpt_idx')
       step = int(sess.run(model.global_step))
