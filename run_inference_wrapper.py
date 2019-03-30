@@ -4,6 +4,21 @@ import subprocess
 import numpy as np
 import metrics
 import h5py
+from datetime import datetime
+
+
+def get_dt_stamp():
+    """Get date-timestamp."""
+    return str(datetime.now()).replace(
+        ' ',
+        '_').replace(
+        ':',
+        '_').replace(
+        '-',
+        '_').replace(
+        '.',
+        '_')
+
 
 def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, output_fullpath,
                          net_name, seed_policy,
@@ -29,7 +44,7 @@ def write_custom_request(request_txt_fullpath, hdf_fullpath, ckpt_fullpath, outp
     file.write('  pad_value: 0.05 \n')
     file.write('  move_threshold: ' + str(move_threshold) + ' \n')
     file.write('  min_boundary_dist { x: 1 y: 1 z: 1} \n')
-    file.write('  segment_threshold: 0.6 \n')
+    file.write('  segment_threshold: 0.5 \n')
     file.write('  min_segment_size: 1000 \n')
     file.write('} \n')
     file.close()
@@ -63,26 +78,72 @@ def find_checkpoint(checkpoint_num, ckpt_root, fov_type, net_cond_name, factor):
 if __name__ == '__main__':
 
     num_machines = int(sys.argv[1])
-    i_machine = int(sys.argv[2]) ####### currently useless. later implement multi-ckpt or multi-vol pipeline
+    version = sys.argv[2]
+    allbut = sys.argv[3]
+    infer_volume_type = sys.argv[4]
+    segment_threshold = float(sys.argv[5])
+    move_threshold = float(sys.argv[6])
+    deltas = [int(x) for x in sys.argv[7].split(',')]
+    i_machine = 1
 
-    script_root = '/home/drew/ffn/'
+    script_root = os.getcwd()
 
-    net_name_obj = 'feedback_hgru_v5_3l_notemp_f' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp_f'  #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    tag = ''  # '_topup_ada'
+    # net_name_obj = 'htd_cnn_3l_inplace'
+    tag = ''
     net_name = net_name_obj
-    train_tfrecords_name = 'allbutberson'
-    tag = '_topup_ada'
     with_membrane = False
     seed_policy = 'PolicyPeaks' #'PolicyMembranePeaks' #'PolicyPeaks'
 
-    infer_volume_name = 'berson'
-    infer_volume_type = 'train'
+    if allbut == 'allbut':
+        if version == 'snemi':
+            train_tfrecords_name = 'allbutisbi'
+            infer_volume_name = 'isbi2013'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'berson':
+            train_tfrecords_name = 'allbutberson'
+            infer_volume_name = 'berson'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'fib':
+            train_tfrecords_name = 'allbutfib'
+            infer_volume_name = 'neuroproof'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'cremi':
+            train_tfrecords_name = 'allbutcremi'
+            infer_volume_name = 'cremi_a'  # neuroproof, cremi_abc, isbi2013
+        else:
+            raise NotImplementedError(version)
+        # move_threshold = 0.8  # .2 / .3
+        # segment_threshold = 0.5
+    elif allbut == 'cv':
+        if version == 'snemi':
+            train_tfrecords_name = 'allbutfib'
+            infer_volume_name = 'isbi2013'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'berson':
+            train_tfrecords_name = 'allbutisbi'
+            infer_volume_name = 'trim_berson'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'fib':
+            train_tfrecords_name = 'allbutisbi'
+            infer_volume_name = 'neuroproof'  # neuroproof, cremi_abc, isbi2013
+        elif version == 'cremi':
+            train_tfrecords_name = 'allbutisbi'
+            infer_volume_name = 'cremi_a'  # neuroproof, cremi_abc, isbi2013
+        else:
+            raise NotImplementedError(version)
+        # move_threshold = 0.8  # .2 / .3
+        # segment_threshold = 0.5  # 0.6
+    else:
+        raise NotImplementedError(allbut)
+
+    assert infer_volume_type == 'val' or infer_volume_type == 'train'
 
     # fov_type = 'traditional_fov'
     # fov_size = [33, 33, 33]
     # deltas = [8, 8, 8]
     fov_type = 'wide_fov'
-    fov_size = [57, 57, 13]
-    deltas = [14, 14, 5] #[8, 8, 3]
+    # fov_size = [64, 64, 64]
+    fov_size = [57, 57, 13]  # 13
+    # deltas = [24, 24, 6] #[8, 8, 3]
+    # deltas = [26, 26, 3] #[8, 8, 3]
+    # deltas = [26, 26, 2]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)
@@ -93,8 +154,6 @@ if __name__ == '__main__':
     ckpt_cap = 9999999 # max number of iters from which to load ckpts
     single_ckpt = None #1190936
     use_latest= True
-    move_threshold = 0.9
-
     image_mean = 128
     image_stddev = 33
 
@@ -109,8 +168,8 @@ if __name__ == '__main__':
     data = h5py.File(hdf_fullpath, 'r')
     vol_shape = data['raw'].shape
     zdim = vol_shape[0]
-    xdim = vol_shape[1]
-    ydim = vol_shape[2]
+    xdim = vol_shape[2]
+    ydim = vol_shape[1]
     data.close()
 
     ## COLLECT CKPTS
@@ -140,7 +199,7 @@ if __name__ == '__main__':
 
         ### DEFINE NAMES
         ckpt_fullpath = os.path.join(ckpt_root, net_cond_name, 'model.ckpt-' + str(checkpoint_num))
-        inference_fullpath = os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type, str(checkpoint_num))
+        inference_fullpath = os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type, '%s_%s' % (checkpoint_num, get_dt_stamp()))
 
         ### OPEN TEXT
         infer_result_txt_fullpath = os.path.join(output_root, net_cond_name, infer_volume_name, infer_volume_type, 'score.txt')
@@ -169,7 +228,7 @@ if __name__ == '__main__':
         print('>>>>>>>>>>>>>> Inference finished')
 
         #### EVALUATE INFERRENCE
-        print('>>>>>>>>>>>>>> Starting evaluation on inferred volume')
+        print('>>>>>>>>>>>>>> Starting evaluation on inferred volume: %s' % inference_fullpath)
         data = h5py.File(gt_fullpath, 'r')
         gt = np.array(data['stack'])
         gt_unique = np.unique(gt)

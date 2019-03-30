@@ -1,0 +1,17 @@
+image { 
+  hdf5: "/media/data_cifs/connectomics/datasets/third_party/wide_fov/isbi2013/val/grayscale_maps.h5:raw" 
+}image_mean: 128
+image_stddev: 33
+seed_policy: "PolicyPeaks" 
+model_checkpoint_path: "/media/data_cifs/connectomics/ffn_ckpts/wide_fov/feedback_hgru_v5_3l_notemp_f_allbutisbi_r0/model.ckpt-707325" 
+model_name: "feedback_hgru_v5_3l_notemp_f.ConvStack3DFFNModel" 
+model_args: "{\"depth\": 12, \"fov_size\": [57, 57, 13], \"deltas\": [8, 8, 3]}" 
+segmentation_output_dir: "/media/data_cifs/connectomics/ffn_inferred/wide_fov/feedback_hgru_v5_3l_notemp_f_allbutisbi_r0/isbi2013/val/707325_2019_03_29_22_27_23_926679" 
+inference_options { 
+  init_activation: 0.95 
+  pad_value: 0.05 
+  move_threshold: 0.6 
+  min_boundary_dist { x: 1 y: 1 z: 1} 
+  segment_threshold: 0.5 
+  min_segment_size: 1000 
+} 
