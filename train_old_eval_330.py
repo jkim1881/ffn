@@ -101,7 +101,7 @@ flags.DEFINE_string('master', '', 'Network address of the master.')
 flags.DEFINE_integer('batch_size', 4, 'Number of images in a batch.')
 flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
 flags.DEFINE_integer('ps_tasks', 0, 'Number of tasks in the ps job.')
-flags.DEFINE_integer('max_steps', 10000, 'Number of steps to train for.')
+flags.DEFINE_integer('eval_steps', 10000, 'Number of steps to train for.')
 flags.DEFINE_integer('replica_step_delay', 300,
                      'Require the model to reach step number '
                      '<replica_step_delay> * '
@@ -702,13 +702,8 @@ def train_ffn(model_cls, **model_kwargs):
 
       t_last = time.time()
 
-      if not FLAGS.validation_mode:
-        # TODO (jk): text log of learning curve. refresh file.
-        learning_curve_txt = open(os.path.join(FLAGS.train_dir, 'lc.txt'),"w")
-        learning_curve_txt.close()
-        max_steps = FLAGS.max_steps
-      else:
-        max_steps = step + 50000/FLAGS.batch_size
+      # TODO (jk): text log of learning curve. refresh file.
+      max_steps = FLAGS.eval_steps
 
       while step < max_steps:
         if (step % 20 == 0) & (step_since_session_start > 0):
@@ -734,14 +729,14 @@ def train_ffn(model_cls, **model_kwargs):
         step_since_session_start += 1
         mask.update_at(seed, (0, 0, 0), updated_seed)
         
-        # RECORD RESULT
-        eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
-        eval_curve_txt.write('\nStep: ' + str(step) +
+      # RECORD RESULT
+      eval_curve_txt = open(os.path.join(FLAGS.train_dir, 'eval.txt'), "a")
+      eval_curve_txt.write('\nStep: ' + str(step) +
                              ',   prec: ' + str((eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
                              ',   recll: ' + str((eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
                              ',   acc: ' + str(((eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))) +
                              ',   #patches: ' + str(eval_tracker.num_patches))
-        eval_curve_txt.close()
+      eval_curve_txt.close()
         print(' prec: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fp + 0.000001))) +
               ', recll: ' + str(np.round(1000*eval_tracker.tp / (eval_tracker.tp + eval_tracker.fn + 0.000001))) +
               ', acc: ' + str(np.round(1000*(eval_tracker.tp + eval_tracker.tn) / (eval_tracker.tp + eval_tracker.tn + eval_tracker.fp + eval_tracker.fn + 0.000001))))
