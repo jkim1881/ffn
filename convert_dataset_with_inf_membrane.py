@@ -9,7 +9,7 @@ import skimage.measure
 import skimage.morphology
 import sys
 
-out_root = '/media/data_cifs/connectomics/datasets/third_party/wide_fov'
+out_root = '/media/data_cifs/connectomics/datasets/third_party/64_fov'
 
 # # BERSON 384
 name = 'berson_w_inf_memb'
