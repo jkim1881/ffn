@@ -64,3 +64,30 @@ gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
 writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
 writer.create_dataset('stack', data=gt_labels, dtype='<i8')
 writer.close()
+
+# BERSON 128 384 384
+name = 'berson128_w_inf_memb'
+volume = np.load('/media/data_cifs/connectomics/datasets/berson_ffn_cleaned.npz')['volume'][:,:,:,0]
+membrane = np.load('/media/data_cifs/connectomics/datasets/berson_ffn_cleaned.npz')['membrane']
+membrane_max = np.max(membrane)
+membrane = membrane*255.0/membrane_max
+
+membrane = np.expand_dims(membrane, axis=3)
+volume = np.expand_dims(volume, axis=3)
+volume_n_membrane = np.concatenate([volume, membrane], axis=3)
+print(' vol: ' + str(volume.shape))
+
+write_dir = os.path.join(out_root,name,'train')
+if not os.path.isdir(write_dir):
+    os.makedirs(write_dir)
+writer = h5py.File(os.path.join(out_root,name,'train','grayscale_maps.h5'), 'w')
+writer.create_dataset('raw', data=volume_n_membrane, dtype='|u1')
+writer.close()
+
+# # BERSON 128 384 384 GT (because it needs to be redone)
+labelpath = '/media/data_cifs/connectomics/datasets/berson_ffn_cleaned.npz'
+gt_labels = np.load(labelpath)['gt']
+gt_labels, _, _ = skimage.segmentation.relabel_sequential(gt_labels, offset=1)
+writer = h5py.File(os.path.join(out_root,name,'train','groundtruth.h5'), 'w')
+writer.create_dataset('stack', data=gt_labels, dtype='<i8')
+writer.close()
