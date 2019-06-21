@@ -94,7 +94,7 @@ if __name__ == '__main__':
         if len(volumes_name_list)==1:
             partition_prefix='jk'
         else:
-            partition_prefix=str(i)
+            partition_prefix=str(i+1)
         data_string += partition_prefix + ':' + volume_fullpath + ':raw'
         label_string += partition_prefix + ':' + groundtruth_fullpath + ':stack'
         if i < len(volumes_name_list)-1:
