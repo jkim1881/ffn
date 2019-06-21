@@ -37,8 +37,9 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
         bn_decay = 0.95
     else:
         bn_decay = 1.0
+  else:
+    bn_decay = 0.95
   train_bn = True
-  # bn_decay = 1.0
 
   if input_patches.get_shape().as_list()[-1] == 2:
       image = tf.expand_dims(input_patches[:,:,:,:,0], axis=4)
