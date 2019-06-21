@@ -756,19 +756,19 @@ def train_ffn(model_cls, **model_kwargs):
             print('REFRESHING EVAL TRACKER...')
             eval_tracker.reset()
 
-        if ((step_since_session_start % 5) == 0) & (model.moment_list is not None):
-            mean1 = sess.run(model.moment_list[0].name)
-            mean2 = sess.run(model.moment_list[-2].name)
-            var1 = sess.run(model.moment_list[1].name)
-            var2 = sess.run(model.moment_list[-1].name)
-            diff = np.sum(np.square(mean1-mean1o)) + np.sum(np.square(mean2-mean2o)) + np.sum(np.square(var1-var1o)) + np.sum(np.square(var2-var2o))
-            mean1o = mean1
-            mean2o = mean2
-            var1o = var1
-            var2o = var2
-            print('moment displacement = ' + str(diff))
-            # print(mean1)
-            # print(var1)
+        # if ((step_since_session_start % 5) == 0) & (model.moment_list is not None):
+        #     mean1 = sess.run(model.moment_list[0].name)
+        #     mean2 = sess.run(model.moment_list[-2].name)
+        #     var1 = sess.run(model.moment_list[1].name)
+        #     var2 = sess.run(model.moment_list[-1].name)
+        #     diff = np.sum(np.square(mean1-mean1o)) + np.sum(np.square(mean2-mean2o)) + np.sum(np.square(var1-var1o)) + np.sum(np.square(var2-var2o))
+        #     mean1o = mean1
+        #     mean2o = mean2
+        #     var1o = var1
+        #     var2o = var2
+        #     print('moment displacement = ' + str(diff))
+        #     # print(mean1)
+        #     # print(var1)
 
         # if FLAGS.adabn:
         #   ####################### REMOVE THIS TO TURN OFF INSTANCE NORMALIZATION
