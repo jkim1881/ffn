@@ -11,9 +11,9 @@ if __name__ == '__main__':
     script_root = '/home/jk/PycharmProjects/ffn'
     net_name_obj = 'feedback_hgru_v5_3l_notemp_july' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
-    volumes_name_list = ['berson128_w_inf_memb',
+    volumes_name_list = ['berson_w_inf_memb',
                          'berson2x_w_inf_memb',
-                         'berson_w_inf_memb']
+                         'berson128_w_inf_memb']
     # volumes_name_list = ['isbi2013']
     # volumes_name_list = ['neuroproof']
     # volumes_name_list = ['isbi2013',
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         if len(volumes_name_list)==1:
             partition_prefix='jk'
         else:
-            partition_prefix=str(i+1)
+            partition_prefix=str(i+1) ############################################ MATCH VOLUME NAMES
         data_string += partition_prefix + ':' + volume_fullpath + ':raw'
         label_string += partition_prefix + ':' + groundtruth_fullpath + ':stack'
         if i < len(volumes_name_list)-1:
