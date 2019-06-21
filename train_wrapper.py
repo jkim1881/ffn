@@ -13,8 +13,7 @@ if __name__ == '__main__':
     net_name = net_name_obj
     volumes_name_list = ['berson128_w_inf_memb',
                          'berson2x_w_inf_memb',
-                         'berson_w_inf_memb',
-                         'cremi_c']
+                         'berson_w_inf_memb']
     # volumes_name_list = ['isbi2013']
     # volumes_name_list = ['neuroproof']
     # volumes_name_list = ['isbi2013',
