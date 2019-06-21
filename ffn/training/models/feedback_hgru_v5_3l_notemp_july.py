@@ -77,7 +77,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                                             padding='SAME',
                                             batch_norm=global_use_bn,
                                             gate_bn=global_use_bn,
-                                            bn_reuse=True,
+                                            bn_reuse=False,
                                             aux=None,
                                             train=train_bn,
                                             bn_decay=bn_decay)
