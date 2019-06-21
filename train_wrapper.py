@@ -8,9 +8,13 @@ if __name__ == '__main__':
 
     batch_size = int(sys.argv[1])
 
-    script_root = '/home/drew/ffn'
-    net_name_obj = 'htd_cnn_3l' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
+    script_root = '/home/jk/ffn'
+    net_name_obj = 'feedback_hgru_v5_3l_notemp_july' #'convstack_3d_bn' #'feedback_hgru_v5_3l_notemp' #'feedback_hgru_generic_longfb_3l_long'#'feedback_hgru_generic_longfb_3l' #'feedback_hgru_3l_dualch' #'feedback_hgru_2l'  # 'convstack_3d'
     net_name = net_name_obj
+    volumes_name_list = ['berson128_w_inf_memb',
+                         'berson2x_w_inf_memb',
+                         'berson_w_inf_memb',
+                         'cremi_c']
     # volumes_name_list = ['isbi2013']
     # volumes_name_list = ['neuroproof']
     # volumes_name_list = ['isbi2013',
@@ -35,8 +39,7 @@ if __name__ == '__main__':
     #                      'cremi_b',
     #                      'cremi_c']
     # volumes_name_list = ['berson_w_inf_memb', 'berson2x_w_inf_memb']
-    volumes_name_list = ['berson_w_inf_memb', 'berson2x_w_inf_memb']
-    tfrecords_name = 'berson3x_w_inf_memb'
+    tfrecords_name = 'berson4x_w_inf_memb'
     dataset_type = 'train' #'val' #'train'
     with_membrane = True
 
@@ -50,10 +53,10 @@ if __name__ == '__main__':
     # fov_type = 'wide_fov'
     # fov_size = [57, 57, 13]
     # deltas = [8, 8, 3]
-    fov_type = 'ultrawide_fov'
-    fov_size = [114, 114, 26]
+    fov_type = '64_fov'
+    fov_size = [64, 64, 16]
     # optional_output_size = [57, 57, 13]
-    deltas = [8, 8, 3]
+    deltas = [16, 16, 6]
 
     hdf_root = os.path.join('/media/data_cifs/connectomics/datasets/third_party/', fov_type)
     ckpt_root = os.path.join('/media/data_cifs/connectomics/ffn_ckpts', fov_type)

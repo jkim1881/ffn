@@ -40,3 +40,10 @@ lom should be (fov_size // 2) + deltas
     --thresholds 0.025,0.05,0.075,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 \
     --lom_radius 48,48,14 \
     --min_size 3000
+
+
+#####
+values = [0,255] for both memb and raw image
+[z,height,width,ch] where ch0 : image and ch1: membrane
+
+
