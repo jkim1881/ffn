@@ -122,6 +122,7 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
                                     num_outputs=1,
                                     kernel_size=(1, 1, 1),
                                     activation_fn=None)
+
   import numpy as np
   extras = 0
   hgru_w = 0
@@ -151,13 +152,24 @@ def _predict_object_mask(input_patches, input_seed, depth=9, is_training=True, a
   print('>>>>>>>>>>>>>>>>>>>>>>BN-TRAIN: ' + str(train_bn))
   return logits
 
+def mask_center(data, size):
+    data_shape = data.get_shape().as_list()[1:]
+    mask = np.zeros(tuple([1]+data_shape))
+    mask[:,(data_shape[0] - size[0]) / 2: (data_shape[0] + size[0]) / 2,
+           (data_shape[1] - size[1]) / 2: (data_shape[1] + size[1]) / 2,
+           (data_shape[2] - size[2]) / 2: (data_shape[2] + size[2]) / 2,
+           :] = 1
+
+    return data*tf.Constant(mask)
 
 class ConvStack3DFFNModel(model.FFNModel):
   dim = 3
   def __init__(self, with_membrane=False, fov_size=None, deltas=None, batch_size=None, depth=9, 
-               is_training=True, adabn=False, reuse=False, tag='', TA=None, grad_clip_val=None):
+               is_training=True, adabn=False, reuse=False, tag='', TA=None,
+               grad_clip_val=None, optional_output_size=None):
     super(ConvStack3DFFNModel, self).__init__(deltas, batch_size, with_membrane, validation_mode=not(is_training), tag=tag)
     self.set_uniform_io_size(fov_size)
+    self.optional_output_size = optional_output_size
     self.depth = depth
     self.reuse=reuse
     self.TA=TA
@@ -175,6 +187,10 @@ class ConvStack3DFFNModel(model.FFNModel):
     with tf.variable_scope('seed_update', reuse=self.reuse):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
                                           depth=self.depth, is_training=self.is_training, adabn=self.adabn)
+
+    # Mask output
+    if self.optional_output_size is not None:
+      logit_update = mask_center(logit_update, self.optional_output_size)  # b,d,h,w,c
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 

@@ -4,6 +4,7 @@ lom should be (fov_size // 2) + deltas
 
 
 >>>>>>>>>>>>> 64_fov (berson3x_w_inf_memb)
+
  fov_size = [64, 64, 16]
     deltas = [16, 16, 6]
     -> lom = [48, 48, 14] (originally 42 42 9)
