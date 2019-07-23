@@ -188,9 +188,11 @@ class ConvStack3DFFNModel(model.FFNModel):
       logit_update = _predict_object_mask(self.input_patches, self.input_seed,
                                           depth=self.depth, is_training=self.is_training, adabn=self.adabn)
 
-    # Mask output
+    # Mask output and label
     if self.optional_output_size is not None:
       logit_update = mask_center(logit_update, self.optional_output_size)  # b,d,h,w,c
+      assert self.input_seed_size == self.pred_mask_size
+      self.labels = mask_center(self.labels, self.optional_output_size)  # b,d,h,w,c
 
     logit_seed = self.update_seed(self.input_seed, logit_update)
 
